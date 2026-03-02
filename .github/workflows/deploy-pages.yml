@@ -18,9 +18,6 @@ jobs:
     build:
         name: Build Frontend
         runs-on: ubuntu-latest
-        defaults:
-            run:
-                working-directory: frontend
         steps:
             - uses: actions/checkout@v4
 
@@ -28,21 +25,19 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: "20"
-                  cache: "npm"
-                  cache-dependency-path: frontend/package-lock.json
 
             - name: Install dependencies
-              run: npm ci || npm install
+              working-directory: frontend
+              run: npm install
 
             - name: Build for GitHub Pages
+              working-directory: frontend
               run: npm run build
-              env:
-                  VITE_API_BASE: ""
 
             - name: Upload artifact
               uses: actions/upload-pages-artifact@v3
               with:
-                  path: frontend/dist
+                  path: ./frontend/dist
 
     deploy:
         name: Deploy to GitHub Pages
