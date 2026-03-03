@@ -1,14 +1,46 @@
 # FinBank — Mini Core Banking System
 
 > **Team 2**: Python + MongoDB + Webhooks  
-> **Architecture**: Modular Monolith  
+> **Architecture**: Modular Monolith + Microservices (Bonus)  
 > **Course**: 2025-2026 FinTech — Department of International Trade and Business
+
+| 🔗 Link | URL |
+|---------|-----|
+| **GitHub** | https://github.com/abdullahyldxz-netizen/finbank-core-banking |
+| **Live Frontend** | https://finbank-core-banking.pages.dev |
+| **API Docs (Swagger)** | https://finbank-api.onrender.com/docs |
 
 ---
 
 ## 🏗️ Architecture
 
-**Modular Monolith** — Single backend application with internally separated modules:
+This project supports **two deployment modes**:
+
+### Option A — Modular Monolith (Primary)
+Single backend application with internally separated modules. Start with:
+```bash
+docker compose up --build
+```
+
+### Option B — Microservices (Bonus)
+8 separate services with API Gateway, each running on its own port. Start with:
+```bash
+cd infra && docker compose up --build
+```
+
+**Microservices:**
+| Service | Port | Responsibility |
+|---------|------|----------------|
+| API Gateway (Nginx) | 8000 | Request routing |
+| Auth Service | 8001 | JWT + RBAC |
+| Banking Service | 8002 | Accounts, Transfers, Ledger |
+| Notification Service | 8003 | Email, Webhook events |
+| Analytics Service | 8004 | Reports, Statistics |
+| Admin Service | 8005 | Admin operations |
+| Employee Service | 8006 | Employee operations |
+| Chatbot Service | 8007 | Gemini AI chatbot |
+
+**Modular Monolith Modules:**
 - `auth` — JWT-based authentication + RBAC (Admin/Customer/Employee/CEO)
 - `customers` — Customer creation + mock KYC verification
 - `accounts` — Account opening + balance inquiry (computed from ledger)
