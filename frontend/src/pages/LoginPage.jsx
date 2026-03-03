@@ -18,7 +18,8 @@ function validateTC(tc) {
     const oddSum = d[0] + d[2] + d[4] + d[6] + d[8];
     const evenSum = d[1] + d[3] + d[5] + d[7];
     const check10 = ((oddSum * 7) - evenSum) % 10;
-    if (check10 < 0 ? check10 + 10 : check10 !== d[9]) {
+    const digit10 = check10 < 0 ? check10 + 10 : check10;
+    if (digit10 !== d[9]) {
         return { valid: false, error: "TC Kimlik numarası geçersiz (10. hane kontrolü başarısız)." };
     }
     const sum10 = d.slice(0, 10).reduce((a, b) => a + b, 0);

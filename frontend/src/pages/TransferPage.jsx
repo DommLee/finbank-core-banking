@@ -90,10 +90,19 @@ export default function TransferPage() {
         e.preventDefault();
         setLoading(true);
         try {
-            await transactionApi.transfer({
-                ...transferForm,
+            const target = transferForm.to_account_id.trim();
+            const payload = {
+                from_account_id: transferForm.from_account_id,
                 amount: parseFloat(transferForm.amount),
-            });
+                description: transferForm.description,
+            };
+            if (target.toUpperCase().startsWith("TR")) {
+                payload.target_iban = target;
+            } else {
+                payload.to_account_id = target;
+            }
+
+            await transactionApi.transfer(payload);
             showReceipt("Havale", transferForm.amount, transferForm.description);
             setTransferForm({
                 from_account_id: transferForm.from_account_id,

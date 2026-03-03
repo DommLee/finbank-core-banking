@@ -21,7 +21,7 @@ router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
 
 async def _validate_account_ownership(
-    db, account_id: str, user_id: str, role: str
+    db, account_id: str, user_id: str, role: str, allow_employee_override: bool = False
 ) -> dict:
     """Validate account exists, is active, and owned by user."""
     account = await db.accounts.find_one({"account_id": account_id})
@@ -29,8 +29,15 @@ async def _validate_account_ownership(
         raise AccountNotFoundError(account_id)
     if account["status"] != "active":
         raise AccountFrozenError()
-    if account["user_id"] != user_id and role != "admin":
-        raise HTTPException(status_code=403, detail="You don't own this account")
+    
+    if account["user_id"] != user_id:
+        if role == "admin":
+            pass
+        elif role == "employee" and allow_employee_override:
+            pass
+        else:
+            raise HTTPException(status_code=403, detail="You don't own this account")
+            
     return account
 
 
@@ -43,7 +50,7 @@ async def deposit(
 ):
     """Deposit money into an account (simulated funding)."""
     account = await _validate_account_ownership(
-        db, body.account_id, current_user["user_id"], current_user["role"]
+        db, body.account_id, current_user["user_id"], current_user["role"], allow_employee_override=True
     )
 
     ledger = LedgerService(db)
@@ -154,8 +161,8 @@ async def transfer(
     db=Depends(get_database),
 ):
     """Transfer money between accounts (internal transfer)."""
-    if body.from_account_id == body.to_account_id:
-        raise SameAccountTransferError()
+    if not body.to_account_id and not body.target_iban:
+        raise HTTPException(status_code=400, detail="Either 'to_account_id' or 'target_iban' is required.")
 
     # Validate source account ownership
     from_account = await _validate_account_ownership(
@@ -163,9 +170,20 @@ async def transfer(
     )
 
     # Validate target account exists and is active
-    to_account = await db.accounts.find_one({"account_id": body.to_account_id})
+    to_account = None
+    if body.to_account_id:
+        to_account = await db.accounts.find_one({"account_id": body.to_account_id})
+    else:
+        to_account = await db.accounts.find_one({"iban": body.target_iban})
+        if to_account:
+            body.to_account_id = to_account["account_id"]
+
     if not to_account:
-        raise AccountNotFoundError(body.to_account_id)
+        raise HTTPException(status_code=404, detail="Target account not found")
+
+    if body.from_account_id == body.to_account_id:
+        raise SameAccountTransferError()
+
     if to_account["status"] != "active":
         raise AccountFrozenError()
 

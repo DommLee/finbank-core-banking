@@ -17,8 +17,10 @@ import AccountsPage from "./pages/AccountsPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotFoundPage from "./pages/NotFoundPage";
 import MessagesPage from "./pages/MessagesPage";
-import BillPayPage from "./pages/BillPayPage";
-import CardControlsPage from "./pages/CardControlsPage";
+import BillsPage from './pages/customer/BillsPage';
+import CardsPage from './pages/customer/CardsPage';
+import AiChatbotPage from './pages/customer/AiChatbotPage';
+import CustomerSupportPage from './pages/customer/CustomerSupportPage';
 
 // Role Specific Pages
 import DashboardPage from "./pages/DashboardPage";
@@ -91,12 +93,12 @@ export default function App() {
                     } />
                     <Route path="/customer/bills" element={
                         <ProtectedRoute allowedRoles={['customer']}>
-                            <BillPayPage />
+                            <BillsPage />
                         </ProtectedRoute>
                     } />
                     <Route path="/customer/cards" element={
                         <ProtectedRoute allowedRoles={['customer']}>
-                            <CardControlsPage />
+                            <CardsPage />
                         </ProtectedRoute>
                     } />
                     <Route path="/customer/goals" element={
@@ -137,6 +139,16 @@ export default function App() {
                     <Route path="/customer/history" element={
                         <ProtectedRoute allowedRoles={['customer']}>
                             <TransferHistoryPage />
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/customer/chatbot" element={
+                        <ProtectedRoute allowedRoles={['customer']}>
+                            <AiChatbotPage />
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/customer/support" element={
+                        <ProtectedRoute allowedRoles={['customer']}>
+                            <CustomerSupportPage />
                         </ProtectedRoute>
                     } />
                 </Route>

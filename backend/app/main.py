@@ -17,7 +17,7 @@ import time
 from app.core.config import settings
 from app.core.database import connect_to_mongo, close_mongo_connection
 from app.core.logging import configure_logging
-from app.api.v1 import auth, customers, accounts, transactions, ledger, audit, messages, bills
+from app.api.v1 import auth, customers, accounts, transactions, ledger, audit, messages, bills, admin, cards, exchange
 
 # ── Configure Logging ──
 configure_logging()
@@ -120,6 +120,9 @@ app.include_router(ledger.router, prefix=API_PREFIX)
 app.include_router(audit.router, prefix=API_PREFIX)
 app.include_router(messages.router, prefix=API_PREFIX)
 app.include_router(bills.router, prefix=API_PREFIX)
+app.include_router(admin.router, prefix=API_PREFIX)
+app.include_router(cards.router, prefix=API_PREFIX + "/cards", tags=["cards"])
+app.include_router(exchange.router, prefix=API_PREFIX + "/exchange", tags=["exchange"])
 
 
 # ── Root ──

@@ -1,49 +1,40 @@
 import asyncio
-from motor.motor_asyncio import AsyncIOMotorClient
-from datetime import datetime
-import uuid
-import random
+import os
+import motor.motor_asyncio
+from app.services.supabase_sync import sync_user
+
+db = motor.motor_asyncio.AsyncIOMotorClient("mongodb://mongo:27017")["finbank"]
 
 async def main():
-    client = AsyncIOMotorClient('mongodb+srv://admin2:finbankadmin123@cluster0.pwh7s.mongodb.net/finbank?retryWrites=true&w=majority')
-    db = client.finbank
+    # Find active customers
+    cursor = db.customers.find({"status": "active"})
+    active_customers = await cursor.to_list(1000)
     
-    # Get pending customer
-    customer = await db.customers.find_one({'status': 'pending_kyc'}, sort=[('created_at', -1)])
-    if not customer:
-        print('No pending customer found')
-        return
-        
-    print(f'Found customer: {customer["first_name"]} {customer["last_name"]}')
+    fixed_count = 0
+    for c in active_customers:
+        user_id = c.get("user_id")
+        user = await db.users.find_one({"user_id": user_id})
+        if user and user.get("kyc_status") != "APPROVED":
+            await db.users.update_one({"user_id": user_id}, {"$set": {"kyc_status": "APPROVED"}})
+            updated_user = await db.users.find_one({"user_id": user_id})
+            await sync_user(updated_user)
+            print(f"Fixed user {user.get('email')}")
+            fixed_count += 1
+            
+    # Find rejected customers
+    cursor = db.customers.find({"status": "suspended"})
+    suspended_customers = await cursor.to_list(1000)
     
-    # Approve KYC
-    await db.customers.update_one(
-        {'customer_id': customer['customer_id']},
-        {'$set': {'status': 'active', 'kyc_decision': 'approved', 'kyc_notes': 'Auto-approved for demo', 'kyc_reviewed_at': datetime.utcnow()}}
-    )
-    print('KYC Approved!')
-    
-    # Check if they already have an account
-    existing_acc = await db.accounts.find_one({'customer_id': customer['customer_id']})
-    if existing_acc:
-        print(f'Account already exists: {existing_acc["iban"]}')
-        return
-        
-    # Create an initial checking account
-    acc_num = str(random.randint(1000000000, 9999999999))
-    iban = f'TR00000100000{acc_num}0000000000'
-    
-    await db.accounts.insert_one({
-        'account_id': str(uuid.uuid4()),
-        'account_number': acc_num,
-        'iban': iban,
-        'customer_id': customer['customer_id'],
-        'user_id': customer['user_id'],
-        'account_type': 'checking',
-        'currency': 'TRY',
-        'status': 'active',
-        'created_at': datetime.utcnow()
-    })
-    print(f'Created Account: {iban}')
-    
+    for c in suspended_customers:
+        user_id = c.get("user_id")
+        user = await db.users.find_one({"user_id": user_id})
+        if user and user.get("kyc_status") not in ["REJECTED", "SUSPENDED"]:
+            await db.users.update_one({"user_id": user_id}, {"$set": {"kyc_status": "REJECTED"}})
+            updated_user = await db.users.find_one({"user_id": user_id})
+            await sync_user(updated_user)
+            print(f"Fixed suspended user {user.get('email')}")
+            fixed_count += 1
+            
+    print(f"Total users fixed: {fixed_count}")
+
 asyncio.run(main())

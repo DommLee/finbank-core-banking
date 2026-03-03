@@ -32,7 +32,7 @@ export default function CustomerLayout() {
         { to: "/customer/transfer", label: "Transfer", icon: ArrowLeftRight },
         { to: "/customer/history", label: "Geçmiş", icon: History },
         { to: "/customer/bills", label: "Fatura", icon: Receipt },
-        { to: "/customer/cards", label: "Kart Kontrol", icon: Lock },
+        { to: "/customer/cards", label: "Kredi Kartı", icon: CreditCard },
         { to: "/customer/ledger", label: "Hareketler", icon: BookOpen },
         { to: "/customer/goals", label: "Tasarruf", icon: Target },
         { to: "/customer/exchange", label: "Döviz", icon: TrendingUp },

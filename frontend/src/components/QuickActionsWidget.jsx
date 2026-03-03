@@ -1,12 +1,14 @@
+import React from "react";
 import { Link } from "react-router-dom";
 import {
-    ArrowLeftRight, CreditCard, Receipt, Target,
-    TrendingUp, BarChart3, Shield, MessageSquare, Bell,
+    Send, Receipt, Target,
+    TrendingUp, BarChart3, Shield, MessageSquare, Bell, CreditCard,
 } from "lucide-react";
 
 export default function QuickActionsWidget({ role = "customer" }) {
     const actions = role === "customer" ? [
-        { to: `/${role}/transfer`, label: "Transfer", icon: <ArrowLeftRight size={20} />, color: "#6366f1" },
+        { to: `/${role}/transfer`, label: "Para Transferi", icon: <Send size={20} />, color: "#3b82f6" },
+        { to: `/${role}/cards`, label: "Kredi Kartlarım", icon: <CreditCard size={20} />, color: "#8b5cf6" },
         { to: `/${role}/bills`, label: "Fatura Öde", icon: <Receipt size={20} />, color: "#f59e0b" },
         { to: `/${role}/goals`, label: "Tasarruf", icon: <Target size={20} />, color: "#22c55e" },
         { to: `/${role}/exchange`, label: "Döviz", icon: <TrendingUp size={20} />, color: "#3b82f6" },

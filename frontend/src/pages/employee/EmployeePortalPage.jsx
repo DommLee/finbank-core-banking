@@ -16,6 +16,13 @@ export default function EmployeePortalPage() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("overview");
 
+    // 360 Modal States
+    const [selectedCustomer, setSelectedCustomer] = useState(null);
+    const [customerAccounts, setCustomerAccounts] = useState([]);
+    const [depositModalOpen, setDepositModalOpen] = useState(false);
+    const [depositForm, setDepositForm] = useState({ accountId: "", amount: "", description: "" });
+    const [actionLoading, setActionLoading] = useState(false);
+
     useEffect(() => {
         loadData();
     }, []);
@@ -49,8 +56,8 @@ export default function EmployeePortalPage() {
 
             setStats({
                 total: cusList.length,
-                pending: cusList.filter(c => c.kyc_status === "PENDING").length,
-                verified: cusList.filter(c => c.kyc_status === "VERIFIED").length,
+                pending: cusList.filter(c => c.status === "pending").length,
+                verified: cusList.filter(c => c.status === "active").length,
                 todayTx: txList.length,
             });
         } catch (err) {
@@ -63,12 +70,48 @@ export default function EmployeePortalPage() {
     const handleKycAction = async (customerId, action) => {
         try {
             await customerApi.updateStatus(customerId, {
-                kyc_status: action === "approve" ? "VERIFIED" : "REJECTED",
+                status: action === "approve" ? "active" : "suspended",
+                kyc_verified: action === "approve" ? true : false,
             });
             toast.success(action === "approve" ? "KYC onaylandı! ✅" : "KYC reddedildi.");
             loadData();
         } catch (err) {
             toast.error(err.response?.data?.detail || "İşlem başarısız.");
+        }
+    };
+
+    const openCustomerModal = async (customer) => {
+        setSelectedCustomer(customer);
+        setCustomerAccounts([]);
+        try {
+            const res = await accountApi.listByCustomer(customer.id);
+            if (Array.isArray(res.data)) {
+                setCustomerAccounts(res.data);
+            }
+        } catch (err) {
+            toast.error("Müşteri hesapları alınamadı.");
+        }
+    };
+
+    const handleDeposit = async (e) => {
+        e.preventDefault();
+        if (!depositForm.amount || depositForm.amount <= 0) return toast.error("Geçerli bir tutar girin.");
+        setActionLoading(true);
+        try {
+            await transactionApi.deposit({
+                account_id: depositForm.accountId,
+                amount: parseFloat(depositForm.amount),
+                description: depositForm.description || "Gişe Yatırımı (Personel İşlemi)"
+            });
+            toast.success("Para yatırma başarılı! ✅");
+            setDepositModalOpen(false);
+            setDepositForm({ accountId: "", amount: "", description: "" });
+            openCustomerModal(selectedCustomer); // Refresh accounts
+            loadData(); // Refresh history
+        } catch (err) {
+            toast.error(err.response?.data?.detail || "İşlem başarısız.");
+        } finally {
+            setActionLoading(false);
         }
     };
 
@@ -210,11 +253,17 @@ export default function EmployeePortalPage() {
                             {searchTerm ? "Sonuç bulunamadı." : "Kayıtlı müşteri yok."}
                         </div>
                     ) : filteredCustomers.map((c, i) => (
-                        <div key={c._id || i} style={{
-                            display: "flex", justifyContent: "space-between", alignItems: "center",
-                            padding: "14px 20px",
-                            borderBottom: i < filteredCustomers.length - 1 ? "1px solid var(--border-color)" : "none",
-                        }}>
+                        <div key={c.id || i}
+                            onClick={() => openCustomerModal(c)}
+                            style={{
+                                display: "flex", justifyContent: "space-between", alignItems: "center",
+                                padding: "14px 20px", cursor: "pointer",
+                                borderBottom: i < filteredCustomers.length - 1 ? "1px solid var(--border-color)" : "none",
+                                transition: "background 0.2s",
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = "var(--bg-secondary)"}
+                            onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+                        >
                             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                                 <div style={{
                                     width: 40, height: 40, borderRadius: 12,
@@ -231,12 +280,12 @@ export default function EmployeePortalPage() {
                             </div>
                             <span style={{
                                 padding: "3px 10px", borderRadius: 8, fontSize: 11, fontWeight: 600,
-                                background: c.kyc_status === "VERIFIED" ? "rgba(16,185,129,0.15)" :
-                                    c.kyc_status === "REJECTED" ? "rgba(239,68,68,0.15)" : "rgba(245,158,11,0.15)",
-                                color: c.kyc_status === "VERIFIED" ? "#10b981" :
-                                    c.kyc_status === "REJECTED" ? "#ef4444" : "#f59e0b",
+                                background: c.status === "active" ? "rgba(16,185,129,0.15)" :
+                                    c.status === "suspended" ? "rgba(239,68,68,0.15)" : "rgba(245,158,11,0.15)",
+                                color: c.status === "active" ? "#10b981" :
+                                    c.status === "suspended" ? "#ef4444" : "#f59e0b",
                             }}>
-                                {c.kyc_status || "PENDING"}
+                                {c.status ? c.status.toUpperCase() : "PENDING"}
                             </span>
                         </div>
                     ))}
@@ -251,12 +300,12 @@ export default function EmployeePortalPage() {
                             <FileCheck size={18} /> Bekleyen KYC Onayları
                         </h2>
                     </div>
-                    {customers.filter(c => c.kyc_status === "PENDING").length === 0 ? (
+                    {customers.filter(c => c.status === "pending").length === 0 ? (
                         <div style={{ padding: 32, textAlign: "center", color: "var(--text-muted)" }}>
                             ✅ Bekleyen KYC onayı yok!
                         </div>
-                    ) : customers.filter(c => c.kyc_status === "PENDING").map((c, i) => (
-                        <div key={c._id || i} style={{
+                    ) : customers.filter(c => c.status === "pending").map((c, i) => (
+                        <div key={c.id || i} style={{
                             display: "flex", justifyContent: "space-between", alignItems: "center",
                             padding: "14px 20px", flexWrap: "wrap", gap: 12,
                             borderBottom: "1px solid var(--border-color)",
@@ -278,7 +327,7 @@ export default function EmployeePortalPage() {
                             </div>
                             <div style={{ display: "flex", gap: 8 }}>
                                 <button
-                                    onClick={() => handleKycAction(c._id, "approve")}
+                                    onClick={() => handleKycAction(c.id, "approve")}
                                     style={{
                                         padding: "8px 16px", borderRadius: 10, border: "none",
                                         background: "linear-gradient(135deg, #10b981, #34d399)",
@@ -289,7 +338,7 @@ export default function EmployeePortalPage() {
                                     <CheckCircle size={14} /> Onayla
                                 </button>
                                 <button
-                                    onClick={() => handleKycAction(c._id, "reject")}
+                                    onClick={() => handleKycAction(c.id, "reject")}
                                     style={{
                                         padding: "8px 16px", borderRadius: 10, border: "none",
                                         background: "linear-gradient(135deg, #ef4444, #f87171)",
@@ -302,6 +351,107 @@ export default function EmployeePortalPage() {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Müşteri 360 Modal */}
+            {selectedCustomer && (
+                <div style={{
+                    position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+                    background: "rgba(0,0,0,0.5)", zIndex: 1000,
+                    display: "flex", alignItems: "center", justifyContent: "center", padding: 20
+                }}>
+                    <div className="card" style={{ width: "100%", maxWidth: 600, maxHeight: "90vh", overflowY: "auto", position: "relative" }}>
+                        <button onClick={() => setSelectedCustomer(null)} style={{
+                            position: "absolute", top: 16, right: 16, background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)"
+                        }}>
+                            <XCircle size={24} />
+                        </button>
+
+                        <div style={{ padding: 24 }}>
+                            <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 16 }}>Müşteri 360° Görünümü</h2>
+
+                            <div style={{ background: "var(--bg-secondary)", padding: 16, borderRadius: 12, marginBottom: 20 }}>
+                                <div style={{ fontWeight: 600, fontSize: 16, marginBottom: 4 }}>{selectedCustomer.full_name}</div>
+                                <div style={{ fontSize: 13, color: "var(--text-muted)", marginBottom: 12 }}>{selectedCustomer.email} • {selectedCustomer.phone}</div>
+                                <div style={{ display: "flex", gap: 10 }}>
+                                    <span style={{ padding: "4px 8px", background: "var(--border-color)", borderRadius: 6, fontSize: 12 }}>
+                                        TC: {selectedCustomer.national_id}
+                                    </span>
+                                    <span style={{ padding: "4px 8px", background: "var(--border-color)", borderRadius: 6, fontSize: 12 }}>
+                                        Durum: {selectedCustomer.status}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>Hesaplar ve Bakiyeler</h3>
+                            {customerAccounts.length === 0 ? (
+                                <div style={{ padding: 20, textAlign: "center", color: "var(--text-muted)", background: "var(--bg-secondary)", borderRadius: 12 }}>
+                                    Müşteriye ait hesap bulunmuyor.
+                                </div>
+                            ) : (
+                                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+                                    {customerAccounts.map(acc => (
+                                        <div key={acc.id} style={{
+                                            border: "1px solid var(--border-color)", padding: 12, borderRadius: 10,
+                                            display: "flex", justifyContent: "space-between", alignItems: "center"
+                                        }}>
+                                            <div>
+                                                <div style={{ fontWeight: 600, fontSize: 14 }}>{acc.account_type} Hesabı</div>
+                                                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{acc.iban || acc.account_number}</div>
+                                            </div>
+                                            <button onClick={() => {
+                                                setDepositForm({ ...depositForm, accountId: acc.id });
+                                                setDepositModalOpen(true);
+                                            }} style={{
+                                                padding: "6px 12px", background: "linear-gradient(135deg, #10b981, #34d399)",
+                                                color: "#fff", border: "none", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer"
+                                            }}>
+                                                Para Yatır
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Deposit Form Modal */}
+            {depositModalOpen && (
+                <div style={{
+                    position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+                    background: "rgba(0,0,0,0.6)", zIndex: 1010,
+                    display: "flex", alignItems: "center", justifyContent: "center", padding: 20
+                }}>
+                    <form onSubmit={handleDeposit} className="card" style={{ width: "100%", maxWidth: 400, padding: 24, position: "relative" }}>
+                        <button type="button" onClick={() => setDepositModalOpen(false)} style={{
+                            position: "absolute", top: 16, right: 16, background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)"
+                        }}>
+                            <XCircle size={24} />
+                        </button>
+                        <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>Gişeden Para Yatırma</h3>
+
+                        <div style={{ marginBottom: 16 }}>
+                            <label className="form-label">Tutar (TRY)</label>
+                            <input type="number" step="0.01" className="form-input" required
+                                value={depositForm.amount} onChange={e => setDepositForm({ ...depositForm, amount: e.target.value })}
+                                placeholder="Örn: 5000" />
+                        </div>
+                        <div style={{ marginBottom: 20 }}>
+                            <label className="form-label">Açıklama (Opsiyonel)</label>
+                            <input type="text" className="form-input"
+                                value={depositForm.description} onChange={e => setDepositForm({ ...depositForm, description: e.target.value })}
+                                placeholder="Gişe nakit yatırma" />
+                        </div>
+                        <button type="submit" disabled={actionLoading} style={{
+                            width: "100%", padding: 12, borderRadius: 10, border: "none",
+                            background: "linear-gradient(135deg, #3b82f6, #60a5fa)", color: "#fff", fontWeight: 600, cursor: actionLoading ? "not-allowed" : "pointer"
+                        }}>
+                            {actionLoading ? "İşleniyor..." : "Yatırımı Onayla"}
+                        </button>
+                    </form>
                 </div>
             )}
         </div>

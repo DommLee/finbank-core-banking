@@ -56,6 +56,7 @@ export const accountApi = {
     listMine: () => api.get("/accounts/"),
     getBalance: (id) => api.get(`/accounts/${id}/balance`),
     listAll: () => api.get("/accounts/all"),
+    listByCustomer: (customerId) => api.get(`/accounts/customer/${customerId}`),
 };
 
 // ── Transactions ──
@@ -84,15 +85,36 @@ export const messagesApi = {
 };
 
 // ── Bills ──
+export const billApi = {
+    getBills: () => api.get('/bills/'),
+    payBill: (billId, from_account_id) => api.post(`/bills/${billId}/pay`, { from_account_id }),
+};
+
+// Bills alias with methods matching BillPayPage expectations
 export const billsApi = {
-    pay: (data) => api.post("/bills/pay", data),
-    history: () => api.get("/bills/history"),
+    history: () => api.get('/bills/history'),
+    pay: (data) => api.post('/bills/pay', data),
+};
+
+export const cardsApi = {
+    getMyCards: () => api.get('/cards/'),
+    applyForCard: (data) => api.post('/cards/apply', data),
+    payCardDebt: (cardId, from_account_id, amount) => api.post(`/cards/${cardId}/pay`, { from_account_id, amount }),
+    getCardTransactions: (cardId) => api.get(`/cards/${cardId}/transactions`),
+    purchase: (cardId, amount, description) => api.post(`/cards/${cardId}/purchase?amount=${amount}&description=${description}`),
+};
+
+export const exchangeApi = {
+    getRates: () => api.get('/exchange/rates'),
 };
 
 // ── Card Controls ──
-export const cardApi = {
+export const cardControlsApi = {
     toggleFreeze: (accountId) => api.patch(`/accounts/${accountId}/toggle-freeze`),
 };
+
+// Alias for CardControlsPage.jsx
+export const cardApi = cardControlsApi;
 
 // ── Chatbot (Gemini AI) ──
 export const chatbotApi = {
@@ -114,11 +136,6 @@ export const goalsApi = {
     list: () => api.get("/goals"),
     contribute: (id, data) => api.post(`/goals/${id}/contribute`, data),
     delete: (id) => api.delete(`/goals/${id}`),
-};
-
-// ── Exchange Rates ──
-export const exchangeApi = {
-    getRates: () => api.get("/exchange-rates"),
 };
 
 // ── Sessions ──

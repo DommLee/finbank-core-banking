@@ -6,7 +6,7 @@ import random
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request
 from app.core.database import get_database
-from app.core.security import get_current_user, require_admin
+from app.core.security import get_current_user, require_admin, require_staff
 from app.models.account import (
     AccountCreateRequest, AccountResponse, AccountBalanceResponse,
 )
@@ -153,6 +153,30 @@ async def list_all_accounts(
     """Admin: List all accounts in the system."""
     cursor = db.accounts.find().sort("created_at", -1)
     accounts = await cursor.to_list(200)
+    return [
+        AccountResponse(
+            id=a["account_id"],
+            account_number=a["account_number"],
+            iban=a["iban"],
+            customer_id=a["customer_id"],
+            account_type=a["account_type"],
+            currency=a["currency"],
+            status=a["status"],
+            created_at=a["created_at"],
+        )
+        for a in accounts
+    ]
+
+
+@router.get("/customer/{customer_id}", response_model=list[AccountResponse])
+async def list_customer_accounts(
+    customer_id: str,
+    current_user: dict = Depends(require_staff),
+    db=Depends(get_database),
+):
+    """Staff: List all accounts owned by a specific customer."""
+    cursor = db.accounts.find({"customer_id": customer_id}).sort("created_at", -1)
+    accounts = await cursor.to_list(50)
     return [
         AccountResponse(
             id=a["account_id"],

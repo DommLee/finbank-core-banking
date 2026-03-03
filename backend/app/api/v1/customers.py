@@ -215,6 +215,18 @@ async def update_customer_status(
         {"$set": update_fields},
     )
 
+    # Update corresponding user doc to reflect KYC approval
+    user_kyc_status = "APPROVED" if body.status.value == "active" else "REJECTED"
+    await db.users.update_one(
+        {"user_id": customer["user_id"]},
+        {"$set": {"kyc_status": user_kyc_status}}
+    )
+    # Sync updated user doc to Supabase
+    updated_user = await db.users.find_one({"user_id": customer["user_id"]})
+    from app.services.supabase_sync import sync_user
+    if updated_user:
+        await sync_user(updated_user)
+
     ip, ua = get_client_info(request)
     await log_audit(
         action="KYC_STATUS_UPDATED",

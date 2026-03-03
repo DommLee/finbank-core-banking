@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { ArrowLeftRight, TrendingUp, RefreshCw } from "lucide-react";
 import { exchangeApi } from "../services/api";
 
-const FLAGS = { TRY: "🇹🇷", USD: "🇺🇸", EUR: "🇪🇺", GBP: "🇬🇧" };
-const NAMES = { TRY: "Türk Lirası", USD: "ABD Doları", EUR: "Euro", GBP: "İngiliz Sterlini" };
+const FLAGS = { TRY: "🇹🇷", USD: "🇺🇸", EUR: "🇪🇺", GBP: "🇬🇧", CHF: "🇨🇭", XAU: "🥇" };
+const NAMES = { TRY: "Türk Lirası", USD: "ABD Doları", EUR: "Euro", GBP: "İngiliz Sterlini", CHF: "İsviçre Frangı", XAU: "Altın (Ons)" };
 
 export default function ExchangeRatesPage() {
     const [rates, setRates] = useState({});
