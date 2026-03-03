@@ -47,6 +47,10 @@ async def send_webhook(event: str, payload: Dict[str, Any]):
         "payload": payload,
     }
 
+    if not settings.WEBHOOK_URL:
+        logger.debug("Webhook URL not configured, skipping", event=event)
+        return
+
     try:
         await _send_webhook_with_retry(settings.WEBHOOK_URL, webhook_data)
         logger.info(

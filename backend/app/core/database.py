@@ -111,3 +111,7 @@ def get_database() -> AsyncIOMotorDatabase:
 def get_client() -> AsyncIOMotorClient:
     """Get client instance (for transactions)."""
     return _client
+
+
+# Alias for modules that import get_db
+get_db = get_database

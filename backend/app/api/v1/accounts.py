@@ -64,6 +64,22 @@ async def create_account(
     await db.accounts.insert_one(account_doc)
     await sync_account(account_doc)
 
+    # Auto-create debit card for the new account
+    from datetime import timedelta
+    debit_card = {
+        "id": str(uuid.uuid4()),
+        "account_id": account_doc["account_id"],
+        "customer_id": customer["customer_id"],
+        "card_number": "5" + "".join([str(random.randint(0, 9)) for _ in range(15)]),
+        "expiry_date": (datetime.now(timezone.utc) + timedelta(days=365*5)).strftime("%m/%y"),
+        "cvv": "".join([str(random.randint(0, 9)) for _ in range(3)]),
+        "card_type": "debit",
+        "holder_name": customer.get("full_name", current_user.get("email", "Kart Sahibi")).upper(),
+        "status": "active",
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.debit_cards.insert_one(debit_card)
+
     ip, ua = get_client_info(request)
     await log_audit(
         action="ACCOUNT_CREATED",
@@ -213,3 +229,29 @@ async def toggle_freeze(
 
     status_text = "donduruldu ❄️" if new_status == "frozen" else "aktifleştirildi ✅"
     return {"message": f"Hesap {status_text}", "status": new_status}
+
+
+@router.get("/debit-cards")
+async def get_my_debit_cards(
+    current_user: dict = Depends(get_current_user),
+    db=Depends(get_database),
+):
+    """Get all debit cards for user's accounts."""
+    accounts = await db.accounts.find({"user_id": current_user["user_id"]}).to_list(100)
+    account_ids = [a["account_id"] for a in accounts]
+    account_map = {a["account_id"]: a for a in accounts}
+
+    if not account_ids:
+        return []
+
+    cards = await db.debit_cards.find({"account_id": {"$in": account_ids}}).to_list(100)
+    result = []
+    for c in cards:
+        c.pop("_id", None)
+        acc = account_map.get(c.get("account_id"), {})
+        c["account_number"] = acc.get("account_number", "")
+        c["iban"] = acc.get("iban", "")
+        c["account_type"] = acc.get("account_type", "")
+        result.append(c)
+
+    return result

@@ -2,7 +2,8 @@
 FinBank - Transaction API Routes (Deposits, Withdrawals, Transfers)
 """
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, Request
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Request, Query
 from app.core.database import get_database
 from app.core.security import get_current_user
 from app.core.exceptions import (
@@ -241,3 +242,35 @@ async def transfer(
         description=body.description,
         created_at=datetime.now(timezone.utc),
     )
+
+
+@router.get("/history")
+async def get_transaction_history(
+    limit: int = Query(50, ge=1, le=200),
+    current_user: dict = Depends(get_current_user),
+    db=Depends(get_database),
+):
+    """Get transaction history for all user accounts."""
+    # Get all user accounts
+    accounts = await db.accounts.find({"user_id": current_user["user_id"]}).to_list(100)
+    account_ids = [a["account_id"] for a in accounts]
+    account_map = {a["account_id"]: a for a in accounts}
+
+    if not account_ids:
+        return []
+
+    # Get ledger entries for all user accounts
+    entries = await db.ledger_entries.find(
+        {"account_id": {"$in": account_ids}}
+    ).sort("created_at", -1).to_list(limit)
+
+    result = []
+    for e in entries:
+        e.pop("_id", None)
+        acc = account_map.get(e.get("account_id"), {})
+        e["account_number"] = acc.get("account_number", "")
+        e["iban"] = acc.get("iban", "")
+        e["currency"] = acc.get("currency", "TRY")
+        result.append(e)
+
+    return result

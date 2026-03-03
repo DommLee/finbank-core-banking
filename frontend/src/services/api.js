@@ -57,6 +57,7 @@ export const accountApi = {
     getBalance: (id) => api.get(`/accounts/${id}/balance`),
     listAll: () => api.get("/accounts/all"),
     listByCustomer: (customerId) => api.get(`/accounts/customer/${customerId}`),
+    getDebitCards: () => api.get("/accounts/debit-cards"),
 };
 
 // ── Transactions ──
@@ -64,6 +65,7 @@ export const transactionApi = {
     deposit: (data) => api.post("/transactions/deposit", data),
     withdraw: (data) => api.post("/transactions/withdraw", data),
     transfer: (data) => api.post("/transactions/transfer", data),
+    history: (params) => api.get("/transactions/history", { params }),
 };
 
 // ── Ledger ──

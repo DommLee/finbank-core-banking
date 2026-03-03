@@ -50,6 +50,12 @@ class Settings(BaseSettings):
     JSON_LOGS: bool = False
     LOG_LEVEL: str = "INFO"
 
+    # Gemini AI
+    GEMINI_API_KEY: str = ""
+
+    # Exchange Rates
+    EXCHANGE_API_KEY: str = ""
+
     @property
     def cors_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
@@ -57,6 +63,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
+        extra = "allow"
 
 
 settings = Settings()
