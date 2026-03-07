@@ -1,5 +1,5 @@
 """
-FinBank Banking Service — Accounts, Transactions, Bills, Savings Goals
+FinBank Banking Service â€” Accounts, Transactions, Bills, Savings Goals
 Port: 8002
 """
 from contextlib import asynccontextmanager
@@ -18,6 +18,7 @@ from shared.config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    settings.validate_runtime_settings()
     db = await connect_to_mongo()
     await db.accounts.create_index("account_number", unique=True)
     await db.accounts.create_index("customer_id")
@@ -35,10 +36,10 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="FinBank Banking Service", version="1.0.0", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins_list, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 
-# ── Models ──
+# â”€â”€ Models â”€â”€
 class AccountCreateRequest(BaseModel):
     account_type: str = "checking"  # checking, savings
     currency: str = "TRY"
@@ -76,7 +77,7 @@ class GoalContributeRequest(BaseModel):
     amount: float
 
 
-# ── Ledger Helper ──
+# â”€â”€ Ledger Helper â”€â”€
 async def get_balance(db, account_id: str) -> float:
     pipeline = [
         {"$match": {"account_id": account_id}},
@@ -109,7 +110,7 @@ async def health():
     return {"status": "healthy", "service": "banking-service"}
 
 
-# ── Customer Profile ──
+# â”€â”€ Customer Profile â”€â”€
 @app.post("/customers")
 async def create_customer(
     first_name: str, last_name: str, national_id: str, phone: str,
@@ -117,7 +118,7 @@ async def create_customer(
 ):
     existing = await db.customers.find_one({"user_id": current_user["user_id"]})
     if existing:
-        raise HTTPException(400, "Müşteri profili zaten var.")
+        raise HTTPException(400, "MÃ¼ÅŸteri profili zaten var.")
 
     doc = {
         "customer_id": str(uuid.uuid4()),
@@ -130,7 +131,7 @@ async def create_customer(
         "created_at": datetime.now(timezone.utc),
     }
     await db.customers.insert_one(doc)
-    return {"message": "Müşteri profili oluşturuldu.", "customer_id": doc["customer_id"]}
+    return {"message": "MÃ¼ÅŸteri profili oluÅŸturuldu.", "customer_id": doc["customer_id"]}
 
 
 @app.get("/customers/me")
@@ -142,14 +143,14 @@ async def get_my_profile(current_user=Depends(get_current_user), db=Depends(get_
     return doc
 
 
-# ── Accounts ──
+# â”€â”€ Accounts â”€â”€
 @app.post("/accounts")
 async def create_account(body: AccountCreateRequest, current_user=Depends(get_current_user), db=Depends(get_database)):
     customer = await db.customers.find_one({"user_id": current_user["user_id"]})
     if not customer:
-        raise HTTPException(400, "Önce müşteri profili oluşturun.")
+        raise HTTPException(400, "Ã–nce mÃ¼ÅŸteri profili oluÅŸturun.")
     if customer["status"] != "active":
-        raise HTTPException(403, "KYC onayı bekleniyor.")
+        raise HTTPException(403, "KYC onayÄ± bekleniyor.")
 
     acc_num = f"{random.randint(1000000000, 9999999999)}"
     iban = f"TR00000100000{acc_num}0000000000"
@@ -191,9 +192,9 @@ async def list_all_accounts(current_user=Depends(require_admin), db=Depends(get_
 async def account_balance(account_id: str, current_user=Depends(get_current_user), db=Depends(get_database)):
     account = await db.accounts.find_one({"account_id": account_id})
     if not account:
-        raise HTTPException(404, "Hesap bulunamadı.")
+        raise HTTPException(404, "Hesap bulunamadÄ±.")
     if account["user_id"] != current_user["user_id"] and current_user["role"] != "admin":
-        raise HTTPException(403, "Erişim reddedildi.")
+        raise HTTPException(403, "EriÅŸim reddedildi.")
     balance = await get_balance(db, account_id)
     return {"account_id": account_id, "balance": balance, "currency": account["currency"]}
 
@@ -202,50 +203,50 @@ async def account_balance(account_id: str, current_user=Depends(get_current_user
 async def toggle_freeze(account_id: str, current_user=Depends(get_current_user), db=Depends(get_database)):
     account = await db.accounts.find_one({"account_id": account_id})
     if not account:
-        raise HTTPException(404, "Hesap bulunamadı.")
+        raise HTTPException(404, "Hesap bulunamadÄ±.")
     if account["user_id"] != current_user["user_id"] and current_user["role"] != "admin":
-        raise HTTPException(403, "Erişim reddedildi.")
+        raise HTTPException(403, "EriÅŸim reddedildi.")
     new_status = "frozen" if account["status"] == "active" else "active"
     await db.accounts.update_one({"account_id": account_id}, {"$set": {"status": new_status}})
-    return {"message": f"Hesap {'donduruldu ❄️' if new_status == 'frozen' else 'aktifleştirildi ✅'}", "status": new_status}
+    return {"message": f"Hesap {'donduruldu â„ï¸' if new_status == 'frozen' else 'aktifleÅŸtirildi âœ…'}", "status": new_status}
 
 
-# ── Transactions ──
+# â”€â”€ Transactions â”€â”€
 @app.post("/transactions/deposit")
 async def deposit(body: DepositRequest, current_user=Depends(get_current_user), db=Depends(get_database)):
     account = await db.accounts.find_one({"account_id": body.account_id})
     if not account or account["status"] != "active":
-        raise HTTPException(400, "Hesap aktif değil veya bulunamadı.")
+        raise HTTPException(400, "Hesap aktif deÄŸil veya bulunamadÄ±.")
     if account["user_id"] != current_user["user_id"] and current_user["role"] != "admin":
-        raise HTTPException(403, "Erişim reddedildi.")
+        raise HTTPException(403, "EriÅŸim reddedildi.")
     txn_ref = f"DEP-{uuid.uuid4().hex[:8].upper()}"
-    entry = await create_ledger_entry(db, body.account_id, "CREDIT", "DEPOSIT", body.amount, txn_ref, current_user["user_id"], body.description or "Para Yatırma")
-    return {"message": "Para yatırıldı ✅", "transaction_ref": txn_ref, "amount": body.amount}
+    entry = await create_ledger_entry(db, body.account_id, "CREDIT", "DEPOSIT", body.amount, txn_ref, current_user["user_id"], body.description or "Para YatÄ±rma")
+    return {"message": "Para yatÄ±rÄ±ldÄ± âœ…", "transaction_ref": txn_ref, "amount": body.amount}
 
 
 @app.post("/transactions/withdraw")
 async def withdraw(body: WithdrawRequest, current_user=Depends(get_current_user), db=Depends(get_database)):
     account = await db.accounts.find_one({"account_id": body.account_id})
     if not account or account["status"] != "active":
-        raise HTTPException(400, "Hesap aktif değil.")
+        raise HTTPException(400, "Hesap aktif deÄŸil.")
     balance = await get_balance(db, body.account_id)
     if balance < body.amount:
         raise HTTPException(400, "Yetersiz bakiye.")
     txn_ref = f"WDR-{uuid.uuid4().hex[:8].upper()}"
-    await create_ledger_entry(db, body.account_id, "DEBIT", "WITHDRAWAL", body.amount, txn_ref, current_user["user_id"], body.description or "Para Çekme")
-    return {"message": "Para çekildi ✅", "transaction_ref": txn_ref, "amount": body.amount}
+    await create_ledger_entry(db, body.account_id, "DEBIT", "WITHDRAWAL", body.amount, txn_ref, current_user["user_id"], body.description or "Para Ã‡ekme")
+    return {"message": "Para Ã§ekildi âœ…", "transaction_ref": txn_ref, "amount": body.amount}
 
 
 @app.post("/transactions/transfer")
 async def transfer(body: TransferRequest, current_user=Depends(get_current_user), db=Depends(get_database)):
     if body.from_account_id == body.to_account_id:
-        raise HTTPException(400, "Aynı hesaba transfer yapılamaz.")
+        raise HTTPException(400, "AynÄ± hesaba transfer yapÄ±lamaz.")
     from_acc = await db.accounts.find_one({"account_id": body.from_account_id})
     to_acc = await db.accounts.find_one({"account_id": body.to_account_id})
     if not from_acc or not to_acc:
-        raise HTTPException(404, "Hesap bulunamadı.")
+        raise HTTPException(404, "Hesap bulunamadÄ±.")
     if from_acc["status"] != "active" or to_acc["status"] != "active":
-        raise HTTPException(400, "Hesaplardan biri aktif değil.")
+        raise HTTPException(400, "Hesaplardan biri aktif deÄŸil.")
     balance = await get_balance(db, body.from_account_id)
     if balance < body.amount:
         raise HTTPException(400, "Yetersiz bakiye.")
@@ -254,10 +255,10 @@ async def transfer(body: TransferRequest, current_user=Depends(get_current_user)
     desc = body.description or "Transfer"
     await create_ledger_entry(db, body.from_account_id, "DEBIT", "TRANSFER_OUT", body.amount, txn_ref, current_user["user_id"], desc)
     await create_ledger_entry(db, body.to_account_id, "CREDIT", "TRANSFER_IN", body.amount, txn_ref, current_user["user_id"], desc)
-    return {"message": "Transfer başarılı ✅", "transaction_ref": txn_ref, "amount": body.amount}
+    return {"message": "Transfer baÅŸarÄ±lÄ± âœ…", "transaction_ref": txn_ref, "amount": body.amount}
 
 
-# ── Ledger ──
+# â”€â”€ Ledger â”€â”€
 @app.get("/ledger/{account_id}")
 async def get_ledger(account_id: str, current_user=Depends(get_current_user), db=Depends(get_database)):
     entries = await db.ledger_entries.find({"account_id": account_id}).sort("created_at", -1).to_list(100)
@@ -276,12 +277,12 @@ async def get_all_ledger(current_user=Depends(get_current_user), db=Depends(get_
     return entries
 
 
-# ── Bills ──
+# â”€â”€ Bills â”€â”€
 @app.post("/bills/pay")
 async def pay_bill(body: BillPayRequest, current_user=Depends(get_current_user), db=Depends(get_database)):
     account = await db.accounts.find_one({"account_id": body.account_id})
     if not account or account["status"] != "active":
-        raise HTTPException(400, "Hesap aktif değil.")
+        raise HTTPException(400, "Hesap aktif deÄŸil.")
     balance = await get_balance(db, body.account_id)
     if balance < body.amount:
         raise HTTPException(400, "Yetersiz bakiye.")
@@ -301,7 +302,7 @@ async def pay_bill(body: BillPayRequest, current_user=Depends(get_current_user),
         "paid_at": datetime.now(timezone.utc),
     }
     await db.bills.insert_one(bill_doc)
-    return {"message": f"{body.provider} faturası ödendi ✅", "bill_id": bill_doc["bill_id"]}
+    return {"message": f"{body.provider} faturasÄ± Ã¶dendi âœ…", "bill_id": bill_doc["bill_id"]}
 
 
 @app.get("/bills/history")
@@ -312,7 +313,7 @@ async def bill_history(current_user=Depends(get_current_user), db=Depends(get_da
     return bills
 
 
-# ── Savings Goals ──
+# â”€â”€ Savings Goals â”€â”€
 @app.post("/goals")
 async def create_goal(body: GoalCreateRequest, current_user=Depends(get_current_user), db=Depends(get_database)):
     doc = {
@@ -326,7 +327,7 @@ async def create_goal(body: GoalCreateRequest, current_user=Depends(get_current_
         "created_at": datetime.now(timezone.utc),
     }
     await db.savings_goals.insert_one(doc)
-    return {"message": "Tasarruf hedefi oluşturuldu 🎯", "goal_id": doc["goal_id"]}
+    return {"message": "Tasarruf hedefi oluÅŸturuldu ğŸ¯", "goal_id": doc["goal_id"]}
 
 
 @app.get("/goals")
@@ -341,7 +342,7 @@ async def list_goals(current_user=Depends(get_current_user), db=Depends(get_data
 async def contribute_to_goal(goal_id: str, body: GoalContributeRequest, current_user=Depends(get_current_user), db=Depends(get_database)):
     goal = await db.savings_goals.find_one({"goal_id": goal_id, "user_id": current_user["user_id"]})
     if not goal:
-        raise HTTPException(404, "Hedef bulunamadı.")
+        raise HTTPException(404, "Hedef bulunamadÄ±.")
 
     balance = await get_balance(db, body.account_id)
     if balance < body.amount:
@@ -356,7 +357,7 @@ async def contribute_to_goal(goal_id: str, body: GoalContributeRequest, current_
         {"goal_id": goal_id},
         {"$set": {"current_amount": new_amount, "status": status}}
     )
-    return {"message": f"₺{body.amount} eklendi 💰", "current_amount": new_amount, "status": status}
+    return {"message": f"â‚º{body.amount} eklendi ğŸ’°", "current_amount": new_amount, "status": status}
 
 
 @app.delete("/goals/{goal_id}")
@@ -365,7 +366,7 @@ async def delete_goal(goal_id: str, current_user=Depends(get_current_user), db=D
     return {"message": "Hedef silindi."}
 
 
-# ── Currency Exchange ──
+# â”€â”€ Currency Exchange â”€â”€
 MOCK_RATES = {"USD": 32.50, "EUR": 35.20, "GBP": 41.10, "TRY": 1.0}
 
 @app.get("/exchange-rates")

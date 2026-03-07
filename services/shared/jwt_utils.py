@@ -6,11 +6,11 @@ from datetime import datetime, timezone, timedelta
 from jose import jwt, JWTError
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import os
+from shared.config import settings
 
-JWT_SECRET = os.getenv("JWT_SECRET", "change-this-to-a-very-long-random-string")
-JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-JWT_EXPIRE_MINUTES = int(os.getenv("JWT_EXPIRE_MINUTES", "60"))
+JWT_SECRET = settings.JWT_SECRET
+JWT_ALGORITHM = settings.JWT_ALGORITHM
+JWT_EXPIRE_MINUTES = settings.JWT_EXPIRE_MINUTES
 
 security = HTTPBearer()
 

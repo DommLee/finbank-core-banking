@@ -3,7 +3,9 @@ import os
 import motor.motor_asyncio
 from app.services.supabase_sync import sync_user
 
-db = motor.motor_asyncio.AsyncIOMotorClient("mongodb://mongo:27017")["finbank"]
+db = motor.motor_asyncio.AsyncIOMotorClient(
+    os.getenv("MONGODB_URL", "mongodb://mongo:27017")
+)[os.getenv("MONGODB_DB_NAME", "finbank")]
 
 async def main():
     # Find active customers

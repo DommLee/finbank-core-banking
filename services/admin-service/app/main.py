@@ -1,5 +1,5 @@
 """
-FinBank Admin Service — User Management, System Settings, Full Access
+FinBank Admin Service â€” User Management, System Settings, Full Access
 Port: 8005
 """
 from contextlib import asynccontextmanager
@@ -18,13 +18,14 @@ from shared.config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    settings.validate_runtime_settings()
     db = await connect_to_mongo()
     yield
     await close_mongo_connection()
 
 
 app = FastAPI(title="FinBank Admin Service", version="1.0.0", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins_list, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 
 class RoleUpdateRequest(BaseModel):
@@ -39,7 +40,7 @@ async def health():
     return {"status": "healthy", "service": "admin-service"}
 
 
-# ── User Management ──
+# â”€â”€ User Management â”€â”€
 @app.get("/users")
 async def list_users(
     page: int = 1, limit: int = 20, role: Optional[str] = None,
@@ -60,7 +61,7 @@ async def list_users(
 async def get_user(user_id: str, current_user=Depends(require_admin), db=Depends(get_database)):
     user = await db.users.find_one({"user_id": user_id}, {"password_hash": 0})
     if not user:
-        raise HTTPException(404, "Kullanıcı bulunamadı.")
+        raise HTTPException(404, "KullanÄ±cÄ± bulunamadÄ±.")
     user["_id"] = str(user["_id"])
 
     customer = await db.customers.find_one({"user_id": user_id})
@@ -76,7 +77,7 @@ async def get_user(user_id: str, current_user=Depends(require_admin), db=Depends
 @app.patch("/users/{user_id}/role")
 async def change_role(user_id: str, body: RoleUpdateRequest, current_user=Depends(require_admin), db=Depends(get_database)):
     if body.role not in ["customer", "employee", "admin", "ceo"]:
-        raise HTTPException(400, "Geçersiz rol.")
+        raise HTTPException(400, "GeÃ§ersiz rol.")
     await db.users.update_one({"user_id": user_id}, {"$set": {"role": body.role}})
     await db.audit_logs.insert_one({
         "action": "ROLE_CHANGE",
@@ -85,13 +86,13 @@ async def change_role(user_id: str, body: RoleUpdateRequest, current_user=Depend
         "new_role": body.role,
         "timestamp": datetime.now(timezone.utc),
     })
-    return {"message": f"Rol '{body.role}' olarak güncellendi."}
+    return {"message": f"Rol '{body.role}' olarak gÃ¼ncellendi."}
 
 
 @app.patch("/users/{user_id}/status")
 async def toggle_user_status(user_id: str, body: UserStatusRequest, current_user=Depends(require_admin), db=Depends(get_database)):
     await db.users.update_one({"user_id": user_id}, {"$set": {"is_active": body.is_active}})
-    status_text = "aktifleştirildi ✅" if body.is_active else "devre dışı bırakıldı ⛔"
+    status_text = "aktifleÅŸtirildi âœ…" if body.is_active else "devre dÄ±ÅŸÄ± bÄ±rakÄ±ldÄ± â›”"
     await db.audit_logs.insert_one({
         "action": "USER_STATUS_CHANGE",
         "user_id": current_user["user_id"],
@@ -99,7 +100,7 @@ async def toggle_user_status(user_id: str, body: UserStatusRequest, current_user
         "is_active": body.is_active,
         "timestamp": datetime.now(timezone.utc),
     })
-    return {"message": f"Kullanıcı {status_text}"}
+    return {"message": f"KullanÄ±cÄ± {status_text}"}
 
 
 @app.delete("/users/{user_id}")
@@ -113,10 +114,10 @@ async def delete_user(user_id: str, current_user=Depends(require_admin), db=Depe
         "target_user_id": user_id,
         "timestamp": datetime.now(timezone.utc),
     })
-    return {"message": "Kullanıcı silindi."}
+    return {"message": "KullanÄ±cÄ± silindi."}
 
 
-# ── System Stats ──
+# â”€â”€ System Stats â”€â”€
 @app.get("/system/stats")
 async def system_stats(current_user=Depends(require_admin), db=Depends(get_database)):
     stats = {
@@ -136,7 +137,7 @@ async def system_stats(current_user=Depends(require_admin), db=Depends(get_datab
     return stats
 
 
-# ── All Messages ──
+# â”€â”€ All Messages â”€â”€
 @app.get("/all-messages")
 async def all_messages(
     page: int = 1, limit: int = 20,
@@ -150,7 +151,7 @@ async def all_messages(
     return {"data": msgs, "total": total, "page": page}
 
 
-# ── All Bills ──
+# â”€â”€ All Bills â”€â”€
 @app.get("/all-bills")
 async def all_bills(
     page: int = 1, limit: int = 20,

@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
     DEBUG: bool = False
+    ENABLE_DEV_SEED_ROUTES: bool = False
+    DEV_BOOTSTRAP_TOKEN: str = ""
 
     # Supabase
     SUPABASE_URL: str = ""

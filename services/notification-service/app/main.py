@@ -1,5 +1,5 @@
 """
-FinBank Notification Service — Messages, Email, WebSocket Notifications
+FinBank Notification Service â€” Messages, Email, WebSocket Notifications
 Port: 8003
 """
 from contextlib import asynccontextmanager
@@ -18,6 +18,7 @@ from shared.config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    settings.validate_runtime_settings()
     db = await connect_to_mongo()
     await db.messages.create_index("sender_id")
     await db.messages.create_index("receiver_role")
@@ -29,7 +30,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="FinBank Notification Service", version="1.0.0", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins_list, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 
 # WebSocket connection manager
@@ -58,7 +59,7 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-# ── Models ──
+# â”€â”€ Models â”€â”€
 class MessageSendRequest(BaseModel):
     receiver_role: str = "employee"
     subject: str
@@ -73,7 +74,7 @@ async def health():
     return {"status": "healthy", "service": "notification-service"}
 
 
-# ── Messages ──
+# â”€â”€ Messages â”€â”€
 @app.post("/messages")
 async def send_message(body: MessageSendRequest, current_user=Depends(get_current_user), db=Depends(get_database)):
     doc = {
@@ -92,7 +93,7 @@ async def send_message(body: MessageSendRequest, current_user=Depends(get_curren
         "created_at": datetime.now(timezone.utc),
     }
     await db.messages.insert_one(doc)
-    return {"message": "Mesajınız gönderildi ✅", "message_id": doc["message_id"]}
+    return {"message": "MesajÄ±nÄ±z gÃ¶nderildi âœ…", "message_id": doc["message_id"]}
 
 
 @app.get("/messages/inbox")
@@ -113,7 +114,7 @@ async def get_inbox(current_user=Depends(get_current_user), db=Depends(get_datab
 async def reply_message(message_id: str, body: ReplyRequest, current_user=Depends(get_current_user), db=Depends(get_database)):
     msg = await db.messages.find_one({"message_id": message_id})
     if not msg:
-        raise HTTPException(404, "Mesaj bulunamadı.")
+        raise HTTPException(404, "Mesaj bulunamadÄ±.")
 
     await db.messages.update_one({"message_id": message_id}, {"$set": {
         "reply": body.reply_body,
@@ -125,19 +126,19 @@ async def reply_message(message_id: str, body: ReplyRequest, current_user=Depend
     # Real-time notification to sender
     await manager.send_to_user(msg["sender_id"], {
         "type": "message_reply",
-        "message": f"Mesajınıza yanıt geldi: {msg['subject']}",
+        "message": f"MesajÄ±nÄ±za yanÄ±t geldi: {msg['subject']}",
     })
 
-    return {"message": "Yanıt gönderildi ✅"}
+    return {"message": "YanÄ±t gÃ¶nderildi âœ…"}
 
 
 @app.patch("/messages/{message_id}/read")
 async def mark_read(message_id: str, current_user=Depends(get_current_user), db=Depends(get_database)):
     await db.messages.update_one({"message_id": message_id}, {"$set": {"read": True}})
-    return {"message": "Okundu olarak işaretlendi."}
+    return {"message": "Okundu olarak iÅŸaretlendi."}
 
 
-# ── Notifications ──
+# â”€â”€ Notifications â”€â”€
 @app.get("/notifications")
 async def list_notifications(current_user=Depends(get_current_user), db=Depends(get_database)):
     notifs = await db.notifications.find(
@@ -170,10 +171,10 @@ async def mark_all_read(current_user=Depends(get_current_user), db=Depends(get_d
         {"user_id": current_user["user_id"], "read": False},
         {"$set": {"read": True}}
     )
-    return {"message": "Tüm bildirimler okundu."}
+    return {"message": "TÃ¼m bildirimler okundu."}
 
 
-# ── WebSocket ──
+# â”€â”€ WebSocket â”€â”€
 @app.websocket("/ws/{token}")
 async def websocket_endpoint(websocket: WebSocket, token: str):
     try:

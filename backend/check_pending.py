@@ -2,7 +2,9 @@ import asyncio
 import os
 import motor.motor_asyncio
 
-db = motor.motor_asyncio.AsyncIOMotorClient("mongodb://localhost:27017")["finbank"]
+db = motor.motor_asyncio.AsyncIOMotorClient(
+    os.getenv("MONGODB_URL", "mongodb://localhost:27017")
+)[os.getenv("MONGODB_DB_NAME", "finbank")]
 
 async def main():
     customers = await db.customers.find({'status': 'pending'}).to_list(100)

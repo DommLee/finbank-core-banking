@@ -4,6 +4,8 @@ FinBank - Auth API Routes (Register, Login, Profile) with Supabase Integration
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 import random
+import secrets
+from app.core.config import settings
 from app.core.database import get_database
 from app.core.security import (
     supabase, get_current_user, get_redirect_url,
@@ -21,6 +23,20 @@ import uuid
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
+def require_dev_seed_access(request: Request) -> None:
+    """Restrict bootstrap routes to explicit local development usage."""
+    if not settings.DEBUG or not settings.ENABLE_DEV_SEED_ROUTES:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+
+    expected_token = settings.DEV_BOOTSTRAP_TOKEN
+    provided_token = request.headers.get("X-Bootstrap-Token", "")
+    if not expected_token or not secrets.compare_digest(provided_token, expected_token):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Bootstrap access denied",
+        )
+
+
 @router.post("/register", response_model=UserResponse, status_code=201)
 async def register(
     body: UserRegisterRequest,
@@ -33,31 +49,31 @@ async def register(
     if existing:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="Bu e-posta adresi zaten kayıtlı.",
+            detail="Bu e-posta adresi zaten kayÄ±tlÄ±.",
         )
 
-    # — TC Kimlik Numarası Doğrulama —
+    # â€” TC Kimlik NumarasÄ± DoÄŸrulama â€”
     tc = body.national_id
     if not tc or len(tc) != 11 or not tc.isdigit() or tc[0] == "0":
-        raise HTTPException(status_code=400, detail="Geçersiz TC Kimlik numarası.")
+        raise HTTPException(status_code=400, detail="GeÃ§ersiz TC Kimlik numarasÄ±.")
     d = [int(c) for c in tc]
     odd_sum = d[0] + d[2] + d[4] + d[6] + d[8]
     even_sum = d[1] + d[3] + d[5] + d[7]
     check10 = ((odd_sum * 7) - even_sum) % 10
     if check10 != d[9]:
-        raise HTTPException(status_code=400, detail="TC Kimlik numarası doğrulanamadı.")
+        raise HTTPException(status_code=400, detail="TC Kimlik numarasÄ± doÄŸrulanamadÄ±.")
     if sum(d[:10]) % 10 != d[10]:
-        raise HTTPException(status_code=400, detail="TC Kimlik numarası doğrulanamadı.")
+        raise HTTPException(status_code=400, detail="TC Kimlik numarasÄ± doÄŸrulanamadÄ±.")
 
-    # — TC zaten kayıtlı mı? —
+    # â€” TC zaten kayÄ±tlÄ± mÄ±? â€”
     existing_tc = await db.customers.find_one({"national_id": tc})
     if existing_tc:
         raise HTTPException(status_code=409, detail="Bu TC Kimlik ile zaten bir hesap mevcut.")
 
-    # — Şifre Güçlülük Kontrolü —
+    # â€” Åifre GÃ¼Ã§lÃ¼lÃ¼k KontrolÃ¼ â€”
     pwd = body.password
     if len(pwd) < 8:
-        raise HTTPException(status_code=400, detail="Şifre en az 8 karakter olmalıdır.")
+        raise HTTPException(status_code=400, detail="Åifre en az 8 karakter olmalÄ±dÄ±r.")
     import re
     pwd_checks = sum([
         bool(re.search(r"[A-Z]", pwd)),
@@ -66,7 +82,7 @@ async def register(
         bool(re.search(r"[!@#$%^&*()_+\-=\[\]{};':\"\\|,.<>\/?]", pwd)),
     ])
     if pwd_checks < 2:
-        raise HTTPException(status_code=400, detail="Şifre en az büyük harf, küçük harf, rakam veya özel karakter içermelidir.")
+        raise HTTPException(status_code=400, detail="Åifre en az bÃ¼yÃ¼k harf, kÃ¼Ã§Ã¼k harf, rakam veya Ã¶zel karakter iÃ§ermelidir.")
 
     # 1. Create user in Supabase Auth (Auto confirm)
     try:
@@ -257,10 +273,10 @@ async def verify_email(body: EmailVerifyRequest, db=Depends(get_database)):
     })
 
     if not record:
-        raise HTTPException(status_code=400, detail="Geçersiz doğrulama kodu.")
+        raise HTTPException(status_code=400, detail="GeÃ§ersiz doÄŸrulama kodu.")
 
     if record["expires_at"] < datetime.now(timezone.utc):
-        raise HTTPException(status_code=400, detail="Doğrulama kodunun süresi dolmuş. Lütfen yeni kod isteyin.")
+        raise HTTPException(status_code=400, detail="DoÄŸrulama kodunun sÃ¼resi dolmuÅŸ. LÃ¼tfen yeni kod isteyin.")
 
     # Mark code as used
     await db.verification_codes.update_one(
@@ -278,7 +294,7 @@ async def verify_email(body: EmailVerifyRequest, db=Depends(get_database)):
     import asyncio
     asyncio.create_task(send_welcome_email(body.email, record.get("full_name", "")))
 
-    return {"message": "E-posta başarıyla doğrulandı! Giriş yapabilirsiniz.", "verified": True}
+    return {"message": "E-posta baÅŸarÄ±yla doÄŸrulandÄ±! GiriÅŸ yapabilirsiniz.", "verified": True}
 
 
 @router.post("/resend-code")
@@ -286,10 +302,10 @@ async def resend_code(body: ResendCodeRequest, db=Depends(get_database)):
     """Resend a new verification code."""
     user = await db.users.find_one({"email": body.email})
     if not user:
-        raise HTTPException(status_code=404, detail="Kullanıcı bulunamadı.")
+        raise HTTPException(status_code=404, detail="KullanÄ±cÄ± bulunamadÄ±.")
 
     if user.get("email_verified"):
-        raise HTTPException(status_code=400, detail="E-posta zaten doğrulanmış.")
+        raise HTTPException(status_code=400, detail="E-posta zaten doÄŸrulanmÄ±ÅŸ.")
 
     # Invalidate old codes
     await db.verification_codes.update_many(
@@ -311,7 +327,7 @@ async def resend_code(body: ResendCodeRequest, db=Depends(get_database)):
     import asyncio
     asyncio.create_task(send_verification_email(body.email, new_code, user.get("full_name", "")))
 
-    return {"message": "Yeni doğrulama kodu e-posta adresinize gönderildi."}
+    return {"message": "Yeni doÄŸrulama kodu e-posta adresinize gÃ¶nderildi."}
 
 
 @router.post("/change-password")
@@ -326,10 +342,10 @@ async def change_password(
     new_password = body.get("new_password")
 
     if not current_password or not new_password:
-        raise HTTPException(status_code=400, detail="Mevcut ve yeni şifre gereklidir.")
+        raise HTTPException(status_code=400, detail="Mevcut ve yeni ÅŸifre gereklidir.")
 
     if len(new_password) < 8:
-        raise HTTPException(status_code=400, detail="Yeni şifre en az 8 karakter olmalıdır.")
+        raise HTTPException(status_code=400, detail="Yeni ÅŸifre en az 8 karakter olmalÄ±dÄ±r.")
 
     # Verify current password by attempting sign-in
     try:
@@ -338,7 +354,7 @@ async def change_password(
             "password": current_password,
         })
     except Exception:
-        raise HTTPException(status_code=400, detail="Mevcut şifre yanlış.")
+        raise HTTPException(status_code=400, detail="Mevcut ÅŸifre yanlÄ±ÅŸ.")
 
     # Update password via Supabase Admin API
     try:
@@ -347,7 +363,7 @@ async def change_password(
             {"password": new_password}
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Şifre güncellenemedi: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Åifre gÃ¼ncellenemedi: {str(e)}")
 
     ip, ua = get_client_info(request)
     await log_audit(
@@ -361,22 +377,23 @@ async def change_password(
         user_agent=ua,
     )
 
-    return {"message": "Şifreniz başarıyla değiştirildi."}
+    return {"message": "Åifreniz baÅŸarÄ±yla deÄŸiÅŸtirildi."}
 
 
-@router.get("/seed-ceo")
-async def seed_ceo(db=Depends(get_database)):
-    """Seed the database with CEO and Employee accounts for testing."""
-    created_accounts = []
-    
-    # Check CEO
+@router.get("/seed-ceo", include_in_schema=False)
+async def seed_ceo(request: Request, db=Depends(get_database)):
+    """Seed privileged accounts for local development only."""
+    require_dev_seed_access(request)
+    created_credentials = []
+
     existing_ceo = await db.users.find_one({"email": "ceo@finbank.com"})
     if not existing_ceo:
         try:
+            ceo_password = secrets.token_urlsafe(18)
             supa_ceo = supabase.auth.admin.create_user({
                 "email": "ceo@finbank.com",
-                "password": "Admin123!",
-                "email_confirm": True
+                "password": ceo_password,
+                "email_confirm": True,
             })
             if supa_ceo and supa_ceo.user:
                 user_doc_ceo = {
@@ -388,18 +405,27 @@ async def seed_ceo(db=Depends(get_database)):
                     "created_at": datetime.now(timezone.utc),
                 }
                 await db.users.insert_one(user_doc_ceo)
-                created_accounts.append("CEO")
+                created_credentials.append(
+                    {
+                        "role": "ceo",
+                        "email": "ceo@finbank.com",
+                        "password": ceo_password,
+                    }
+                )
         except Exception as e:
-            created_accounts.append(f"CEO Fallback Error: {e}")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"CEO bootstrap failed: {e}",
+            )
 
-    # Check Employee
     existing_employee = await db.users.find_one({"email": "employee@finbank.com"})
     if not existing_employee:
         try:
+            employee_password = secrets.token_urlsafe(18)
             supa_emp = supabase.auth.admin.create_user({
                 "email": "employee@finbank.com",
-                "password": "Employee123!",
-                "email_confirm": True
+                "password": employee_password,
+                "email_confirm": True,
             })
             if supa_emp and supa_emp.user:
                 user_doc_emp = {
@@ -411,11 +437,23 @@ async def seed_ceo(db=Depends(get_database)):
                     "created_at": datetime.now(timezone.utc),
                 }
                 await db.users.insert_one(user_doc_emp)
-                created_accounts.append("Employee")
+                created_credentials.append(
+                    {
+                        "role": "employee",
+                        "email": "employee@finbank.com",
+                        "password": employee_password,
+                    }
+                )
         except Exception as e:
-            created_accounts.append(f"Employee Fallback Error: {e}")
-            
-    if created_accounts:
-        return {"message": f"Hesaplar oluşturuldu veya denendi: {', '.join(created_accounts)}", "detail": "CEO: ceo@finbank.com / Admin123! | Employee: employee@finbank.com / Employee123!"}
-    
-    return {"message": "CEO ve Çalışan hesapları hali hazırda mevcut!", "detail": "CEO: ceo@finbank.com / Admin123! | Employee: employee@finbank.com / Employee123!"}
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Employee bootstrap failed: {e}",
+            )
+
+    if created_credentials:
+        return {
+            "message": "Development accounts created.",
+            "credentials": created_credentials,
+        }
+
+    return {"message": "Development accounts already exist."}

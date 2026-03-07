@@ -1,13 +1,23 @@
 const { MongoClient } = require('mongodb');
-const uri = 'mongodb+srv://admin2:finbankadmin123@cluster0.pwh7s.mongodb.net/finbank?retryWrites=true&w=majority';
+
+const mongoUrl = process.env.MONGODB_URL;
+const databaseName = process.env.MONGODB_DB_NAME || 'finbank';
+const apiBaseUrl = (process.env.FINBANK_API_URL || 'http://localhost:8000').replace(/\/$/, '');
+const email = process.env.SEED_USER_EMAIL || 'ceo@finbank.com';
+const password = process.env.SEED_USER_PASSWORD;
+
+if (!mongoUrl) {
+    throw new Error('MONGODB_URL environment variable is required.');
+}
+
+if (!password) {
+    throw new Error('SEED_USER_PASSWORD environment variable is required.');
+}
 
 async function main() {
-    const email = 'ceo@finbank.com';
-    const password = 'Password123!';
-
     console.log(`[1] Registering ${email}...`);
     try {
-        const res = await fetch('https://finbank-core-banking.onrender.com/api/auth/register', {
+        const res = await fetch(`${apiBaseUrl}/api/v1/auth/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password, role: 'customer' })
@@ -19,10 +29,10 @@ async function main() {
     }
 
     console.log(`[2] Connecting to MongoDB...`);
-    const client = new MongoClient(uri);
+    const client = new MongoClient(mongoUrl);
     try {
         await client.connect();
-        const db = client.db('finbank');
+        const db = client.db(databaseName);
 
         console.log(`[3] Updating user role to 'ceo'...`);
         const updateResult = await db.collection('users').updateOne(

@@ -1,41 +1,217 @@
-services:
-  - type: web
-    name: finbank-api
-    runtime: python
-    plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    rootDir: backend
+# Render microservice blueprint.
+# Note: this layout requires paid instances because Render private services do not support the free plan.
+
+envVarGroups:
+  - name: finbank-microservices-common
     envVars:
-      - key: MONGODB_URL
-        sync: false
       - key: MONGODB_DB_NAME
         value: finbank
-      - key: JWT_SECRET
-        sync: false
       - key: JWT_ALGORITHM
         value: HS256
       - key: JWT_EXPIRE_MINUTES
         value: 60
-      - key: SUPABASE_URL
+      - key: CORS_ORIGINS
+        value: https://finbank-core-banking.pages.dev,http://localhost:3000,http://localhost:5173
+      - key: DEBUG
+        value: "false"
+      - key: ENABLE_DEV_SEED_ROUTES
+        value: "false"
+      - key: PYTHON_VERSION
+        value: "3.11.11"
+
+services:
+  - type: web
+    name: finbank-core-banking
+    runtime: docker
+    plan: starter
+    rootDir: services/api-gateway
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    buildFilter:
+      paths:
+        - services/api-gateway/**
+        - render.yaml
+
+  - type: pserv
+    name: auth-service
+    runtime: python
+    plan: starter
+    rootDir: services/auth-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 8001
+    buildFilter:
+      paths:
+        - services/auth-service/**
+        - services/shared/**
+        - render.yaml
+    envVars:
+      - fromGroup: finbank-microservices-common
+      - key: MONGODB_URL
         sync: false
-      - key: SUPABASE_ANON_KEY
+      - key: JWT_SECRET
+        sync: false
+      - key: DEV_BOOTSTRAP_TOKEN
+        sync: false
+      - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+
+  - type: pserv
+    name: banking-service
+    runtime: python
+    plan: starter
+    rootDir: services/banking-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 8002
+    buildFilter:
+      paths:
+        - services/banking-service/**
+        - services/shared/**
+        - render.yaml
+    envVars:
+      - fromGroup: finbank-microservices-common
+      - key: MONGODB_URL
+        fromService:
+          name: auth-service
+          type: pserv
+          envVarKey: MONGODB_URL
+      - key: JWT_SECRET
+        fromService:
+          name: auth-service
+          type: pserv
+          envVarKey: JWT_SECRET
+
+  - type: pserv
+    name: notification-service
+    runtime: python
+    plan: starter
+    rootDir: services/notification-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 8003
+    buildFilter:
+      paths:
+        - services/notification-service/**
+        - services/shared/**
+        - render.yaml
+    envVars:
+      - fromGroup: finbank-microservices-common
+      - key: MONGODB_URL
+        fromService:
+          name: auth-service
+          type: pserv
+          envVarKey: MONGODB_URL
+      - key: JWT_SECRET
+        fromService:
+          name: auth-service
+          type: pserv
+          envVarKey: JWT_SECRET
       - key: RESEND_API_KEY
         sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+
+  - type: pserv
+    name: analytics-service
+    runtime: python
+    plan: starter
+    rootDir: services/analytics-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 8004
+    buildFilter:
+      paths:
+        - services/analytics-service/**
+        - services/shared/**
+        - render.yaml
+    envVars:
+      - fromGroup: finbank-microservices-common
+      - key: MONGODB_URL
+        fromService:
+          name: auth-service
+          type: pserv
+          envVarKey: MONGODB_URL
+      - key: JWT_SECRET
+        fromService:
+          name: auth-service
+          type: pserv
+          envVarKey: JWT_SECRET
+
+  - type: pserv
+    name: admin-service
+    runtime: python
+    plan: starter
+    rootDir: services/admin-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 8005
+    buildFilter:
+      paths:
+        - services/admin-service/**
+        - services/shared/**
+        - render.yaml
+    envVars:
+      - fromGroup: finbank-microservices-common
+      - key: MONGODB_URL
+        fromService:
+          name: auth-service
+          type: pserv
+          envVarKey: MONGODB_URL
+      - key: JWT_SECRET
+        fromService:
+          name: auth-service
+          type: pserv
+          envVarKey: JWT_SECRET
+
+  - type: pserv
+    name: employee-service
+    runtime: python
+    plan: starter
+    rootDir: services/employee-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 8006
+    buildFilter:
+      paths:
+        - services/employee-service/**
+        - services/shared/**
+        - render.yaml
+    envVars:
+      - fromGroup: finbank-microservices-common
+      - key: MONGODB_URL
+        fromService:
+          name: auth-service
+          type: pserv
+          envVarKey: MONGODB_URL
+      - key: JWT_SECRET
+        fromService:
+          name: auth-service
+          type: pserv
+          envVarKey: JWT_SECRET
+
+  - type: pserv
+    name: chatbot-service
+    runtime: python
+    plan: starter
+    rootDir: services/chatbot-service
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port 8007
+    buildFilter:
+      paths:
+        - services/chatbot-service/**
+        - services/shared/**
+        - render.yaml
+    envVars:
+      - fromGroup: finbank-microservices-common
+      - key: MONGODB_URL
+        fromService:
+          name: auth-service
+          type: pserv
+          envVarKey: MONGODB_URL
+      - key: JWT_SECRET
+        fromService:
+          name: auth-service
+          type: pserv
+          envVarKey: JWT_SECRET
       - key: GEMINI_API_KEY
         sync: false
-      - key: CORS_ORIGINS
-        value: https://finbank-core-banking.pages.dev,http://localhost:3000,http://localhost:5173
-      - key: WEBHOOK_URL
-        value: ""
-      - key: RATE_LIMIT_AUTH
-        value: 5/minute
-      - key: RATE_LIMIT_GENERAL
-        value: 60/minute
-      - key: DEBUG
-        value: "false"
-      - key: PYTHON_VERSION
-        value: "3.11"

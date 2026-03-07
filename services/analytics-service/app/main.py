@@ -1,5 +1,5 @@
 """
-FinBank Analytics Service — Audit Logs, Reports, Stats, Spending Analysis
+FinBank Analytics Service â€” Audit Logs, Reports, Stats, Spending Analysis
 Port: 8004
 """
 from contextlib import asynccontextmanager
@@ -16,6 +16,7 @@ from shared.config import settings
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    settings.validate_runtime_settings()
     db = await connect_to_mongo()
     await db.audit_logs.create_index("timestamp")
     await db.audit_logs.create_index("user_id")
@@ -25,7 +26,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="FinBank Analytics Service", version="1.0.0", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=settings.cors_origins_list, allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 
 @app.get("/health")
@@ -33,7 +34,7 @@ async def health():
     return {"status": "healthy", "service": "analytics-service"}
 
 
-# ── Audit Logs ──
+# â”€â”€ Audit Logs â”€â”€
 @app.get("/audit-logs")
 async def get_audit_logs(
     page: int = 1, limit: int = 20,
@@ -47,7 +48,7 @@ async def get_audit_logs(
     return {"data": logs, "total": total, "page": page}
 
 
-# ── Dashboard Stats ──
+# â”€â”€ Dashboard Stats â”€â”€
 @app.get("/stats/overview")
 async def overview_stats(current_user=Depends(require_staff), db=Depends(get_database)):
     total_users = await db.users.count_documents({})
@@ -67,7 +68,7 @@ async def overview_stats(current_user=Depends(require_staff), db=Depends(get_dat
     }
 
 
-# ── Spending Analysis (Customer) ──
+# â”€â”€ Spending Analysis (Customer) â”€â”€
 @app.get("/spending-analysis")
 async def spending_analysis(current_user=Depends(get_current_user), db=Depends(get_database)):
     accs = await db.accounts.find({"user_id": current_user["user_id"]}).to_list(50)
@@ -103,7 +104,7 @@ async def spending_analysis(current_user=Depends(get_current_user), db=Depends(g
     }
 
 
-# ── Monthly Report ──
+# â”€â”€ Monthly Report â”€â”€
 @app.get("/reports/monthly")
 async def monthly_report(
     year: int = None, month: int = None,
