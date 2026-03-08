@@ -45,8 +45,15 @@ cd infra && docker compose up --build
 - `customers` — Customer creation + mock KYC verification
 - `accounts` — Account opening + balance inquiry (computed from ledger)
 - `ledger` — Append-only ledger (single source of truth)
-- `transactions` — Deposit, withdrawal, internal transfer
+- `transactions` — Deposit, withdrawal, internal transfer, FAST (alias resolution)
 - `audit` — Admin-level audit trail
+- `cards` — Virtual card management, limits, freezing
+- `easy_addresses` — Kolay Adres management (Email, Phone, TC Kimlik)
+- `payment_requests` — "Ödeme İste" and split bill functionality
+- `auto_bills` — Recurring automatic bill payments
+- `approvals` — Multi-layer approval processing for high-risk operations
+- `exchange` — Foreign exchange rates and conversions
+- `employee` & `admin` — Privilege-separated operational dashboards
 
 ### Architecture Diagram
 
@@ -272,9 +279,15 @@ python -m pytest tests/test_ledger_service.py -v
 | GET | `/api/v1/accounts/{id}/balance` | Get balance (computed) | JWT |
 | POST | `/api/v1/transactions/deposit` | Deposit | JWT |
 | POST | `/api/v1/transactions/withdraw` | Withdraw | JWT |
-| POST | `/api/v1/transactions/transfer` | Transfer | JWT |
+| POST | `/api/v1/transactions/transfer` | Transfer (IBAN or Kolay Adres) | JWT |
+| POST | `/api/v1/easy-address/` | Create Kolay Adres | JWT |
+| GET | `/api/v1/payment-requests/` | List pending requests | JWT |
+| POST | `/api/v1/payment-requests/{id}/approve`| Approve & process split bill | JWT |
+| POST | `/api/v1/auto-bills/` | Create recurring bill payment | JWT |
+| PATCH| `/api/v1/cards/{id}/settings` | Freeze/unfreeze virtual card | JWT |
 | GET | `/api/v1/ledger/` | Query ledger entries | JWT |
 | GET | `/api/v1/audit/` | Query audit logs | Admin |
+| GET | `/api/v1/approvals/pending` | List multi-layer approval queue| Employee/CEO |
 
 ---
 
