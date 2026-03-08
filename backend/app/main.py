@@ -1,9 +1,11 @@
 """
-FinBank - Mini Core Banking System
-FastAPI Application Entry Point
+=========================================================
+FinBank & FinHR - Next Generation Core Banking SaaS
+Copyright (C) 2026 Abdullah Yildiz. All Rights Reserved.
 
-Team 2: Python + MongoDB + Webhooks
+Developer: Abdullah Yildiz (abdullahyldxz)
 Architecture: Modular Monolith
+=========================================================
 """
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response
