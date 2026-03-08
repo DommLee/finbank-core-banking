@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from bson import ObjectId
 
 from app.core.security import get_current_user
-from app.core.database import db
+from app.core.database import get_database
 from app.models.payment_request import PaymentRequestCreate, PaymentRequestResponse, PaymentRequestApprove
 from app.services.ledger_service import PaymentService, PaymentDirection
 
@@ -14,7 +14,8 @@ router = APIRouter()
 async def create_payment_request(
     request: Request,
     req_body: PaymentRequestCreate,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    db = Depends(get_database)
 ):
     requester_user_id = current_user["id"]
     
@@ -70,7 +71,10 @@ async def create_payment_request(
     return request_doc
 
 @router.get("/", response_model=List[PaymentRequestResponse])
-async def list_payment_requests(current_user: dict = Depends(get_current_user)):
+async def list_payment_requests(
+    current_user: dict = Depends(get_current_user),
+    db = Depends(get_database)
+):
     user_id = current_user["id"]
     cursor = db.payment_requests.find(
         {"$or": [{"requester_user_id": user_id}, {"target_user_id": user_id}]}
@@ -87,7 +91,8 @@ async def list_payment_requests(current_user: dict = Depends(get_current_user)):
 async def approve_payment_request(
     request_id: str,
     body: PaymentRequestApprove,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    db = Depends(get_database)
 ):
     user_id = current_user["id"]
     
@@ -150,7 +155,8 @@ async def approve_payment_request(
 @router.post("/{request_id}/reject")
 async def reject_payment_request(
     request_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    db = Depends(get_database)
 ):
     req_doc = await db.payment_requests.find_one({"_id": ObjectId(request_id)})
     if not req_doc:
@@ -171,7 +177,8 @@ async def reject_payment_request(
 @router.post("/{request_id}/cancel")
 async def cancel_payment_request(
     request_id: str,
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
+    db = Depends(get_database)
 ):
     req_doc = await db.payment_requests.find_one({"_id": ObjectId(request_id)})
     if not req_doc:
