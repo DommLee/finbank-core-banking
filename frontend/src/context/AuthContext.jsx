@@ -1,12 +1,10 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import { authApi } from "../services/api";
+import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext(null);
 
-// ── Role → Path Mapping (mirrors backend ROLE_REDIRECTS) ──
 const ROLE_REDIRECTS = {
     customer: "/customer/dashboard",
-    employee: "/employee/portal",
+    employee: "/employee/dashboard",
     ceo: "/executive/cockpit",
     admin: "/admin/dashboard",
 };
@@ -52,15 +50,23 @@ export function AuthProvider({ children }) {
     const isCustomer = user?.role === "customer";
     const isStaff = isEmployee || isAdmin;
     const isManagement = isCeo || isAdmin;
-
     const hasRole = (...roles) => roles.includes(user?.role);
 
     return (
         <AuthContext.Provider
             value={{
-                user, loading, login, logout,
-                isAuthenticated, isAdmin, isEmployee, isCeo, isCustomer,
-                isStaff, isManagement, hasRole,
+                user,
+                loading,
+                login,
+                logout,
+                isAuthenticated,
+                isAdmin,
+                isEmployee,
+                isCeo,
+                isCustomer,
+                isStaff,
+                isManagement,
+                hasRole,
             }}
         >
             {children}
@@ -73,3 +79,4 @@ export function useAuth() {
     if (!ctx) throw new Error("useAuth must be used within AuthProvider");
     return ctx;
 }
+

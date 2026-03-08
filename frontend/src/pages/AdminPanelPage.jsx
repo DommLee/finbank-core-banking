@@ -1,379 +1,380 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Crown, Users, Activity, MessageSquare, Shield, Trash2, UserCheck, UserX, Download, TrendingUp, DollarSign } from "lucide-react";
-import { adminApi } from "../services/api";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import {
-    AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, BarChart, Bar, Legend
-} from 'recharts';
-import html2canvas from 'html2canvas';
-import { jsPDF } from 'jspdf';
+    Activity,
+    AlertTriangle,
+    Crown,
+    CreditCard,
+    Eye,
+    FileText,
+    Loader2,
+    Mail,
+    MessageSquare,
+    RefreshCw,
+    Shield,
+    Trash2,
+    UserCheck,
+    UserX,
+    Users,
+} from "lucide-react";
+import { adminApi } from "../services/api";
 
-const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+const ROLE_OPTIONS = ["customer", "employee", "admin", "ceo"];
+const PAGE_SIZE = 12;
 
 export default function AdminPanelPage() {
-    const [tab, setTab] = useState("stats");
+    const [tab, setTab] = useState("overview");
     const [stats, setStats] = useState(null);
     const [users, setUsers] = useState([]);
     const [userTotal, setUserTotal] = useState(0);
     const [messages, setMessages] = useState([]);
+    const [bills, setBills] = useState([]);
+    const [selectedUser, setSelectedUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [searchRole, setSearchRole] = useState("");
+    const [detailLoading, setDetailLoading] = useState(false);
+    const [roleFilter, setRoleFilter] = useState("");
     const [page, setPage] = useState(1);
-    const pdfRef = useRef(null);
-
-    const fetchStats = useCallback(async () => {
-        setLoading(true);
-        try {
-            const res = await adminApi.systemStats();
-            setStats(res.data);
-        } catch { toast.error("İstatistikler alınamadı") }
-        setLoading(false);
-    }, []);
-
-    const fetchUsers = useCallback(async () => {
-        setLoading(true);
-        try {
-            const params = { page, limit: 15 };
-            if (searchRole) params.role = searchRole;
-            const res = await adminApi.listUsers(params);
-            setUsers(res.data.data);
-            setUserTotal(res.data.total);
-        } catch { toast.error("Kullanıcılar alınamadı"); }
-        setLoading(false);
-    }, [page, searchRole]);
-
-    const fetchMessages = useCallback(async () => {
-        setLoading(true);
-        try {
-            const res = await adminApi.allMessages({ page: 1, limit: 30 });
-            setMessages(res.data.data);
-        } catch { toast.error("Mesajlar alınamadı"); }
-        setLoading(false);
-    }, []);
+    const [busyKey, setBusyKey] = useState("");
 
     useEffect(() => {
-        if (tab === "stats") fetchStats();
-        else if (tab === "users") fetchUsers();
-        else if (tab === "messages") fetchMessages();
-    }, [tab, fetchStats, fetchUsers, fetchMessages]);
+        if (tab === "overview") loadOverview();
+        if (tab === "users") loadUsers();
+        if (tab === "messages") loadMessages();
+    }, [tab, page, roleFilter]);
 
-    const changeRole = async (userId, role) => {
-        try { await adminApi.changeRole(userId, { role }); toast.success("Rol güncellendi."); fetchUsers(); } catch { toast.error("Hata."); }
-    };
-
-    const toggleStatus = async (userId, active) => {
-        try { await adminApi.toggleStatus(userId, { is_active: active }); toast.success(active ? "Aktifleştirildi." : "Devre dışı bırakıldı."); fetchUsers(); } catch { toast.error("Hata."); }
-    };
-
-    const deleteUser = async (userId) => {
-        if (!window.confirm("Bu kullanıcıyı silmek istediğinize emin misiniz?")) return;
-        try { await adminApi.deleteUser(userId); toast.success("Kullanıcı silindi."); fetchUsers(); } catch { toast.error("Hata."); }
-    };
-
-    const downloadPDF = async () => {
-        const input = pdfRef.current;
-        if (!input) return;
-        toast.loading("PDF Hazırlanıyor...", { id: "pdf-toast" });
+    const loadOverview = async () => {
+        setLoading(true);
         try {
-            const canvas = await html2canvas(input, { scale: 2, useCORS: true, backgroundColor: '#0f172a' });
-            const imgData = canvas.toDataURL('image/png');
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`FinBank-Rapor-${new Date().toISOString().split('T')[0]}.pdf`);
-            toast.success("PDF başarıyla indirildi!", { id: "pdf-toast" });
-        } catch (err) {
-            console.error(err);
-            toast.error("PDF oluşturulurken hata oluştu", { id: "pdf-toast" });
+            const [statsRes, usersRes, messagesRes, billsRes] = await Promise.all([
+                adminApi.systemStats(),
+                adminApi.listUsers({ page: 1, limit: 8 }),
+                adminApi.allMessages({ page: 1, limit: 8 }),
+                adminApi.allBills({ page: 1, limit: 8 }),
+            ]);
+            setStats(statsRes.data);
+            setUsers(usersRes.data?.data || []);
+            setUserTotal(usersRes.data?.total || 0);
+            setMessages(messagesRes.data?.data || []);
+            setBills(billsRes.data?.data || []);
+        } catch {
+            toast.error("Admin dashboard verileri yuklenemedi.");
+        } finally {
+            setLoading(false);
         }
     };
 
-    const fmt = (n) => new Intl.NumberFormat("tr-TR").format(n || 0);
-    const fmtCurrency = (n) => new Intl.NumberFormat("tr-TR", { style: "currency", currency: "USD" }).format(n || 0);
+    const loadUsers = async () => {
+        setLoading(true);
+        try {
+            const params = { page, limit: PAGE_SIZE };
+            if (roleFilter) params.role = roleFilter;
+            const res = await adminApi.listUsers(params);
+            setUsers(res.data?.data || []);
+            setUserTotal(res.data?.total || 0);
+        } catch {
+            toast.error("Kullanici listesi yuklenemedi.");
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    const tabs = [
-        { id: "stats", label: "Analiz & Raporlar", icon: <Activity size={16} /> },
-        { id: "users", label: "Kullanıcı Yönetimi", icon: <Users size={16} /> },
-        { id: "messages", label: "Sistem Mesajları", icon: <MessageSquare size={16} /> },
+    const loadMessages = async () => {
+        setLoading(true);
+        try {
+            const [messagesRes, billsRes] = await Promise.all([
+                adminApi.allMessages({ page: 1, limit: 30 }),
+                adminApi.allBills({ page: 1, limit: 20 }),
+            ]);
+            setMessages(messagesRes.data?.data || []);
+            setBills(billsRes.data?.data || []);
+        } catch {
+            toast.error("Mesaj ve odeme listeleri yuklenemedi.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const openUser = async (userId) => {
+        setDetailLoading(true);
+        try {
+            const res = await adminApi.getUser(userId);
+            setSelectedUser(res.data);
+        } catch {
+            toast.error("Kullanici detayi yuklenemedi.");
+        } finally {
+            setDetailLoading(false);
+        }
+    };
+
+    const changeRole = async (userId, role) => {
+        setBusyKey(`role-${userId}`);
+        try {
+            await adminApi.changeRole(userId, { role });
+            toast.success("Rol guncellendi.");
+            loadUsers();
+            if (selectedUser?.user?.user_id === userId) openUser(userId);
+        } catch (error) {
+            toast.error(error.response?.data?.detail || "Rol guncellenemedi.");
+        } finally {
+            setBusyKey("");
+        }
+    };
+
+    const toggleStatus = async (user) => {
+        const next = !user.is_active;
+        setBusyKey(`status-${user.user_id}`);
+        try {
+            await adminApi.toggleStatus(user.user_id, { is_active: next });
+            toast.success(next ? "Kullanici aktiflesti." : "Kullanici pasife alindi.");
+            loadUsers();
+            if (selectedUser?.user?.user_id === user.user_id) openUser(user.user_id);
+        } catch (error) {
+            toast.error(error.response?.data?.detail || "Durum guncellenemedi.");
+        } finally {
+            setBusyKey("");
+        }
+    };
+
+    const removeUser = async (userId) => {
+        if (!window.confirm("Bu kullaniciyi silmek istiyor musunuz?")) return;
+        setBusyKey(`delete-${userId}`);
+        try {
+            await adminApi.deleteUser(userId);
+            toast.success("Kullanici silindi.");
+            setSelectedUser((current) => (current?.user?.user_id === userId ? null : current));
+            loadUsers();
+        } catch (error) {
+            toast.error(error.response?.data?.detail || "Kullanici silinemedi.");
+        } finally {
+            setBusyKey("");
+        }
+    };
+
+    const inactiveUsers = Math.max(Number(stats?.total_users || 0) - Number(stats?.active_users || 0), 0);
+    const totalPages = Math.max(1, Math.ceil(Number(userTotal || 0) / PAGE_SIZE));
+    const roles = [
+        { key: "", label: "Tum roller" },
+        { key: "customer", label: "Customer" },
+        { key: "employee", label: "Employee" },
+        { key: "admin", label: "Admin" },
+        { key: "ceo", label: "CEO" },
     ];
 
     return (
-        <div style={{ padding: "24px", maxWidth: 1200, margin: "0 auto", animation: "fadeIn 0.4s ease-out" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 16 }}>
-                <h1 style={{ fontSize: 28, fontWeight: 800, display: "flex", alignItems: "center", gap: 12 }}>
-                    <Crown size={32} color="#f59e0b" /> Yönetici & CEO Paneli
-                </h1>
-                {tab === "stats" && stats && (
-                    <button onClick={downloadPDF} style={{
-                        display: "flex", alignItems: "center", gap: 8, padding: "10px 20px",
-                        background: "linear-gradient(135deg, #10b981, #059669)", color: "white",
-                        border: "none", borderRadius: 12, cursor: "pointer", fontWeight: 600,
-                        boxShadow: "0 4px 12px rgba(16, 185, 129, 0.3)", transition: "all 0.2s"
-                    }}>
-                        <Download size={18} /> CEO Raporu İndir (PDF)
-                    </button>
-                )}
+        <div style={{ maxWidth: 1240, margin: "0 auto", padding: 24 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
+                <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                        <div style={iconBox("rgba(245,158,11,0.12)", "#f59e0b")}><Crown size={22} /></div>
+                        <h1 style={{ margin: 0, fontSize: 30, fontWeight: 900 }}>Admin dashboard</h1>
+                    </div>
+                    <p style={{ margin: 0, color: "var(--text-secondary)" }}>Kullanici, kuyruk ve mesaj akislarini merkezi olarak yonetin.</p>
+                </div>
+                <button type="button" onClick={() => { if (tab === "overview") loadOverview(); if (tab === "users") loadUsers(); if (tab === "messages") loadMessages(); }} style={secondaryButtonStyle}>
+                    <RefreshCw size={16} /> Yenile
+                </button>
             </div>
 
-            {/* Tabs */}
-            <div style={{ display: "flex", gap: 12, marginBottom: 32, overflowX: "auto", paddingBottom: 8 }}>
-                {tabs.map((t) => (
-                    <button key={t.id} onClick={() => setTab(t.id)} style={{
-                        padding: "12px 24px", borderRadius: 14, border: "none", cursor: "pointer",
-                        background: tab === t.id ? "linear-gradient(135deg, #6366f1, #4f46e5)" : "var(--bg-card)",
-                        color: tab === t.id ? "#fff" : "var(--text-secondary)", fontWeight: 600, fontSize: 14,
-                        display: "flex", alignItems: "center", gap: 8, transition: "all 0.2s",
-                        boxShadow: tab === t.id ? "0 4px 12px rgba(99, 102, 241, 0.3)" : "none"
-                    }}>{t.icon} {t.label}</button>
+            <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+                {[
+                    { id: "overview", label: "Overview" },
+                    { id: "users", label: "Users" },
+                    { id: "messages", label: "Messages" },
+                ].map((item) => (
+                    <button key={item.id} type="button" onClick={() => setTab(item.id)} style={tabButtonStyle(tab === item.id)}>{item.label}</button>
                 ))}
             </div>
 
-            {/* Stats Tab */}
-            {tab === "stats" && loading && <div style={{ display: "flex", justifyContent: "center", padding: 60 }}><Activity className="animate-pulse" size={40} color="#6366f1" /></div>}
+            {loading ? <LoadingState /> : null}
 
-            {tab === "stats" && stats && !loading && (
-                <div ref={pdfRef} style={{ background: "transparent", padding: "10px" }}>
-                    {/* Top KPI Cards */}
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20, marginBottom: 32 }}>
-                        {[
-                            { label: "Toplam Kullanıcı", val: fmt(stats.total_users), color: "#6366f1", icon: <Users size={24} /> },
-                            { label: "Sistemdeki Hesaplar", val: fmt(stats.total_accounts), color: "#8b5cf6", icon: <UserCheck size={24} /> },
-                            { label: "Net Likidite", val: fmtCurrency(stats.financials?.net_liquidity), color: "#10b981", icon: <DollarSign size={24} /> },
-                            { label: "Toplam Adet (İşlem)", val: fmt(stats.total_transactions), color: "#f59e0b", icon: <TrendingUp size={24} /> },
-                        ].map((s, i) => (
-                            <div key={i} style={{
-                                background: "var(--bg-card)", borderRadius: 20, padding: 24,
-                                border: "1px solid var(--border-color)", position: "relative", overflow: "hidden"
-                            }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
-                                    <div style={{ width: 48, height: 48, borderRadius: 14, background: `${s.color}20`, display: "flex", alignItems: "center", justifyContent: "center", color: s.color }}>{s.icon}</div>
-                                    <div style={{ fontSize: 14, color: "var(--text-secondary)", fontWeight: 500 }}>{s.label}</div>
-                                </div>
-                                <div style={{ fontSize: 28, fontWeight: 800, color: "var(--text-primary)" }}>{s.val}</div>
-                                <div style={{ position: "absolute", bottom: -20, right: -20, opacity: 0.05, transform: "scale(3)" }}>{s.icon}</div>
-                            </div>
-                        ))}
+            {!loading && tab === "overview" ? (
+                <div style={{ display: "grid", gap: 16 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+                        <MetricCard icon={<Users size={18} />} label="Toplam kullanici" value={formatNumber(stats?.total_users)} tone="#2563eb" />
+                        <MetricCard icon={<UserCheck size={18} />} label="Aktif kullanici" value={formatNumber(stats?.active_users)} tone="#10b981" />
+                        <MetricCard icon={<CreditCard size={18} />} label="Toplam hesap" value={formatNumber(stats?.total_accounts)} tone="#8b5cf6" />
+                        <MetricCard icon={<Activity size={18} />} label="Toplam islem" value={formatNumber(stats?.total_transactions)} tone="#f59e0b" />
                     </div>
 
-                    {/* Financial Metrics Row */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 32, gridAutoFlow: "dense" }}>
-                        <div style={{ background: "var(--bg-card)", borderRadius: 20, border: "1px solid var(--border-color)", padding: 24, minWidth: 0 }}>
-                            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}><Activity size={20} color="#3b82f6" /> İşlem Hacmi Trendi (Son 30 Gün)</h3>
-                            <div style={{ height: 300, width: "100%" }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={stats.daily_trends || []} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                        <defs>
-                                            <linearGradient id="colorVolume" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
-                                                <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <XAxis dataKey="date" stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} />
-                                        <YAxis stroke="var(--text-secondary)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val / 1000}k`} />
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', borderRadius: 12, color: 'var(--text-primary)' }}
-                                            formatter={(value) => [fmtCurrency(value), 'Hacim']}
-                                        />
-                                        <Area type="monotone" dataKey="volume" stroke="#3b82f6" strokeWidth={3} fillOpacity={1} fill="url(#colorVolume)" />
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+                        <QueueCard icon={<AlertTriangle size={16} />} label="Bekleyen KYC" value={stats?.pending_kyc} tone="#f59e0b" />
+                        <QueueCard icon={<Mail size={16} />} label="Acik mesaj" value={stats?.open_messages} tone="#ef4444" />
+                        <QueueCard icon={<Shield size={16} />} label="Donuk hesap" value={stats?.frozen_accounts} tone="#6366f1" />
+                        <QueueCard icon={<UserX size={16} />} label="Pasif kullanici" value={inactiveUsers} tone="#64748b" />
+                    </div>
 
-                        <div style={{ background: "var(--bg-card)", borderRadius: 20, border: "1px solid var(--border-color)", padding: 24, minWidth: 0 }}>
-                            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}><Shield size={20} color="#f59e0b" /> Genel Finansal Dağılım</h3>
-                            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                                {[
-                                    { label: "Toplam Gelen (Mevduat)", value: stats.financials?.total_deposits, color: "#10b981", percent: 100 },
-                                    { label: "Toplam Giden (Çekim)", value: stats.financials?.total_withdrawals, color: "#ef4444", percent: Math.min((stats.financials?.total_withdrawals / (stats.financials?.total_deposits || 1)) * 100, 100) },
-                                    { label: "İç Transferler", value: stats.financials?.total_transfers, color: "#6366f1", percent: Math.min((stats.financials?.total_transfers / (stats.financials?.total_deposits || 1)) * 100, 100) }
-                                ].map((item, i) => (
-                                    <div key={i}>
-                                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                                            <span style={{ fontSize: 14, color: "var(--text-secondary)", fontWeight: 500 }}>{item.label}</span>
-                                            <span style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>{fmtCurrency(item.value)}</span>
+                    <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 16 }}>
+                        <Panel title="Son kullanicilar" subtitle="Yeni kayitlari hizli inceleyin">
+                            {users.length === 0 ? <Empty message="Kullanici kaydi yok." /> : users.map((user) => (
+                                <div key={user.user_id} style={rowStyle}>
+                                    <div>
+                                        <div style={{ fontWeight: 700 }}>{user.email}</div>
+                                        <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>{user.role} - {user.is_active ? "active" : "passive"}</div>
+                                    </div>
+                                    <button type="button" onClick={() => openUser(user.user_id)} style={secondaryButtonStyle}><Eye size={14} /> Detay</button>
+                                </div>
+                            ))}
+                        </Panel>
+
+                        <Panel title="Mesaj ve odeme akisi" subtitle="Operasyon sinyallerini kacirmayin">
+                            <div style={{ display: "grid", gap: 10, marginBottom: 16 }}>
+                                {(messages || []).slice(0, 4).map((message) => (
+                                    <div key={message.message_id} style={messageStyle(message.status === "open")}>
+                                        <div style={{ fontWeight: 700, marginBottom: 6 }}>{message.subject}</div>
+                                        <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 6 }}>{message.sender_email}</div>
+                                        <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{formatDateTime(message.created_at)}</div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div style={{ display: "grid", gap: 10 }}>
+                                {(bills || []).slice(0, 4).map((bill) => (
+                                    <div key={bill.bill_id || `${bill.provider}-${bill.subscriber_no}`} style={rowStyle}>
+                                        <div>
+                                            <div style={{ fontWeight: 700 }}>{bill.provider || bill.bill_type || "Bill"}</div>
+                                            <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>{formatDate(bill.paid_at || bill.created_at)}</div>
                                         </div>
-                                        <div style={{ width: "100%", height: 8, background: "var(--bg-secondary)", borderRadius: 4, overflow: "hidden" }}>
-                                            <div style={{ width: `${item.percent}%`, height: "100%", background: item.color, borderRadius: 4, transition: "width 1s ease-out" }} />
+                                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                            <FileText size={14} />
+                                            <strong>{formatMoney(bill.amount)}</strong>
                                         </div>
                                     </div>
                                 ))}
-
-                                <div style={{ marginTop: 20, padding: 16, background: "rgba(245, 158, 11, 0.1)", borderRadius: 12, border: "1px solid rgba(245, 158, 11, 0.2)" }}>
-                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                        <span style={{ color: "#f59e0b", fontWeight: 600 }}>Cevap Bekleyen KYC Başvuruları</span>
-                                        <span style={{ background: "#f59e0b", color: "white", padding: "4px 12px", borderRadius: 20, fontWeight: 800 }}>{stats.pending_kyc} Adet</span>
-                                    </div>
-                                </div>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Bottom Row */}
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, gridAutoFlow: "dense" }}>
-                        <div style={{ background: "var(--bg-card)", borderRadius: 20, border: "1px solid var(--border-color)", padding: 24, display: "flex", flexDirection: "column", minWidth: 0 }}>
-                            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>Kullanıcı ve Rol Dağılımı</h3>
-                            <div style={{ height: 260, width: "100%" }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={[
-                                        { name: "Müşteriler", count: stats.customers },
-                                        { name: "Çalışanlar/Admin", count: stats.employees }
-                                    ]} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--border-color)" />
-                                        <XAxis type="number" stroke="var(--text-secondary)" fontSize={12} />
-                                        <YAxis dataKey="name" type="category" stroke="var(--text-secondary)" fontSize={13} width={120} />
-                                        <Tooltip cursor={{ fill: 'var(--bg-secondary)' }} contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', borderRadius: 12 }} />
-                                        <Bar dataKey="count" fill="#8b5cf6" radius={[0, 8, 8, 0]} barSize={40}>
-                                            {[0, 1].map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
-                                        </Bar>
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-
-                        <div style={{ background: "var(--bg-card)", borderRadius: 20, border: "1px solid var(--border-color)", padding: 24, display: "flex", flexDirection: "column", minWidth: 0 }}>
-                            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>Açık Hesap Tipleri</h3>
-                            <div style={{ height: 260, width: "100%", display: "flex", justifyContent: "center", alignItems: "center" }}>
-                                {(!stats.account_types || stats.account_types.length === 0) ? (
-                                    <p style={{ color: "var(--text-secondary)" }}>Yeterli veri yok.</p>
-                                ) : (
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <PieChart>
-                                            <Pie
-                                                data={stats.account_types}
-                                                cx="50%" cy="50%"
-                                                innerRadius={60} outerRadius={90}
-                                                paddingAngle={5}
-                                                dataKey="value"
-                                                nameKey="name"
-                                                stroke="none"
-                                            >
-                                                {stats.account_types.map((entry, index) => (
-                                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip formatter={(value) => [value, 'Adet']} contentStyle={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border-color)', borderRadius: 12 }} />
-                                            <Legend verticalAlign="bottom" height={36} iconType="circle" />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                )}
-                            </div>
-                        </div>
+                        </Panel>
                     </div>
                 </div>
-            )}
+            ) : null}
 
-            {/* Users Tab */}
-            {tab === "users" && (
-                <div style={{ animation: "fadeIn 0.3s ease-out" }}>
-                    <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-                        {["", "customer", "employee", "admin", "ceo"].map((r) => (
-                            <button key={r} onClick={() => { setSearchRole(r); setPage(1); }} style={{
-                                padding: "8px 18px", borderRadius: 10, border: "1px solid var(--border-color)", cursor: "pointer", fontSize: 13, fontWeight: 500, transition: "all 0.2s",
-                                background: searchRole === r ? "#6366f1" : "var(--bg-card)", color: searchRole === r ? "#fff" : "var(--text-secondary)",
-                            }}>{r ? r.charAt(0).toUpperCase() + r.slice(1) : "Tüm Kullanıcılar"}</button>
-                        ))}
-                    </div>
-                    {loading ? <div style={{ padding: 40, textAlign: "center" }}><Loader2 size={32} className="animate-spin" color="#6366f1" /></div> : (
-                        <div style={{ overflowX: "auto", background: "var(--bg-card)", borderRadius: 16, border: "1px solid var(--border-color)" }}>
+            {!loading && tab === "users" ? (
+                <div style={{ display: "grid", gridTemplateColumns: selectedUser ? "1.2fr 0.8fr" : "1fr", gap: 16 }}>
+                    <Panel title="Kullanici yonetimi" subtitle="Rol, durum ve silme islemleri">
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+                            {roles.map((role) => (
+                                <button key={role.key || "all"} type="button" onClick={() => { setPage(1); setRoleFilter(role.key); }} style={filterButtonStyle(roleFilter === role.key)}>{role.label}</button>
+                            ))}
+                        </div>
+                        <div style={{ overflowX: "auto" }}>
                             <table style={{ width: "100%", borderCollapse: "collapse" }}>
                                 <thead>
-                                    <tr style={{ borderBottom: "1px solid var(--border-color)", background: "var(--bg-secondary)" }}>
-                                        {["Kullanıcı ID / E-posta", "Rol", "Durum", "Kayıt Tarihi", "İşlemler"].map((h) => (
-                                            <th key={h} style={{ padding: "16px 20px", fontSize: 13, fontWeight: 600, color: "var(--text-secondary)", textAlign: "left" }}>{h}</th>
-                                        ))}
+                                    <tr style={{ borderBottom: "1px solid var(--border-color)" }}>
+                                        {['Kullanici','Rol','Durum','Kayit','Aksiyon'].map((head) => <th key={head} style={tableHeadStyle}>{head}</th>)}
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {users.map((u) => (
-                                        <tr key={u.user_id} style={{ borderBottom: "1px solid var(--border-color)", transition: "background 0.2s" }} className="hover-row">
-                                            <td style={{ padding: "16px 20px" }}>
-                                                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>{u.email}</div>
-                                                <div style={{ fontSize: 11, color: "var(--text-secondary)", marginTop: 4, fontFamily: "monospace" }}>{u.user_id}</div>
+                                    {users.map((user) => (
+                                        <tr key={user.user_id} style={{ borderBottom: "1px solid var(--border-color)" }}>
+                                            <td style={tableCellStyle}>
+                                                <div style={{ fontWeight: 700 }}>{user.email}</div>
+                                                <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>{user.user_id}</div>
                                             </td>
-                                            <td style={{ padding: "16px 20px" }}>
-                                                <select value={u.role} onChange={(e) => changeRole(u.user_id, e.target.value)}
-                                                    style={{ padding: "6px 12px", borderRadius: 8, border: "1px solid var(--border-color)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13, cursor: "pointer", outline: "none" }}>
-                                                    {["customer", "employee", "admin", "ceo"].map((r) => <option key={r} value={r}>{r}</option>)}
+                                            <td style={tableCellStyle}>
+                                                <select value={user.role} onChange={(event) => changeRole(user.user_id, event.target.value)} disabled={busyKey === `role-${user.user_id}`} style={selectStyle}>
+                                                    {ROLE_OPTIONS.map((role) => <option key={role} value={role}>{role}</option>)}
                                                 </select>
                                             </td>
-                                            <td style={{ padding: "16px 20px" }}>
-                                                <span style={{
-                                                    padding: "6px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700,
-                                                    background: u.is_active ? "rgba(34,197,94,0.15)" : "rgba(239,68,68,0.15)",
-                                                    color: u.is_active ? "#22c55e" : "#ef4444",
-                                                }}>{u.is_active ? "🟢 Aktif" : "🔴 Pasif"}</span>
-                                            </td>
-                                            <td style={{ padding: "16px 20px", fontSize: 13, color: "var(--text-secondary)", fontWeight: 500 }}>
-                                                {new Date(u.created_at).toLocaleDateString("tr-TR")}
-                                            </td>
-                                            <td style={{ padding: "16px 20px", display: "flex", gap: 10 }}>
-                                                <button onClick={() => toggleStatus(u.user_id, !u.is_active)} style={{
-                                                    padding: "6px 12px", borderRadius: 8, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600, transition: "opacity 0.2s",
-                                                    background: u.is_active ? "rgba(239,68,68,0.1)" : "rgba(34,197,94,0.1)",
-                                                    color: u.is_active ? "#ef4444" : "#22c55e",
-                                                }}>{u.is_active ? "Devre Dışı Bırak" : "Aktifleştir"}</button>
-                                                <button onClick={() => deleteUser(u.user_id)} style={{
-                                                    padding: "8px", borderRadius: 8, border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                                                    background: "rgba(239,68,68,0.1)", color: "#ef4444", transition: "all 0.2s"
-                                                }} title="Sil"><Trash2 size={16} /></button>
+                                            <td style={tableCellStyle}><Status active={user.is_active}>{user.is_active ? "active" : "passive"}</Status></td>
+                                            <td style={tableCellStyle}>{formatDate(user.created_at)}</td>
+                                            <td style={tableCellStyle}>
+                                                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                                    <button type="button" onClick={() => openUser(user.user_id)} style={secondaryButtonStyle}><Eye size={14} /> Detay</button>
+                                                    <button type="button" onClick={() => toggleStatus(user)} disabled={busyKey === `status-${user.user_id}`} style={user.is_active ? dangerButtonStyle : successButtonStyle}>{user.is_active ? <UserX size={14} /> : <UserCheck size={14} />}{user.is_active ? "Pasife al" : "Ac"}</button>
+                                                    <button type="button" onClick={() => removeUser(user.user_id)} disabled={busyKey === `delete-${user.user_id}`} style={dangerGhostStyle}><Trash2 size={14} /> Sil</button>
+                                                </div>
                                             </td>
                                         </tr>
                                     ))}
                                 </tbody>
                             </table>
-                            {userTotal > 15 && (
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderTop: "1px solid var(--border-color)" }}>
-                                    <span style={{ fontSize: 13, color: "var(--text-secondary)" }}>Toplam <strong>{userTotal}</strong> kullanıcı, Sayfa {page}</span>
-                                    <div style={{ display: "flex", gap: 8 }}>
-                                        <button disabled={page <= 1} onClick={() => setPage(page - 1)} style={pgBtn}>En Yeni ←</button>
-                                        <button disabled={page * 15 >= userTotal} onClick={() => setPage(page + 1)} style={pgBtn}>Daha Eski →</button>
-                                    </div>
-                                </div>
-                            )}
                         </div>
-                    )}
-                </div>
-            )}
-
-            {/* Messages Tab */}
-            {tab === "messages" && (
-                <div style={{ display: "grid", gap: 16, animation: "fadeIn 0.3s ease-out" }}>
-                    {loading ? <div style={{ padding: 40, textAlign: "center" }}><Loader2 size={32} className="animate-spin" color="#6366f1" /></div> : messages.length === 0 ? <p style={{ textAlign: "center", color: "var(--text-secondary)", padding: 40, fontSize: 15 }}>Cevaplanmamış veya gösterilecek mesaj yok.</p> :
-                        messages.map((m) => (
-                            <div key={m.message_id} style={{
-                                background: "var(--bg-card)", borderRadius: 16, padding: 20,
-                                border: `1px solid ${m.status === "open" ? "rgba(245,158,11,0.5)" : "var(--border-color)"}`,
-                                position: "relative", overflow: "hidden"
-                            }}>
-                                {m.status === "open" && <div style={{ position: "absolute", top: 0, left: 0, width: 4, height: "100%", background: "#f59e0b" }} />}
-                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12, alignItems: "center" }}>
-                                    <span style={{ fontWeight: 700, fontSize: 16, color: "var(--text-primary)" }}>{m.subject}</span>
-                                    <span style={{
-                                        padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 700,
-                                        background: m.status === "open" ? "rgba(245,158,11,0.15)" : "rgba(34,197,94,0.15)",
-                                        color: m.status === "open" ? "#f59e0b" : "#22c55e",
-                                    }}>{m.status === "open" ? "Açık - Bekliyor" : "Yanıtlandı"}</span>
-                                </div>
-                                <p style={{ fontSize: 14, color: "var(--text-secondary)", marginBottom: 16, lineHeight: 1.5 }}>{m.body}</p>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px dashed var(--border-color)", paddingTop: 12 }}>
-                                    <span style={{ fontSize: 12, color: "var(--text-secondary)", fontWeight: 500 }}>Gönderen: <span style={{ color: "var(--text-primary)" }}>{m.sender_email}</span></span>
-                                    <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{new Date(m.created_at).toLocaleString("tr-TR")}</span>
-                                </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
+                            <span style={{ color: "var(--text-secondary)", fontSize: 13 }}>{formatNumber(userTotal)} kayit - sayfa {page}/{totalPages}</span>
+                            <div style={{ display: "flex", gap: 8 }}>
+                                <button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page <= 1} style={secondaryButtonStyle}>Geri</button>
+                                <button type="button" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={page >= totalPages} style={secondaryButtonStyle}>Ileri</button>
                             </div>
-                        ))
-                    }
+                        </div>
+                    </Panel>
+                    {selectedUser ? <UserDetailCard data={selectedUser} loading={detailLoading} /> : null}
                 </div>
-            )}
-            <style>{`
-                @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-                .hover-row:hover { background: var(--bg-secondary) !important; }
-            `}</style>
+            ) : null}
+
+            {!loading && tab === "messages" ? (
+                <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 16 }}>
+                    <Panel title="Mesaj merkezi" subtitle="Tum acik ve yanitlanmis mesajlar">
+                        {messages.length === 0 ? <Empty message="Mesaj yok." /> : messages.map((message) => (
+                            <div key={message.message_id} style={messageStyle(message.status === "open")}>
+                                <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 8 }}>
+                                    <strong>{message.subject}</strong>
+                                    <Status active={message.status !== "open"}>{message.status}</Status>
+                                </div>
+                                <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 8 }}>{message.body}</div>
+                                <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{message.sender_email} - {formatDateTime(message.created_at)}</div>
+                                {message.reply ? <div style={{ marginTop: 10, padding: 10, borderRadius: 12, background: "var(--bg-card)" }}>{message.reply}</div> : null}
+                            </div>
+                        ))}
+                    </Panel>
+                    <Panel title="Odeme listesi" subtitle="Son gelen bill islemleri">
+                        {bills.length === 0 ? <Empty message="Odeme kaydi yok." /> : bills.map((bill) => (
+                            <div key={bill.bill_id || `${bill.provider}-${bill.subscriber_no}`} style={rowStyle}>
+                                <div>
+                                    <div style={{ fontWeight: 700 }}>{bill.provider || bill.bill_type || "Bill"}</div>
+                                    <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>{bill.subscriber_no || "-"} - {formatDateTime(bill.paid_at || bill.created_at)}</div>
+                                </div>
+                                <strong>{formatMoney(bill.amount)}</strong>
+                            </div>
+                        ))}
+                    </Panel>
+                </div>
+            ) : null}
         </div>
     );
 }
 
-const pgBtn = { padding: "8px 16px", borderRadius: 10, border: "1px solid var(--border-color)", cursor: "pointer", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13, fontWeight: 600, transition: "background 0.2s" };
+function UserDetailCard({ data, loading }) {
+    return (
+        <Panel title="Secili kullanici" subtitle="Kullanici, profil ve hesap ozeti">
+            {loading ? <LoadingState compact /> : (
+                <div style={{ display: "grid", gap: 12 }}>
+                    <div style={infoStyle}><strong>{data.user?.email || "-"}</strong><span>{data.user?.role || "-"}</span></div>
+                    <div style={infoStyle}>KYC: {data.user?.kyc_status || data.customer?.status || "-"}</div>
+                    <div style={infoStyle}>Musteri: {data.customer?.full_name || `${data.customer?.first_name || ""} ${data.customer?.last_name || ""}`.trim() || "Profil yok"}</div>
+                    <div style={infoStyle}>TC: {data.customer?.national_id || "-"}</div>
+                    <div style={infoStyle}>Tel: {data.customer?.phone || "-"}</div>
+                    {(data.accounts || []).length === 0 ? <Empty message="Hesap yok." /> : data.accounts.map((account) => (
+                        <div key={account.account_id} style={infoStyle}>
+                            <strong>{account.account_number}</strong>
+                            <span>{account.account_type} - {account.currency} - {account.status}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </Panel>
+    );
+}
+
+function Panel({ title, subtitle, children }) {
+    return <div style={panelStyle}><div style={{ marginBottom: 14 }}><div style={{ fontSize: 18, fontWeight: 800 }}>{title}</div><div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}>{subtitle}</div></div>{children}</div>;
+}
+function MetricCard({ icon, label, value, tone }) { return <div style={panelStyle}><div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}><span style={{ color: "var(--text-secondary)", fontSize: 13 }}>{label}</span><div style={iconBox(`${tone}18`, tone)}>{icon}</div></div><div style={{ fontSize: 30, fontWeight: 900 }}>{value}</div></div>; }
+function QueueCard({ icon, label, value, tone }) { return <div style={{ ...panelStyle, background: "var(--bg-secondary)" }}><div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}><span style={{ fontWeight: 700 }}>{label}</span><div style={iconBox(`${tone}18`, tone)}>{icon}</div></div><div style={{ fontSize: 28, fontWeight: 900 }}>{formatNumber(value)}</div></div>; }
+function Status({ active, children }) { return <span style={{ display: "inline-flex", padding: "6px 10px", borderRadius: 999, background: active ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)", color: active ? "#10b981" : "#ef4444", fontWeight: 700, fontSize: 12 }}>{children}</span>; }
+function Empty({ message }) { return <div style={{ padding: 18, borderRadius: 16, background: "var(--bg-secondary)", color: "var(--text-secondary)", textAlign: "center" }}>{message}</div>; }
+function LoadingState({ compact = false }) { return <div style={{ minHeight: compact ? 120 : 260, display: "flex", alignItems: "center", justifyContent: "center" }}><Loader2 size={compact ? 22 : 34} style={{ animation: "spin 1s linear infinite" }} /><style>{"@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }"}</style></div>; }
+function formatNumber(value) { return new Intl.NumberFormat("tr-TR").format(Number(value || 0)); }
+function formatMoney(value) { return new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(Number(value || 0)); }
+function formatDate(value) { return value ? new Date(value).toLocaleDateString("tr-TR") : "-"; }
+function formatDateTime(value) { return value ? new Date(value).toLocaleString("tr-TR") : "-"; }
+function iconBox(background, color) { return { width: 40, height: 40, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", background, color }; }
+function tabButtonStyle(active) { return { border: "none", borderRadius: 999, padding: "10px 16px", cursor: "pointer", fontWeight: 700, background: active ? "linear-gradient(135deg, #111827, #2563eb)" : "var(--bg-secondary)", color: active ? "#fff" : "var(--text-secondary)" }; }
+function filterButtonStyle(active) { return { border: "1px solid var(--border-color)", borderRadius: 999, padding: "8px 12px", cursor: "pointer", fontWeight: 700, background: active ? "rgba(37,99,235,0.12)" : "var(--bg-secondary)", color: active ? "#2563eb" : "var(--text-secondary)" }; }
+const panelStyle = { background: "var(--bg-card)", borderRadius: 20, border: "1px solid var(--border-color)", padding: 18 };
+const rowStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: 14, borderRadius: 16, border: "1px solid var(--border-color)", background: "var(--bg-secondary)", marginBottom: 10 };
+const infoStyle = { padding: 14, borderRadius: 16, border: "1px solid var(--border-color)", background: "var(--bg-secondary)", display: "grid", gap: 6 };
+const messageStyle = (highlight) => ({ padding: 14, borderRadius: 16, border: highlight ? "1px solid rgba(245,158,11,0.35)" : "1px solid var(--border-color)", background: highlight ? "rgba(245,158,11,0.05)" : "var(--bg-secondary)", marginBottom: 10 });
+const secondaryButtonStyle = { display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 12, border: "1px solid var(--border-color)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontWeight: 700, cursor: "pointer" };
+const successButtonStyle = { display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #10b981, #34d399)", color: "#fff", fontWeight: 700, cursor: "pointer" };
+const dangerButtonStyle = { display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #ef4444, #f87171)", color: "#fff", fontWeight: 700, cursor: "pointer" };
+const dangerGhostStyle = { display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 12, border: "1px solid rgba(239,68,68,0.18)", background: "rgba(239,68,68,0.08)", color: "#ef4444", fontWeight: 700, cursor: "pointer" };
+const tableHeadStyle = { padding: "12px 14px", textAlign: "left", fontSize: 12, color: "var(--text-secondary)", fontWeight: 700 };
+const tableCellStyle = { padding: "14px", fontSize: 13, verticalAlign: "top" };
+const selectStyle = { borderRadius: 10, border: "1px solid var(--border-color)", padding: "8px 10px", background: "var(--bg-secondary)", color: "var(--text-primary)" };

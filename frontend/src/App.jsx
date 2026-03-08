@@ -21,6 +21,9 @@ import BillsPage from './pages/customer/BillsPage';
 import CardsPage from './pages/customer/CardsPage';
 import AiChatbotPage from './pages/customer/AiChatbotPage';
 import CustomerSupportPage from './pages/customer/CustomerSupportPage';
+import EasyAddressPage from './pages/customer/EasyAddressPage';
+import PaymentRequestsPage from "./pages/customer/PaymentRequestsPage";
+import QRPage from "./pages/customer/QRPage";
 
 // Role Specific Pages
 import DashboardPage from "./pages/DashboardPage";
@@ -106,6 +109,11 @@ export default function App() {
                             <SavingsGoalsPage />
                         </ProtectedRoute>
                     } />
+                    <Route path="/customer/easy-address" element={
+                        <ProtectedRoute allowedRoles={['customer']}>
+                            <EasyAddressPage />
+                        </ProtectedRoute>
+                    } />
                     <Route path="/customer/exchange" element={
                         <ProtectedRoute allowedRoles={['customer']}>
                             <ExchangeRatesPage />
@@ -151,10 +159,25 @@ export default function App() {
                             <CustomerSupportPage />
                         </ProtectedRoute>
                     } />
+                    <Route path="/customer/payment-requests" element={
+                        <ProtectedRoute allowedRoles={['customer']}>
+                            <PaymentRequestsPage />
+                        </ProtectedRoute>
+                    } />
+                    <Route path="/customer/qr" element={
+                        <ProtectedRoute allowedRoles={['customer']}>
+                            <QRPage />
+                        </ProtectedRoute>
+                    } />
                 </Route>
 
                 {/* ── Employee Area ── */}
                 <Route element={<EmployeeLayout />}>
+                    <Route path="/employee/dashboard" element={
+                        <ProtectedRoute allowedRoles={['employee']}>
+                            <EmployeePanelPage />
+                        </ProtectedRoute>
+                    } />
                     <Route path="/employee/portal" element={
                         <ProtectedRoute allowedRoles={['employee']}>
                             <EmployeePortalPage />
@@ -220,7 +243,7 @@ export default function App() {
                 <Route element={<AdminLayout />}>
                     <Route path="/admin/dashboard" element={
                         <ProtectedRoute allowedRoles={['admin']}>
-                            <DashboardPage />
+                            <AdminPanelPage />
                         </ProtectedRoute>
                     } />
                     <Route path="/admin/customers" element={
@@ -274,3 +297,6 @@ export default function App() {
         </div>
     );
 }
+
+
+

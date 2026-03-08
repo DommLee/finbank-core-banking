@@ -1,162 +1,299 @@
-import { useState, useEffect, useCallback } from "react";
-import { History, ArrowUpRight, ArrowDownLeft, Search, Filter, Calendar, Loader2, Download } from "lucide-react";
-import { ledgerApi } from "../services/api";
+import { useCallback, useEffect, useState } from "react";
+import {
+    ArrowDownLeft,
+    ArrowUpRight,
+    Download,
+    Filter,
+    History,
+    Loader2,
+    Search,
+} from "lucide-react";
+import { transactionApi } from "../services/api";
+
+const CATEGORY_OPTIONS = [
+    { value: "", label: "Tum kategoriler" },
+    { value: "DEPOSIT", label: "Para yatirma" },
+    { value: "WITHDRAWAL", label: "Para cekme" },
+    { value: "TRANSFER_IN", label: "Gelen transfer" },
+    { value: "TRANSFER_OUT", label: "Giden transfer" },
+    { value: "BILL_PAYMENT", label: "Fatura odeme" },
+    { value: "CARD_PAYMENT", label: "Kart odeme" },
+    { value: "GOAL_CONTRIBUTION", label: "Hedef birikim" },
+];
+
+const TYPE_OPTIONS = [
+    { value: "", label: "Tum yonler" },
+    { value: "CREDIT", label: "Gelen" },
+    { value: "DEBIT", label: "Giden" },
+];
+
+const CATEGORY_LABELS = {
+    DEPOSIT: "Para yatirma",
+    WITHDRAWAL: "Para cekme",
+    TRANSFER_IN: "Gelen transfer",
+    TRANSFER_OUT: "Giden transfer",
+    BILL_PAYMENT: "Fatura odeme",
+    CARD_PAYMENT: "Kart odemesi",
+    GOAL_CONTRIBUTION: "Hedefe aktarim",
+};
 
 export default function TransferHistoryPage() {
     const [entries, setEntries] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [filter, setFilter] = useState({ type: "", category: "", search: "" });
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
+    const [filter, setFilter] = useState({ type: "", category: "", search: "" });
     const limit = 20;
 
-    const fetch = useCallback(async () => {
+    const fetchHistory = useCallback(async () => {
         setLoading(true);
         try {
             const params = { page, limit };
             if (filter.type) params.type = filter.type;
             if (filter.category) params.category = filter.category;
-            const res = await ledgerApi.list(params);
-            setEntries(res.data.data || res.data);
-            setTotal(res.data.total || res.data.length);
-        } catch { /* */ }
-        setLoading(false);
-    }, [page, filter.type, filter.category]);
+            if (filter.search.trim()) params.search = filter.search.trim();
 
-    useEffect(() => { fetch(); }, [fetch]);
+            const res = await transactionApi.history(params);
+            setEntries(Array.isArray(res.data?.data) ? res.data.data : []);
+            setTotal(Number(res.data?.total || 0));
+        } catch (error) {
+            setEntries([]);
+            setTotal(0);
+        } finally {
+            setLoading(false);
+        }
+    }, [filter.category, filter.search, filter.type, page]);
 
-    const fmt = (n) => new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(n || 0);
+    useEffect(() => {
+        fetchHistory();
+    }, [fetchHistory]);
 
-    const filtered = entries.filter((e) =>
-        !filter.search || (e.description || "").toLowerCase().includes(filter.search.toLowerCase()) ||
-        (e.category || "").toLowerCase().includes(filter.search.toLowerCase())
-    );
+    const formatMoney = (value) => new Intl.NumberFormat("tr-TR", {
+        style: "currency",
+        currency: "TRY",
+    }).format(value || 0);
 
-    const exportCSV = () => {
-        const header = "Tarih,Tür,Kategori,Açıklama,Tutar\n";
-        const rows = filtered.map((e) =>
-            `${new Date(e.created_at).toLocaleDateString("tr-TR")},${e.type},${e.category},${e.description},${e.amount}`
-        ).join("\n");
-        const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
+    const exportCsv = () => {
+        if (!entries.length) return;
+        const header = "Tarih,Tip,Kategori,Aciklama,Tutar\n";
+        const rows = entries.map((entry) => {
+            const date = new Date(entry.created_at).toLocaleString("tr-TR");
+            const type = entry.type === "CREDIT" ? "Gelen" : "Giden";
+            const category = CATEGORY_LABELS[entry.category] || entry.category || "Islem";
+            const description = (entry.description || "").replaceAll(",", " ");
+            return `${date},${type},${category},${description},${entry.amount}`;
+        });
+        const blob = new Blob([header + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `transfer_gecmisi_${new Date().toISOString().split("T")[0]}.csv`;
-        a.click();
+        const anchor = document.createElement("a");
+        anchor.href = url;
+        anchor.download = `transfer-gecmisi-${new Date().toISOString().slice(0, 10)}.csv`;
+        anchor.click();
         URL.revokeObjectURL(url);
     };
 
-    // Summary
-    const totalIn = filtered.filter((e) => e.type === "CREDIT").reduce((s, e) => s + (e.amount || 0), 0);
-    const totalOut = filtered.filter((e) => e.type === "DEBIT").reduce((s, e) => s + (e.amount || 0), 0);
+    const totalIn = entries
+        .filter((entry) => entry.type === "CREDIT")
+        .reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+    const totalOut = entries
+        .filter((entry) => entry.type === "DEBIT")
+        .reduce((sum, entry) => sum + Number(entry.amount || 0), 0);
+    const hasNextPage = page * limit < total;
 
     return (
-        <div style={{ padding: 24, maxWidth: 900, margin: "0 auto" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
-                <h1 style={{ fontSize: 24, fontWeight: 700, display: "flex", alignItems: "center", gap: 10 }}>
-                    <History size={28} color="#6366f1" /> Transfer Geçmişi
-                </h1>
-                <button onClick={exportCSV} style={{
-                    padding: "8px 16px", borderRadius: 10, border: "1px solid var(--border-color)",
-                    background: "var(--bg-card)", color: "var(--text-primary)", cursor: "pointer",
-                    display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 600,
-                }}><Download size={16} /> CSV İndir</button>
+        <div style={{ padding: 24, maxWidth: 960, margin: "0 auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+                <div>
+                    <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, display: "flex", alignItems: "center", gap: 10 }}>
+                        <History size={28} color="#2563eb" /> Transfer gecmisi
+                    </h1>
+                    <p style={{ color: "var(--text-secondary)", margin: "8px 0 0" }}>
+                        Para hareketlerinizi, transferlerinizi ve odemelerinizi tek ekranda izleyin.
+                    </p>
+                </div>
+                <button onClick={exportCsv} style={secondaryButtonStyle}>
+                    <Download size={16} /> CSV indir
+                </button>
             </div>
 
-            {/* Summary Cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
-                <div style={{ ...cardStyle, borderLeft: "4px solid #22c55e" }}>
-                    <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Toplam Gelen</div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: "#22c55e" }}>+{fmt(totalIn)}</div>
-                </div>
-                <div style={{ ...cardStyle, borderLeft: "4px solid #ef4444" }}>
-                    <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Toplam Giden</div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: "#ef4444" }}>-{fmt(totalOut)}</div>
-                </div>
-                <div style={{ ...cardStyle, borderLeft: "4px solid #6366f1" }}>
-                    <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>Net</div>
-                    <div style={{ fontSize: 20, fontWeight: 800, color: totalIn - totalOut >= 0 ? "#22c55e" : "#ef4444" }}>
-                        {fmt(totalIn - totalOut)}
-                    </div>
-                </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 20 }}>
+                <SummaryCard label="Toplam gelen" value={`+${formatMoney(totalIn)}`} accent="#10b981" />
+                <SummaryCard label="Toplam giden" value={`-${formatMoney(totalOut)}`} accent="#ef4444" />
+                <SummaryCard label="Net hareket" value={formatMoney(totalIn - totalOut)} accent="#2563eb" />
             </div>
 
-            {/* Filters */}
-            <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
-                <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginBottom: 16 }}>
+                <div style={{ position: "relative" }}>
                     <Search size={16} style={{ position: "absolute", left: 12, top: 12, color: "var(--text-secondary)" }} />
-                    <input value={filter.search} onChange={(e) => setFilter({ ...filter, search: e.target.value })}
-                        placeholder="Açıklama veya kategori ara..." style={{ ...inputStyle, paddingLeft: 36 }} />
+                    <input
+                        value={filter.search}
+                        onChange={(event) => {
+                            setPage(1);
+                            setFilter((prev) => ({ ...prev, search: event.target.value }));
+                        }}
+                        placeholder="Aciklama veya kategori ara"
+                        style={{ ...inputStyle, paddingLeft: 38 }}
+                    />
                 </div>
-                <select value={filter.type} onChange={(e) => { setFilter({ ...filter, type: e.target.value }); setPage(1); }} style={selectStyle}>
-                    <option value="">Tüm Türler</option>
-                    <option value="CREDIT">Gelen</option>
-                    <option value="DEBIT">Giden</option>
-                </select>
-                <select value={filter.category} onChange={(e) => { setFilter({ ...filter, category: e.target.value }); setPage(1); }} style={selectStyle}>
-                    <option value="">Tüm Kategoriler</option>
-                    {["transfer", "deposit", "withdrawal", "bill_payment", "fee", "interest", "goal_contribution"].map((c) => (
-                        <option key={c} value={c}>{c}</option>
+
+                <select
+                    value={filter.type}
+                    onChange={(event) => {
+                        setPage(1);
+                        setFilter((prev) => ({ ...prev, type: event.target.value }));
+                    }}
+                    style={inputStyle}
+                >
+                    {TYPE_OPTIONS.map((option) => (
+                        <option key={option.value || "all"} value={option.value}>{option.label}</option>
                     ))}
                 </select>
+
+                <div style={{ position: "relative" }}>
+                    <Filter size={16} style={{ position: "absolute", left: 12, top: 12, color: "var(--text-secondary)" }} />
+                    <select
+                        value={filter.category}
+                        onChange={(event) => {
+                            setPage(1);
+                            setFilter((prev) => ({ ...prev, category: event.target.value }));
+                        }}
+                        style={{ ...inputStyle, paddingLeft: 38 }}
+                    >
+                        {CATEGORY_OPTIONS.map((option) => (
+                            <option key={option.value || "all"} value={option.value}>{option.label}</option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
-            {/* Table */}
             {loading ? (
-                <div style={{ textAlign: "center", padding: 40 }}><Loader2 size={24} style={{ animation: "spin 1s linear infinite" }} /></div>
-            ) : filtered.length === 0 ? (
-                <div style={{ textAlign: "center", padding: 40, color: "var(--text-secondary)", background: "var(--bg-card)", borderRadius: 16 }}>
-                    İşlem bulunamadı.
+                <div style={{ textAlign: "center", padding: 56 }}>
+                    <Loader2 size={28} style={{ animation: "spin 1s linear infinite" }} />
+                </div>
+            ) : entries.length === 0 ? (
+                <div style={emptyStateStyle}>
+                    Bu filtrelere uygun islem bulunamadi.
                 </div>
             ) : (
-                <div style={{ background: "var(--bg-card)", borderRadius: 16, overflow: "hidden", border: "1px solid var(--border-color)" }}>
-                    {filtered.map((e, i) => (
-                        <div key={e.entry_id || i} style={{
-                            padding: "14px 18px", display: "flex", alignItems: "center", justifyContent: "space-between",
-                            borderBottom: i < filtered.length - 1 ? "1px solid var(--border-color)" : "none",
-                            transition: "background 0.15s",
-                        }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                                <div style={{
-                                    width: 40, height: 40, borderRadius: 12,
-                                    background: e.type === "CREDIT" ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)",
-                                    display: "flex", alignItems: "center", justifyContent: "center",
-                                    color: e.type === "CREDIT" ? "#22c55e" : "#ef4444",
-                                }}>
-                                    {e.type === "CREDIT" ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
-                                </div>
-                                <div>
-                                    <div style={{ fontSize: 14, fontWeight: 600 }}>{e.description || "İşlem"}</div>
-                                    <div style={{ fontSize: 11, color: "var(--text-secondary)", display: "flex", gap: 8, marginTop: 2 }}>
-                                        <span>{e.category}</span>
-                                        <span>•</span>
-                                        <span>{new Date(e.created_at).toLocaleDateString("tr-TR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}</span>
+                <div style={listStyle}>
+                    {entries.map((entry, index) => {
+                        const isCredit = entry.type === "CREDIT";
+                        return (
+                            <div key={entry.id || entry.entry_id || index} style={{ ...rowStyle, borderBottom: index < entries.length - 1 ? "1px solid var(--border-color)" : "none" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                                    <div style={{
+                                        width: 42,
+                                        height: 42,
+                                        borderRadius: 14,
+                                        background: isCredit ? "rgba(16,185,129,0.14)" : "rgba(239,68,68,0.14)",
+                                        color: isCredit ? "#10b981" : "#ef4444",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                    }}>
+                                        {isCredit ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
+                                    </div>
+                                    <div>
+                                        <div style={{ fontWeight: 700, fontSize: 14 }}>
+                                            {entry.description || CATEGORY_LABELS[entry.category] || "Finansal islem"}
+                                        </div>
+                                        <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                            <span>{CATEGORY_LABELS[entry.category] || entry.category || "Diger"}</span>
+                                            <span>•</span>
+                                            <span>{new Date(entry.created_at).toLocaleString("tr-TR")}</span>
+                                        </div>
                                     </div>
                                 </div>
+                                <div style={{ fontSize: 16, fontWeight: 800, color: isCredit ? "#10b981" : "#ef4444" }}>
+                                    {isCredit ? "+" : "-"}{formatMoney(entry.amount)}
+                                </div>
                             </div>
-                            <div style={{
-                                fontSize: 15, fontWeight: 700,
-                                color: e.type === "CREDIT" ? "#22c55e" : "#ef4444",
-                            }}>
-                                {e.type === "CREDIT" ? "+" : "-"}{fmt(e.amount)}
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 
-            {/* Pagination */}
-            <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 16 }}>
-                <button disabled={page <= 1} onClick={() => setPage(page - 1)} style={pgBtn}>← Önceki</button>
-                <span style={{ padding: "8px 12px", fontSize: 13 }}>Sayfa {page}</span>
-                <button disabled={filtered.length < limit} onClick={() => setPage(page + 1)} style={pgBtn}>Sonraki →</button>
+            <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 18 }}>
+                <button disabled={page <= 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))} style={paginationButtonStyle}>
+                    Onceki
+                </button>
+                <span style={{ padding: "10px 14px", fontWeight: 600, color: "var(--text-secondary)" }}>
+                    Sayfa {page}
+                </span>
+                <button disabled={!hasNextPage} onClick={() => setPage((prev) => prev + 1)} style={paginationButtonStyle}>
+                    Sonraki
+                </button>
             </div>
-            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+
+            <style>{"@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }"}</style>
         </div>
     );
 }
 
-const cardStyle = { background: "var(--bg-card)", borderRadius: 14, padding: "14px 18px", border: "1px solid var(--border-color)" };
-const inputStyle = { width: "100%", padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border-color)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13, outline: "none", boxSizing: "border-box" };
-const selectStyle = { padding: "10px 14px", borderRadius: 10, border: "1px solid var(--border-color)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 13, cursor: "pointer" };
-const pgBtn = { padding: "8px 16px", borderRadius: 8, border: "none", cursor: "pointer", background: "var(--bg-card)", color: "var(--text-primary)", fontSize: 13 };
+function SummaryCard({ label, value, accent }) {
+    return (
+        <div style={{ background: "var(--bg-card)", borderRadius: 16, padding: "16px 18px", border: "1px solid var(--border-color)", borderLeft: `4px solid ${accent}` }}>
+            <div style={{ color: "var(--text-secondary)", fontSize: 12, marginBottom: 6 }}>{label}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: accent }}>{value}</div>
+        </div>
+    );
+}
+
+const inputStyle = {
+    width: "100%",
+    padding: "10px 14px",
+    borderRadius: 12,
+    border: "1px solid var(--border-color)",
+    background: "var(--bg-secondary)",
+    color: "var(--text-primary)",
+    fontSize: 14,
+    outline: "none",
+    boxSizing: "border-box",
+};
+
+const secondaryButtonStyle = {
+    padding: "10px 16px",
+    borderRadius: 12,
+    border: "1px solid var(--border-color)",
+    background: "var(--bg-card)",
+    color: "var(--text-primary)",
+    fontWeight: 600,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+};
+
+const emptyStateStyle = {
+    background: "var(--bg-card)",
+    borderRadius: 18,
+    border: "1px solid var(--border-color)",
+    color: "var(--text-secondary)",
+    textAlign: "center",
+    padding: 48,
+};
+
+const listStyle = {
+    background: "var(--bg-card)",
+    borderRadius: 18,
+    border: "1px solid var(--border-color)",
+    overflow: "hidden",
+};
+
+const rowStyle = {
+    padding: "16px 18px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+};
+
+const paginationButtonStyle = {
+    padding: "10px 16px",
+    borderRadius: 10,
+    border: "1px solid var(--border-color)",
+    background: "var(--bg-card)",
+    color: "var(--text-primary)",
+    fontWeight: 600,
+    cursor: "pointer",
+};

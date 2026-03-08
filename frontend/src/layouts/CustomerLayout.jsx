@@ -6,7 +6,7 @@ import {
     LayoutDashboard, CreditCard, ArrowLeftRight,
     BookOpen, LogOut, User, Settings, Moon, Sun, MessageSquare,
     Receipt, Lock, Target, TrendingUp, BarChart3, Shield,
-    FileCheck, History, Headphones
+    FileCheck, History, Headphones, HandCoins, QrCode
 } from "lucide-react";
 
 
@@ -30,6 +30,9 @@ export default function CustomerLayout() {
         { to: "/customer/dashboard", label: "Panel", icon: LayoutDashboard },
         { to: "/customer/accounts", label: "Hesaplar", icon: CreditCard },
         { to: "/customer/transfer", label: "Transfer", icon: ArrowLeftRight },
+        { to: "/customer/easy-address", label: "Kolay Adres", icon: BookOpen },
+        { to: "/customer/payment-requests", label: "Ödeme İste", icon: HandCoins },
+        { to: "/customer/qr", label: "QR İşlemleri", icon: QrCode },
         { to: "/customer/history", label: "Geçmiş", icon: History },
         { to: "/customer/bills", label: "Fatura", icon: Receipt },
         { to: "/customer/cards", label: "Kredi Kartı", icon: CreditCard },

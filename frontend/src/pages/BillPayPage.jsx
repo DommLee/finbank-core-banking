@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import {
     Zap, Droplets, Flame, Wifi, Phone, FileText,
-    CreditCard, Clock, CheckCircle, Send,
+    CreditCard, Clock, CheckCircle, Send, RefreshCw, Plus, XCircle
 } from "lucide-react";
-import { billsApi, accountApi } from "../services/api";
+import { billsApi, billApi, accountApi } from "../services/api";
 import toast from "react-hot-toast";
 
 const BILL_TYPES = [
@@ -29,18 +29,31 @@ export default function BillPayPage() {
         amount: "",
     });
 
+    const [autoBills, setAutoBills] = useState([]);
+    const [actionLoading, setActionLoading] = useState(false);
+    const [showAutoModal, setShowAutoModal] = useState(false);
+    const [autoForm, setAutoForm] = useState({
+        account_id: "",
+        provider: "",
+        subscriber_no: "",
+        payment_day: 1,
+        max_amount: ""
+    });
+
     useEffect(() => {
         loadData();
     }, []);
 
     const loadData = async () => {
         try {
-            const [accRes, histRes] = await Promise.allSettled([
+            const [accRes, histRes, autoRes] = await Promise.allSettled([
                 accountApi.listMine(),
                 billsApi.history(),
+                billApi.listAuto(),
             ]);
-            setAccounts(accRes.status === "fulfilled" ? (Array.isArray(accRes.value.data) ? accRes.value.data : []) : []);
-            setHistory(histRes.status === "fulfilled" ? (Array.isArray(histRes.value.data) ? histRes.value.data : []) : []);
+            setAccounts(accRes.status === "fulfilled" ? (Array.isArray(accRes.value.data) ? accRes.value.data : (accRes.value.data?.data || [])) : []);
+            setHistory(histRes.status === "fulfilled" ? (Array.isArray(histRes.value.data) ? histRes.value.data : (histRes.value.data?.data || [])) : []);
+            setAutoBills(autoRes.status === "fulfilled" ? (Array.isArray(autoRes.value.data?.data) ? autoRes.value.data.data : []) : []);
         } catch { }
         finally { setLoading(false); }
     };
@@ -67,6 +80,44 @@ export default function BillPayPage() {
         } catch (err) {
             toast.error(err.response?.data?.detail || "Ödeme başarısız.");
         } finally { setPaying(false); }
+    };
+
+    const handleCreateAuto = async (e) => {
+        e.preventDefault();
+        if (!selectedType || !autoForm.account_id || !autoForm.provider || !autoForm.subscriber_no || !autoForm.payment_day) {
+            toast.error("Lütfen gerekli tüm alanları doldurun.");
+            return;
+        }
+        setActionLoading(true);
+        try {
+            await billApi.createAuto({
+                account_id: autoForm.account_id,
+                bill_type: selectedType,
+                provider: autoForm.provider,
+                subscriber_no: autoForm.subscriber_no,
+                payment_day: Number(autoForm.payment_day),
+                max_amount: autoForm.max_amount ? Number(autoForm.max_amount) : null
+            });
+            toast.success("Otomatik ödeme talimatı oluşturuldu! ✅");
+            setShowAutoModal(false);
+            setAutoForm({ account_id: "", provider: "", subscriber_no: "", payment_day: 1, max_amount: "" });
+            setSelectedType(null);
+            loadData();
+        } catch (err) {
+            toast.error(err.response?.data?.detail || "Talimat oluşturulamadı.");
+        } finally { setActionLoading(false); }
+    };
+
+    const handleCancelAuto = async (id) => {
+        if (!window.confirm("Bu otomatik ödeme talimatını iptal etmek istediğinize emin misiniz?")) return;
+        setActionLoading(true);
+        try {
+            await billApi.cancelAuto(id);
+            toast.success("Talimat iptal edildi.");
+            loadData();
+        } catch (err) {
+            toast.error("İptal işlemi başarısız oldu.");
+        } finally { setActionLoading(false); }
     };
 
     const formatCurrency = (val) =>
@@ -97,9 +148,12 @@ export default function BillPayPage() {
             </div>
 
             {/* Tabs */}
-            <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+            <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", background: "var(--bg-secondary)", padding: 6, borderRadius: 16 }}>
                 <TabBtn active={activeTab === "pay"} onClick={() => setActiveTab("pay")}>
                     💳 Fatura Öde
+                </TabBtn>
+                <TabBtn active={activeTab === "auto"} onClick={() => setActiveTab("auto")}>
+                    🔄 Otomatik Ödemeler
                 </TabBtn>
                 <TabBtn active={activeTab === "history"} onClick={() => setActiveTab("history")}>
                     📜 Ödeme Geçmişi ({history.length})
@@ -262,6 +316,163 @@ export default function BillPayPage() {
                     })}
                 </div>
             )}
+
+            {/* Auto Bills Tab */}
+            {activeTab === "auto" && (
+                <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                        <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Otomatik Ödeme Talimatları</h3>
+                        <button
+                            onClick={() => setShowAutoModal(true)}
+                            style={{ background: "#f59e0b", color: "#fff", border: "none", padding: "10px 16px", borderRadius: 12, fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
+                        >
+                            <Plus size={18} /> Yeni Talimat
+                        </button>
+                    </div>
+
+                    {autoBills.length === 0 ? (
+                        <div className="card" style={{ padding: 40, textAlign: "center" }}>
+                            <RefreshCw size={40} style={{ color: "var(--text-muted)", marginBottom: 12 }} />
+                            <p style={{ color: "var(--text-muted)" }}>Henüz otomatik ödeme talimatınız bulunmuyor.</p>
+                        </div>
+                    ) : (
+                        <div style={{ display: "grid", gap: 16 }}>
+                            {autoBills.map(ab => {
+                                const bt = BILL_TYPES.find(b => b.id === ab.bill_type) || BILL_TYPES[5];
+                                const Icon = bt.icon;
+                                return (
+                                    <div key={ab.auto_bill_id} className="card" style={{ padding: 20, display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 20 }}>
+                                        <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                                            <div style={{ width: 48, height: 48, borderRadius: 14, background: `${bt.color}20`, color: bt.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                <Icon size={24} />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontWeight: 700, fontSize: 16 }}>{ab.provider}</div>
+                                                <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}>Abone: {ab.subscriber_no}</div>
+                                                <div style={{ fontSize: 12, fontWeight: 600, color: "#f59e0b", marginTop: 4 }}>
+                                                    Her ayın {ab.payment_day}. günü
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+                                            {ab.max_amount && (
+                                                <div style={{ textAlign: "right" }}>
+                                                    <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>Maks. Limit</div>
+                                                    <div style={{ fontWeight: 800 }}>{formatCurrency(ab.max_amount)}</div>
+                                                </div>
+                                            )}
+                                            <button
+                                                onClick={() => handleCancelAuto(ab.auto_bill_id)}
+                                                style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "none", padding: "8px 12px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}
+                                                disabled={actionLoading}
+                                            >
+                                                İptal Et
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Auto Bill Create Modal */}
+            {showAutoModal && (
+                <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: 20 }}>
+                    <div style={{ background: "var(--bg-card)", padding: 24, borderRadius: 24, width: "100%", maxWidth: 500, maxHeight: "90vh", overflowY: "auto" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>Yeni Otomatik Talimat</h2>
+                            <button onClick={() => { setShowAutoModal(false); setSelectedType(null); }} style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}><XCircle size={24} /></button>
+                        </div>
+
+                        <div style={{ marginBottom: 20 }}>
+                            <label className="form-label" style={{ marginBottom: 10 }}>Fatura Türü</label>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                                {BILL_TYPES.map((bt) => {
+                                    const Icon = bt.icon;
+                                    return (
+                                        <button
+                                            key={bt.id}
+                                            onClick={() => setSelectedType(bt.id)}
+                                            style={{
+                                                padding: "10px", borderRadius: 12, border: "1px solid var(--border-color)",
+                                                cursor: "pointer", textAlign: "center",
+                                                background: selectedType === bt.id ? `${bt.color}20` : "transparent",
+                                                color: selectedType === bt.id ? bt.color : "var(--text-secondary)",
+                                                fontWeight: selectedType === bt.id ? 700 : 500,
+                                            }}
+                                        >
+                                            <Icon size={20} style={{ margin: "0 auto 4px" }} />
+                                            <div style={{ fontSize: 12 }}>{bt.label}</div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {selectedType && (
+                            <form onSubmit={handleCreateAuto} style={{ display: "grid", gap: 16 }}>
+                                <div>
+                                    <label className="form-label">Hesap Seçin</label>
+                                    <select
+                                        className="form-input"
+                                        value={autoForm.account_id}
+                                        onChange={(e) => setAutoForm({ ...autoForm, account_id: e.target.value })}
+                                        required
+                                    >
+                                        <option value="">Hesap seçin...</option>
+                                        {accounts.filter(a => a.status === "active").map((a) => (
+                                            <option key={a.id || a.account_id} value={a.id || a.account_id}>
+                                                {a.account_number} ({a.balance} TL)
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                                    <div>
+                                        <label className="form-label">Kurum / Sağlayıcı</label>
+                                        <input
+                                            className="form-input" placeholder="Örn: TEDAŞ" required
+                                            value={autoForm.provider} onChange={(e) => setAutoForm({ ...autoForm, provider: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="form-label">Abone No</label>
+                                        <input
+                                            className="form-input" placeholder="Abone numarası" required
+                                            value={autoForm.subscriber_no} onChange={(e) => setAutoForm({ ...autoForm, subscriber_no: e.target.value })}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                                    <div>
+                                        <label className="form-label">Ödeme Günü (1-31)</label>
+                                        <input
+                                            className="form-input" type="number" min="1" max="31" required
+                                            value={autoForm.payment_day} onChange={(e) => setAutoForm({ ...autoForm, payment_day: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="form-label">Maks. Tutar (Opsiyonel)</label>
+                                        <input
+                                            className="form-input" type="number" step="0.01" min="1" placeholder="Limitsiz"
+                                            value={autoForm.max_amount} onChange={(e) => setAutoForm({ ...autoForm, max_amount: e.target.value })}
+                                            title="Bu tutarı aşan faturalar otomatik ödenmez."
+                                        />
+                                    </div>
+                                </div>
+
+                                <button type="submit" style={{ background: "#10b981", color: "#fff", border: "none", padding: "14px", borderRadius: 14, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 8 }} disabled={actionLoading}>
+                                    {actionLoading ? <RefreshCw size={20} style={{ animation: "spin 1s linear infinite" }} /> : <><CheckCircle size={20} /> Talimatı Kaydet</>}
+                                </button>
+                            </form>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
@@ -269,11 +480,12 @@ export default function BillPayPage() {
 function TabBtn({ active, onClick, children }) {
     return (
         <button onClick={onClick} style={{
-            padding: "10px 18px", borderRadius: 12, border: "none",
-            fontWeight: 600, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap",
-            background: active ? "linear-gradient(135deg, #6366f1, #818cf8)" : "var(--bg-secondary)",
-            color: active ? "#fff" : "var(--text-secondary)",
-            transition: "all 0.2s",
+            flex: 1, padding: "12px 16px", borderRadius: 12, border: "none",
+            fontWeight: active ? 800 : 600, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap",
+            background: active ? "var(--bg-card)" : "transparent",
+            color: active ? "var(--text-primary)" : "var(--text-secondary)",
+            boxShadow: active ? "0 2px 8px rgba(0,0,0,0.05)" : "none",
+            transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 8
         }}>
             {children}
         </button>

@@ -1,267 +1,332 @@
-import { useState, useEffect, useCallback } from "react";
-import { Briefcase, UserCheck, UserX, Search, Clock, CheckCircle, XCircle, Loader2, Eye } from "lucide-react";
-import { employeeApi, messagesApi } from "../services/api";
+import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import {
+    Briefcase,
+    CheckCircle,
+    Clock,
+    Eye,
+    Landmark,
+    Loader2,
+    MessageSquare,
+    RefreshCw,
+    Search,
+    Send,
+    ShieldCheck,
+    UserRound,
+    XCircle,
+} from "lucide-react";
+import { employeeApi, messagesApi } from "../services/api";
+
+const CUSTOMER_PAGE_SIZE = 12;
 
 export default function EmployeePanelPage() {
-    const [tab, setTab] = useState("dashboard");
-    const [dashData, setDashData] = useState(null);
-    const [pendingKYC, setPendingKYC] = useState([]);
+    const [tab, setTab] = useState("overview");
+    const [dashboard, setDashboard] = useState(null);
+    const [pendingKyc, setPendingKyc] = useState([]);
     const [customers, setCustomers] = useState([]);
+    const [customerTotal, setCustomerTotal] = useState(0);
     const [messages, setMessages] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [searchQ, setSearchQ] = useState("");
     const [selectedCustomer, setSelectedCustomer] = useState(null);
-    const [replyText, setReplyText] = useState("");
-
-    const fetchDash = useCallback(async () => {
-        try { const res = await employeeApi.dashboard(); setDashData(res.data); } catch { /* */ }
-        setLoading(false);
-    }, []);
-
-    const fetchKYC = useCallback(async () => {
-        setLoading(true);
-        try { const res = await employeeApi.pendingKYC(); setPendingKYC(res.data); } catch { /* */ }
-        setLoading(false);
-    }, []);
-
-    const fetchCustomers = useCallback(async () => {
-        setLoading(true);
-        try { const res = await employeeApi.searchCustomers({ q: searchQ }); setCustomers(res.data.data); } catch { /* */ }
-        setLoading(false);
-    }, [searchQ]);
-
-    const fetchMessages = useCallback(async () => {
-        setLoading(true);
-        try { const res = await messagesApi.inbox(); setMessages(res.data); } catch { /* */ }
-        setLoading(false);
-    }, []);
+    const [loading, setLoading] = useState(true);
+    const [detailLoading, setDetailLoading] = useState(false);
+    const [searchQ, setSearchQ] = useState("");
+    const [page, setPage] = useState(1);
+    const [notes, setNotes] = useState({});
+    const [replies, setReplies] = useState({});
+    const [busyKey, setBusyKey] = useState("");
 
     useEffect(() => {
-        if (tab === "dashboard") fetchDash();
-        else if (tab === "kyc") fetchKYC();
-        else if (tab === "customers") fetchCustomers();
-        else if (tab === "messages") fetchMessages();
-    }, [tab, fetchDash, fetchKYC, fetchCustomers, fetchMessages]);
+        if (tab === "overview") loadOverview();
+        if (tab === "kyc") loadPendingKyc();
+        if (tab === "customers") loadCustomers();
+        if (tab === "messages") loadMessages();
+    }, [tab, page]);
 
-    const handleKYCDecision = async (customerId, decision) => {
+    const loadOverview = async () => {
+        setLoading(true);
         try {
-            await employeeApi.kycDecision(customerId, { decision });
-            toast.success(decision === "approved" ? "KYC onaylandı ✅" : "KYC reddedildi ❌");
-            fetchKYC();
-        } catch (err) { toast.error(err.response?.data?.detail || "Hata."); }
+            const [dashboardRes, kycRes, customerRes, messageRes] = await Promise.all([
+                employeeApi.dashboard(),
+                employeeApi.pendingKYC(),
+                employeeApi.searchCustomers({ page: 1, limit: 8 }),
+                messagesApi.inbox(),
+            ]);
+            setDashboard(dashboardRes.data);
+            setPendingKyc(kycRes.data || []);
+            setCustomers(customerRes.data?.data || []);
+            setCustomerTotal(customerRes.data?.total || 0);
+            setMessages(messageRes.data || []);
+        } catch {
+            toast.error("Employee dashboard verileri yuklenemedi.");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleReply = async (messageId) => {
-        if (!replyText.trim()) return;
+    const loadPendingKyc = async () => {
+        setLoading(true);
         try {
-            await messagesApi.reply(messageId, { reply_body: replyText });
-            toast.success("Yanıt gönderildi ✅");
-            setReplyText("");
-            fetchMessages();
-        } catch { toast.error("Hata."); }
+            const res = await employeeApi.pendingKYC();
+            setPendingKyc(res.data || []);
+        } catch {
+            toast.error("KYC kuyrugu yuklenemedi.");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const viewCustomer = async (customerId) => {
+    const loadCustomers = async () => {
+        setLoading(true);
+        try {
+            const res = await employeeApi.searchCustomers({ q: searchQ || undefined, page, limit: CUSTOMER_PAGE_SIZE });
+            setCustomers(res.data?.data || []);
+            setCustomerTotal(res.data?.total || 0);
+        } catch {
+            toast.error("Musteri listesi yuklenemedi.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadMessages = async () => {
+        setLoading(true);
+        try {
+            const res = await messagesApi.inbox();
+            setMessages(res.data || []);
+        } catch {
+            toast.error("Mesaj listesi yuklenemedi.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const openCustomer = async (customerId) => {
+        setDetailLoading(true);
         try {
             const res = await employeeApi.getCustomer(customerId);
             setSelectedCustomer(res.data);
-        } catch { toast.error("Detay yüklenemedi."); }
+        } catch {
+            toast.error("Musteri detayi yuklenemedi.");
+        } finally {
+            setDetailLoading(false);
+        }
     };
 
-    const fmt = (n) => new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(n || 0);
+    const handleKycDecision = async (customerId, decision) => {
+        setBusyKey(`kyc-${customerId}-${decision}`);
+        try {
+            await employeeApi.kycDecision(customerId, { decision, notes: notes[customerId] || undefined });
+            toast.success(decision === "approved" ? "KYC onaylandi." : "KYC reddedildi.");
+            loadPendingKyc();
+            if (tab === "overview") loadOverview();
+            if (selectedCustomer?.customer?.customer_id === customerId) openCustomer(customerId);
+        } catch (error) {
+            toast.error(error.response?.data?.detail || "KYC karari gonderilemedi.");
+        } finally {
+            setBusyKey("");
+        }
+    };
 
-    const tabs = [
-        { id: "dashboard", label: "Panel", icon: <Briefcase size={16} /> },
-        { id: "kyc", label: "KYC Onay", icon: <UserCheck size={16} /> },
-        { id: "customers", label: "Müşteriler", icon: <Search size={16} /> },
-        { id: "messages", label: "Mesajlar", icon: <Clock size={16} /> },
-    ];
+    const handleReply = async (messageId) => {
+        const replyBody = replies[messageId];
+        if (!replyBody?.trim()) {
+            toast.error("Yaniti bos gonderemezsiniz.");
+            return;
+        }
+        setBusyKey(`reply-${messageId}`);
+        try {
+            await messagesApi.reply(messageId, { reply_body: replyBody.trim() });
+            toast.success("Yanit gonderildi.");
+            setReplies((current) => ({ ...current, [messageId]: "" }));
+            loadMessages();
+        } catch {
+            toast.error("Yanit gonderilemedi.");
+        } finally {
+            setBusyKey("");
+        }
+    };
+
+    const totalPages = Math.max(1, Math.ceil(Number(customerTotal || 0) / CUSTOMER_PAGE_SIZE));
 
     return (
-        <div style={{ padding: "24px", maxWidth: 1100, margin: "0 auto" }}>
-            <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 24, display: "flex", alignItems: "center", gap: 10 }}>
-                <Briefcase size={28} color="#3b82f6" /> Çalışan Paneli
-            </h1>
+        <div style={{ maxWidth: 1240, margin: "0 auto", padding: 24 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
+                <div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 6 }}>
+                        <div style={iconBox("rgba(37,99,235,0.12)", "#2563eb")}><Briefcase size={22} /></div>
+                        <h1 style={{ margin: 0, fontSize: 30, fontWeight: 900 }}>Employee dashboard</h1>
+                    </div>
+                    <p style={{ margin: 0, color: "var(--text-secondary)" }}>KYC kuyrugu, musteri arama ve mesaj cevaplarini tek panelden yonetin.</p>
+                </div>
+                <button type="button" onClick={() => { if (tab === "overview") loadOverview(); if (tab === "kyc") loadPendingKyc(); if (tab === "customers") loadCustomers(); if (tab === "messages") loadMessages(); }} style={secondaryButtonStyle}>
+                    <RefreshCw size={16} /> Yenile
+                </button>
+            </div>
 
-            {/* Tabs */}
-            <div style={{ display: "flex", gap: 8, marginBottom: 24, overflowX: "auto" }}>
-                {tabs.map((t) => (
-                    <button key={t.id} onClick={() => { setTab(t.id); setSelectedCustomer(null); }} style={{
-                        padding: "10px 18px", borderRadius: 12, border: "none", cursor: "pointer",
-                        background: tab === t.id ? "linear-gradient(135deg, #3b82f6, #2563eb)" : "var(--bg-card)",
-                        color: tab === t.id ? "#fff" : "var(--text-secondary)", fontWeight: 600, fontSize: 13,
-                        display: "flex", alignItems: "center", gap: 6,
-                    }}>{t.icon} {t.label}</button>
+            <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+                {[
+                    { id: "overview", label: "Overview" },
+                    { id: "kyc", label: "KYC" },
+                    { id: "customers", label: "Customers" },
+                    { id: "messages", label: "Messages" },
+                ].map((item) => (
+                    <button key={item.id} type="button" onClick={() => setTab(item.id)} style={tabButtonStyle(tab === item.id)}>{item.label}</button>
                 ))}
             </div>
 
-            {/* Dashboard Tab */}
-            {tab === "dashboard" && dashData && (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
-                    {[
-                        { label: "Bekleyen KYC", val: dashData.pending_kyc, color: "#f59e0b", icon: <Clock size={24} /> },
-                        { label: "Toplam Müşteri", val: dashData.total_customers, color: "#6366f1", icon: <UserCheck size={24} /> },
-                        { label: "Açık Mesajlar", val: dashData.open_messages, color: "#ef4444", icon: <Clock size={24} /> },
-                        { label: "Bugünkü İşlemler", val: dashData.today_transactions, color: "#22c55e", icon: <Briefcase size={24} /> },
-                    ].map((s, i) => (
-                        <div key={i} style={{
-                            background: "var(--bg-card)", borderRadius: 16, padding: 24,
-                            border: "1px solid var(--border-color)",
-                        }}>
-                            <div style={{ width: 48, height: 48, borderRadius: 14, background: `${s.color}18`, display: "flex", alignItems: "center", justifyContent: "center", color: s.color, marginBottom: 12 }}>
-                                {s.icon}
-                            </div>
-                            <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{s.label}</div>
-                            <div style={{ fontSize: 28, fontWeight: 800 }}>{s.val}</div>
-                        </div>
-                    ))}
-                </div>
-            )}
+            {loading ? <LoadingState /> : null}
 
-            {/* KYC Tab */}
-            {tab === "kyc" && (
-                <div style={{ display: "grid", gap: 12 }}>
-                    {loading ? <Loader2 size={24} style={{ animation: "spin 1s linear infinite" }} /> :
-                        pendingKYC.length === 0 ? <p style={{ textAlign: "center", color: "var(--text-secondary)", padding: 40 }}>Bekleyen KYC başvurusu yok ✅</p> :
-                            pendingKYC.map((c) => (
-                                <div key={c.customer_id} style={{
-                                    background: "var(--bg-card)", borderRadius: 16, padding: 20,
-                                    border: "1px solid var(--border-color)",
-                                }}>
-                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", flexWrap: "wrap", gap: 12 }}>
-                                        <div>
-                                            <h3 style={{ fontSize: 16, fontWeight: 600 }}>{c.first_name} {c.last_name}</h3>
-                                            <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>TC: {c.national_id} • Tel: {c.phone}</p>
-                                            {c.user && <p style={{ fontSize: 12, color: "var(--text-secondary)" }}>E-posta: {c.user.email}</p>}
-                                            <p style={{ fontSize: 11, color: "var(--text-secondary)" }}>Kayıt: {new Date(c.created_at).toLocaleDateString("tr-TR")}</p>
-                                        </div>
-                                        <div style={{ display: "flex", gap: 8 }}>
-                                            <button onClick={() => handleKYCDecision(c.customer_id, "approved")} style={{
-                                                padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-                                                background: "#22c55e", color: "#fff", fontWeight: 600, fontSize: 13,
-                                                display: "flex", alignItems: "center", gap: 4,
-                                            }}><CheckCircle size={16} /> Onayla</button>
-                                            <button onClick={() => handleKYCDecision(c.customer_id, "rejected")} style={{
-                                                padding: "8px 16px", borderRadius: 10, border: "none", cursor: "pointer",
-                                                background: "#ef4444", color: "#fff", fontWeight: 600, fontSize: 13,
-                                                display: "flex", alignItems: "center", gap: 4,
-                                            }}><XCircle size={16} /> Reddet</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))
-                    }
-                </div>
-            )}
-
-            {/* Customers Tab */}
-            {tab === "customers" && (
-                <div>
-                    <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-                        <input value={searchQ} onChange={(e) => setSearchQ(e.target.value)}
-                            placeholder="İsim veya TC ile ara..." style={{ ...inputStyle, flex: 1 }} />
-                        <button onClick={fetchCustomers} style={{ ...primaryBtn }}>
-                            <Search size={16} /> Ara
-                        </button>
+            {!loading && tab === "overview" ? (
+                <div style={{ display: "grid", gap: 16 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
+                        <MetricCard icon={<Clock size={18} />} label="Bekleyen KYC" value={formatNumber(dashboard?.pending_kyc)} tone="#f59e0b" />
+                        <MetricCard icon={<UserRound size={18} />} label="Toplam musteri" value={formatNumber(dashboard?.total_customers)} tone="#2563eb" />
+                        <MetricCard icon={<MessageSquare size={18} />} label="Acik mesaj" value={formatNumber(dashboard?.open_messages)} tone="#ef4444" />
+                        <MetricCard icon={<Landmark size={18} />} label="Bugunku islem" value={formatNumber(dashboard?.today_transactions)} tone="#10b981" />
                     </div>
 
-                    {selectedCustomer ? (
-                        <div style={{ background: "var(--bg-card)", borderRadius: 16, padding: 24, border: "1px solid var(--border-color)" }}>
-                            <button onClick={() => setSelectedCustomer(null)} style={{ marginBottom: 12, background: "none", border: "none", color: "#6366f1", cursor: "pointer", fontSize: 13 }}>← Listeye Dön</button>
-                            <h3 style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>
-                                {selectedCustomer.customer?.first_name} {selectedCustomer.customer?.last_name}
-                            </h3>
-                            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 20 }}>
-                                <div style={infoCard}><strong>TC:</strong> {selectedCustomer.customer?.national_id}</div>
-                                <div style={infoCard}><strong>E-posta:</strong> {selectedCustomer.user?.email}</div>
-                                <div style={infoCard}><strong>Durum:</strong> {selectedCustomer.customer?.status}</div>
-                            </div>
-                            <h4 style={{ fontWeight: 600, marginBottom: 8 }}>Hesaplar ({selectedCustomer.accounts?.length || 0})</h4>
-                            {selectedCustomer.accounts?.map((a) => (
-                                <div key={a.account_id} style={{ ...infoCard, marginBottom: 6 }}>
-                                    {a.account_number} — {a.account_type} ({a.currency}) — {a.status}
-                                </div>
-                            ))}
-                            <h4 style={{ fontWeight: 600, marginTop: 16, marginBottom: 8 }}>Son İşlemler ({selectedCustomer.recent_transactions?.length || 0})</h4>
-                            {selectedCustomer.recent_transactions?.slice(0, 10).map((t) => (
-                                <div key={t.entry_id} style={{ ...infoCard, marginBottom: 4, display: "flex", justifyContent: "space-between" }}>
-                                    <span>{t.category} — {t.description}</span>
-                                    <span style={{ fontWeight: 700, color: t.type === "CREDIT" ? "#22c55e" : "#ef4444" }}>
-                                        {t.type === "CREDIT" ? "+" : "-"}{fmt(t.amount)}
-                                    </span>
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div style={{ display: "grid", gap: 10 }}>
-                            {customers.map((c) => (
-                                <div key={c.customer_id} style={{
-                                    background: "var(--bg-card)", borderRadius: 14, padding: 16,
-                                    border: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center",
-                                }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                        <Panel title="KYC oncelik kuyugu" subtitle="Bekleyen dosyalari hizli ele alin">
+                            {pendingKyc.length === 0 ? <Empty message="Bekleyen KYC yok." /> : pendingKyc.slice(0, 5).map((customer) => (
+                                <div key={customer.customer_id} style={rowStyle}>
                                     <div>
-                                        <div style={{ fontWeight: 600, fontSize: 14 }}>{c.first_name} {c.last_name}</div>
-                                        <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>TC: {c.national_id} • Durum: {c.status}</div>
+                                        <div style={{ fontWeight: 700 }}>{customer.first_name} {customer.last_name}</div>
+                                        <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>{customer.user?.email || customer.phone || "-"}</div>
                                     </div>
-                                    <button onClick={() => viewCustomer(c.customer_id)} style={{ ...primaryBtn, padding: "6px 14px" }}>
-                                        <Eye size={14} /> Detay
-                                    </button>
+                                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                        <button type="button" onClick={() => openCustomer(customer.customer_id)} style={secondaryButtonStyle}><Eye size={14} /> Detay</button>
+                                        <button type="button" onClick={() => handleKycDecision(customer.customer_id, "approved")} disabled={busyKey === `kyc-${customer.customer_id}-approved`} style={successButtonStyle}><CheckCircle size={14} /> Onay</button>
+                                        <button type="button" onClick={() => handleKycDecision(customer.customer_id, "rejected")} disabled={busyKey === `kyc-${customer.customer_id}-rejected`} style={dangerButtonStyle}><XCircle size={14} /> Red</button>
+                                    </div>
                                 </div>
                             ))}
-                        </div>
-                    )}
-                </div>
-            )}
+                        </Panel>
 
-            {/* Messages Tab */}
-            {tab === "messages" && (
-                <div style={{ display: "grid", gap: 10 }}>
-                    {messages.length === 0 ? <p style={{ textAlign: "center", color: "var(--text-secondary)", padding: 40 }}>Mesaj yok.</p> :
-                        messages.map((m) => (
-                            <div key={m.message_id} style={{
-                                background: "var(--bg-card)", borderRadius: 14, padding: 18,
-                                border: `1px solid ${m.status === "open" ? "#f59e0b" : "var(--border-color)"}`,
-                            }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 6 }}>
-                                    <span style={{ fontWeight: 600, fontSize: 14 }}>{m.subject}</span>
-                                    <span style={{
-                                        padding: "2px 8px", borderRadius: 12, fontSize: 10, fontWeight: 600,
-                                        background: m.status === "open" ? "rgba(245,158,11,0.15)" : "rgba(34,197,94,0.15)",
-                                        color: m.status === "open" ? "#f59e0b" : "#22c55e",
-                                    }}>{m.status === "open" ? "Açık" : "Yanıtlandı"}</span>
+                        <Panel title="Mesajlar" subtitle="Musteri yaniti bekleyen basliklar">
+                            {messages.length === 0 ? <Empty message="Mesaj yok." /> : messages.slice(0, 5).map((message) => (
+                                <div key={message.message_id} style={messageStyle(message.status === "open")}>
+                                    <div style={{ fontWeight: 700, marginBottom: 6 }}>{message.subject}</div>
+                                    <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 6 }}>{message.sender_email}</div>
+                                    <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{formatDateTime(message.created_at)}</div>
                                 </div>
-                                <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 6 }}>{m.body}</p>
-                                <span style={{ fontSize: 11, color: "var(--text-secondary)" }}>{m.sender_email} • {new Date(m.created_at).toLocaleDateString("tr-TR")}</span>
-
-                                {m.reply && (
-                                    <div style={{ marginTop: 10, padding: 12, borderRadius: 10, background: "var(--bg-secondary)", borderLeft: "3px solid #22c55e" }}>
-                                        <p style={{ fontSize: 12, fontWeight: 600, color: "#22c55e", marginBottom: 4 }}>Yanıt ({m.reply_by})</p>
-                                        <p style={{ fontSize: 13 }}>{m.reply}</p>
-                                    </div>
-                                )}
-
-                                {m.status === "open" && (
-                                    <div style={{ marginTop: 10, display: "flex", gap: 8 }}>
-                                        <input value={m.message_id === replyText.split("::")[0] ? replyText.split("::")[1] || "" : ""}
-                                            onChange={(e) => setReplyText(`${m.message_id}::${e.target.value}`)}
-                                            placeholder="Yanıt yazın..." style={{ ...inputStyle, flex: 1 }} />
-                                        <button onClick={() => {
-                                            const parts = replyText.split("::");
-                                            if (parts[0] === m.message_id) handleReply(m.message_id);
-                                        }} style={{ ...primaryBtn, padding: "8px 14px" }}>Gönder</button>
-                                    </div>
-                                )}
-                            </div>
-                        ))
-                    }
+                            ))}
+                        </Panel>
+                    </div>
                 </div>
-            )}
-            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
+            ) : null}
+
+            {!loading && tab === "kyc" ? (
+                <Panel title="KYC kuyrugu" subtitle="Karar notu ile birlikte onay veya red verin">
+                    {pendingKyc.length === 0 ? <Empty message="Bekleyen KYC kaydi yok." /> : pendingKyc.map((customer) => (
+                        <div key={customer.customer_id} style={cardStyle}>
+                            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+                                <div>
+                                    <div style={{ fontWeight: 700 }}>{customer.first_name} {customer.last_name}</div>
+                                    <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>TC: {customer.national_id} - Tel: {customer.phone}</div>
+                                    <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>{customer.user?.email || "-"}</div>
+                                </div>
+                                <button type="button" onClick={() => openCustomer(customer.customer_id)} style={secondaryButtonStyle}><Eye size={14} /> Detay</button>
+                            </div>
+                            <textarea value={notes[customer.customer_id] || ""} onChange={(event) => setNotes((current) => ({ ...current, [customer.customer_id]: event.target.value }))} placeholder="Karar notu (opsiyonel)" style={textAreaStyle} />
+                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+                                <button type="button" onClick={() => handleKycDecision(customer.customer_id, "approved")} disabled={busyKey === `kyc-${customer.customer_id}-approved`} style={successButtonStyle}><CheckCircle size={14} /> Onayla</button>
+                                <button type="button" onClick={() => handleKycDecision(customer.customer_id, "rejected")} disabled={busyKey === `kyc-${customer.customer_id}-rejected`} style={dangerButtonStyle}><XCircle size={14} /> Reddet</button>
+                            </div>
+                        </div>
+                    ))}
+                </Panel>
+            ) : null}
+
+            {!loading && tab === "customers" ? (
+                <div style={{ display: "grid", gridTemplateColumns: selectedCustomer ? "1.1fr 0.9fr" : "1fr", gap: 16 }}>
+                    <Panel title="Musteri arama" subtitle="Hesap, profil ve hareket gecmisine hizli erisin">
+                        <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+                            <input value={searchQ} onChange={(event) => setSearchQ(event.target.value)} placeholder="Isim, soyisim veya TC ara" style={{ ...inputStyle, flex: 1 }} />
+                            <button type="button" onClick={() => { setPage(1); loadCustomers(); }} style={secondaryButtonStyle}><Search size={14} /> Ara</button>
+                        </div>
+                        {(customers || []).length === 0 ? <Empty message="Sonuc bulunamadi." /> : customers.map((customer) => (
+                            <div key={customer.customer_id} style={rowStyle}>
+                                <div>
+                                    <div style={{ fontWeight: 700 }}>{customer.full_name || `${customer.first_name || ""} ${customer.last_name || ""}`.trim() || "-"}</div>
+                                    <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>{customer.national_id || "-"} - {customer.status || "-"}</div>
+                                </div>
+                                <button type="button" onClick={() => openCustomer(customer.customer_id)} style={secondaryButtonStyle}><Eye size={14} /> Detay</button>
+                            </div>
+                        ))}
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: 16, flexWrap: "wrap" }}>
+                            <span style={{ color: "var(--text-secondary)", fontSize: 13 }}>{formatNumber(customerTotal)} kayit - sayfa {page}/{totalPages}</span>
+                            <div style={{ display: "flex", gap: 8 }}>
+                                <button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page <= 1} style={secondaryButtonStyle}>Geri</button>
+                                <button type="button" onClick={() => setPage((current) => Math.min(totalPages, current + 1))} disabled={page >= totalPages} style={secondaryButtonStyle}>Ileri</button>
+                            </div>
+                        </div>
+                    </Panel>
+                    {selectedCustomer ? <CustomerDetailCard data={selectedCustomer} loading={detailLoading} /> : null}
+                </div>
+            ) : null}
+
+            {!loading && tab === "messages" ? (
+                <Panel title="Mesaj merkezi" subtitle="Musteri sorularina panelden cevap verin">
+                    {messages.length === 0 ? <Empty message="Mesaj yok." /> : messages.map((message) => (
+                        <div key={message.message_id} style={cardStyle}>
+                            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 8, flexWrap: "wrap" }}>
+                                <strong>{message.subject}</strong>
+                                <Status active={message.status !== "open"}>{message.status}</Status>
+                            </div>
+                            <div style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 8 }}>{message.body}</div>
+                            <div style={{ fontSize: 12, color: "var(--text-secondary)", marginBottom: 10 }}>{message.sender_email} - {formatDateTime(message.created_at)}</div>
+                            {message.reply ? <div style={{ padding: 10, borderRadius: 12, background: "var(--bg-card)", marginBottom: 10 }}>{message.reply}</div> : null}
+                            {message.status === "open" ? (
+                                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                    <input value={replies[message.message_id] || ""} onChange={(event) => setReplies((current) => ({ ...current, [message.message_id]: event.target.value }))} placeholder="Yaniti yazin" style={{ ...inputStyle, flex: 1 }} />
+                                    <button type="button" onClick={() => handleReply(message.message_id)} disabled={busyKey === `reply-${message.message_id}`} style={successButtonStyle}><Send size={14} /> Gonder</button>
+                                </div>
+                            ) : null}
+                        </div>
+                    ))}
+                </Panel>
+            ) : null}
         </div>
     );
 }
 
-const inputStyle = { padding: "12px 16px", borderRadius: 12, border: "1px solid var(--border-color)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14, outline: "none" };
-const primaryBtn = { padding: "10px 18px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #3b82f6, #2563eb)", color: "#fff", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 };
-const infoCard = { background: "var(--bg-secondary)", borderRadius: 10, padding: "8px 14px", fontSize: 13 };
+function CustomerDetailCard({ data, loading }) {
+    return (
+        <Panel title="Musteri 360" subtitle="Profil, hesaplar ve son hareketler">
+            {loading ? <LoadingState compact /> : (
+                <div style={{ display: "grid", gap: 12 }}>
+                    <div style={infoStyle}><strong>{data.customer?.full_name || `${data.customer?.first_name || ""} ${data.customer?.last_name || ""}`.trim() || "-"}</strong><span>{data.user?.email || "-"}</span></div>
+                    <div style={infoStyle}>Durum: {data.customer?.status || "-"}</div>
+                    <div style={infoStyle}>TC: {data.customer?.national_id || "-"}</div>
+                    {(data.accounts || []).length === 0 ? <Empty message="Hesap yok." /> : data.accounts.map((account) => (
+                        <div key={account.account_id} style={infoStyle}><strong>{account.account_number}</strong><span>{account.account_type} - {account.currency} - {account.status}</span></div>
+                    ))}
+                    {(data.recent_transactions || []).slice(0, 8).map((tx) => (
+                        <div key={tx.entry_id || tx.id} style={infoStyle}><strong>{tx.category || tx.type || "islem"}</strong><span>{formatMoney(tx.amount)} - {formatDateTime(tx.created_at)}</span></div>
+                    ))}
+                </div>
+            )}
+        </Panel>
+    );
+}
+
+function Panel({ title, subtitle, children }) { return <div style={panelStyle}><div style={{ marginBottom: 14 }}><div style={{ fontSize: 18, fontWeight: 800 }}>{title}</div><div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}>{subtitle}</div></div>{children}</div>; }
+function MetricCard({ icon, label, value, tone }) { return <div style={panelStyle}><div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}><span style={{ color: "var(--text-secondary)", fontSize: 13 }}>{label}</span><div style={iconBox(`${tone}18`, tone)}>{icon}</div></div><div style={{ fontSize: 30, fontWeight: 900 }}>{value}</div></div>; }
+function Status({ active, children }) { return <span style={{ display: "inline-flex", padding: "6px 10px", borderRadius: 999, background: active ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)", color: active ? "#10b981" : "#ef4444", fontWeight: 700, fontSize: 12 }}>{children}</span>; }
+function Empty({ message }) { return <div style={{ padding: 18, borderRadius: 16, background: "var(--bg-secondary)", color: "var(--text-secondary)", textAlign: "center" }}>{message}</div>; }
+function LoadingState({ compact = false }) { return <div style={{ minHeight: compact ? 120 : 260, display: "flex", alignItems: "center", justifyContent: "center" }}><Loader2 size={compact ? 22 : 34} style={{ animation: "spin 1s linear infinite" }} /><style>{"@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }"}</style></div>; }
+function formatNumber(value) { return new Intl.NumberFormat("tr-TR").format(Number(value || 0)); }
+function formatMoney(value) { return new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(Number(value || 0)); }
+function formatDateTime(value) { return value ? new Date(value).toLocaleString("tr-TR") : "-"; }
+function iconBox(background, color) { return { width: 40, height: 40, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", background, color }; }
+function tabButtonStyle(active) { return { border: "none", borderRadius: 999, padding: "10px 16px", cursor: "pointer", fontWeight: 700, background: active ? "linear-gradient(135deg, #111827, #2563eb)" : "var(--bg-secondary)", color: active ? "#fff" : "var(--text-secondary)" }; }
+const panelStyle = { background: "var(--bg-card)", borderRadius: 20, border: "1px solid var(--border-color)", padding: 18 };
+const rowStyle = { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: 14, borderRadius: 16, border: "1px solid var(--border-color)", background: "var(--bg-secondary)", marginBottom: 10 };
+const cardStyle = { padding: 14, borderRadius: 16, border: "1px solid var(--border-color)", background: "var(--bg-secondary)", marginBottom: 10 };
+const infoStyle = { padding: 14, borderRadius: 16, border: "1px solid var(--border-color)", background: "var(--bg-secondary)", display: "grid", gap: 6 };
+const messageStyle = (highlight) => ({ padding: 14, borderRadius: 16, border: highlight ? "1px solid rgba(245,158,11,0.35)" : "1px solid var(--border-color)", background: highlight ? "rgba(245,158,11,0.05)" : "var(--bg-secondary)", marginBottom: 10 });
+const secondaryButtonStyle = { display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 14px", borderRadius: 12, border: "1px solid var(--border-color)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontWeight: 700, cursor: "pointer" };
+const successButtonStyle = { display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #10b981, #34d399)", color: "#fff", fontWeight: 700, cursor: "pointer" };
+const dangerButtonStyle = { display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #ef4444, #f87171)", color: "#fff", fontWeight: 700, cursor: "pointer" };
+const inputStyle = { padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-color)", background: "var(--bg-secondary)", color: "var(--text-primary)" };
+const textAreaStyle = { width: "100%", minHeight: 88, resize: "vertical", padding: "12px 14px", borderRadius: 12, border: "1px solid var(--border-color)", background: "var(--bg-card)", color: "var(--text-primary)" };
