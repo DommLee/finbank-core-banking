@@ -34,6 +34,8 @@ class AccountResponse(BaseModel):
     currency: str
     status: str
     balance: Optional[float] = 0.0
+    overdraft_limit: Optional[float] = 0.0
+    account_name: Optional[str] = None
     created_at: datetime
 
 
@@ -44,4 +46,6 @@ class AccountBalanceResponse(BaseModel):
     iban: str
     balance: float
     currency: str
+    overdraft_limit: Optional[float] = 0.0
+    account_name: Optional[str] = None
     computed_at: datetime

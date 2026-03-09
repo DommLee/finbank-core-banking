@@ -18,6 +18,7 @@ import {
     ShieldCheck,
     Smartphone,
     Landmark,
+    Send,
 } from "lucide-react";
 import { accountApi, cardsApi, approvalsApi } from "../../services/api";
 
@@ -414,7 +415,7 @@ export default function CardsPage() {
                                         <div style={{ padding: "16px 24px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                                             <div>
                                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                                                    <div style={{ fontSize: 12, opacity: 0.7 }}>Son kullanma: <strong style={{ fontFamily: "monospace", fontSize: 14 }}>{selectedCard.expiry_date}</strong></div>
+                                                    <div style={{ fontSize: 12, opacity: 0.7 }}>Son kullanma: <strong style={{ fontFamily: "monospace", fontSize: 14 }}>{showSensitive ? selectedCard.expiry_date : "**/**"}</strong></div>
                                                     <button type="button" onClick={() => setShowSensitive((prev) => !prev)} style={{ ...miniButtonStyle, padding: "6px 12px", background: showSensitive ? "rgba(99, 102, 241, 0.2)" : "rgba(255,255,255,0.08)" }}>
                                                         {showSensitive ? <EyeOff size={14} /> : <Eye size={14} />} {showSensitive ? "Gizle" : "Göster"}
                                                     </button>
@@ -502,6 +503,7 @@ export default function CardsPage() {
                                     <TabButton active={activeTab === "transactions"} onClick={() => setActiveTab("transactions")}><Activity size={14} /> Hareketler</TabButton>
                                     <TabButton active={activeTab === "pay"} onClick={() => setActiveTab("pay")}><DollarSign size={14} /> Borc ode</TabButton>
                                     <TabButton active={activeTab === "simulate"} onClick={() => setActiveTab("simulate")}><ShoppingCart size={14} /> Harcama</TabButton>
+                                    <TabButton active={false} onClick={() => window.location.href = "/customer/transfer"}><Send size={14} /> Para Transferi</TabButton>
                                 </div>
 
                                 <div style={{ background: "var(--bg-card)", borderRadius: 20, border: "1px solid var(--border-color)", minHeight: 420, overflow: "hidden" }}>

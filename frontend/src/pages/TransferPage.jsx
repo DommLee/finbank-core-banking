@@ -238,7 +238,7 @@ export default function TransferPage() {
                         const accountId = account.id || account.account_id;
                         return (
                             <div key={accountId} style={{ padding: "8px 12px", borderRadius: 12, background: "var(--bg-secondary)", fontSize: 12, fontWeight: 600 }}>
-                                {account.account_name || account.account_number} - {formatMoney(balances[accountId])}
+                                {account.account_type === 'credit' ? `Kredi Kartı Hesabı (${account.account_number.slice(-4)})` : (account.account_name || account.account_number)} - {formatMoney(balances[accountId])}
                             </div>
                         );
                     })}
@@ -315,7 +315,7 @@ export default function TransferPage() {
                                         const accountId = account.id || account.account_id;
                                         return (
                                             <option key={accountId} value={accountId}>
-                                                {account.account_name || account.account_number} - {formatMoney(balances[accountId])}
+                                                {account.account_type === 'credit' ? `Kredi Kartı Hesabı (${account.account_number.slice(-4)})` : (account.account_name || account.account_number)} - {formatMoney(balances[accountId])}
                                             </option>
                                         );
                                     })}

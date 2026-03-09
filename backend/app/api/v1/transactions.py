@@ -3,7 +3,7 @@ FinBank - Transaction API Routes (Deposits, Withdrawals, Transfers)
 """
 from datetime import datetime, timezone
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Request, Query, Header
+from fastapi import APIRouter, Depends, HTTPException, Request, Query, Header, BackgroundTasks
 from app.core.database import get_database
 from app.core.security import get_current_user
 from app.core.exceptions import (
@@ -123,6 +123,7 @@ async def deposit(
 async def withdraw(
     body: WithdrawRequest,
     request: Request,
+    background_tasks: BackgroundTasks,
     idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
     current_user: dict = Depends(get_current_user),
     db=Depends(get_database),
@@ -170,11 +171,15 @@ async def withdraw(
         user_agent=ua,
     )
 
-    await send_webhook(WebhookEvent.WITHDRAWAL_COMPLETED, {
-        "account_id": body.account_id,
-        "amount": body.amount,
-        "transaction_ref": entry["transaction_ref"],
-    })
+    background_tasks.add_task(
+        send_webhook,
+        WebhookEvent.WITHDRAWAL_COMPLETED,
+        {
+            "account_id": body.account_id,
+            "amount": body.amount,
+            "transaction_ref": entry["transaction_ref"],
+        }
+    )
 
     response = TransactionResponse(
         transaction_ref=entry["transaction_ref"],
@@ -200,6 +205,7 @@ async def withdraw(
 async def transfer(
     body: TransferRequest,
     request: Request,
+    background_tasks: BackgroundTasks,
     idempotency_key: Optional[str] = Header(None, alias="Idempotency-Key"),
     current_user: dict = Depends(get_current_user),
     db=Depends(get_database),
@@ -278,13 +284,14 @@ async def transfer(
         user_agent=ua,
     )
 
-    # Publish all 4 required webhook events
-    await publish_transfer_events(
+    # Publish all 4 required webhook events in background
+    background_tasks.add_task(
+        publish_transfer_events,
         transfer_id=txn_ref,
         from_account=body.from_account_id,
         to_account=body.to_account_id,
         amount=body.amount,
-        currency=from_account.get("currency", "TRY"),
+        currency=from_account.get("currency", "TRY")
     )
 
     response = TransactionResponse(

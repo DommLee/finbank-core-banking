@@ -134,6 +134,8 @@ async def list_my_accounts(
                 currency=a["currency"],
                 status=a["status"],
                 balance=balance,
+                overdraft_limit=a.get("overdraft_limit", 0.0),
+                account_name=a.get("account_name"),
                 created_at=a["created_at"],
             )
         )
@@ -201,6 +203,8 @@ async def get_account_balance(
         iban=account["iban"],
         balance=balance,
         currency=account["currency"],
+        overdraft_limit=account.get("overdraft_limit", 0.0),
+        account_name=account.get("account_name"),
         computed_at=datetime.now(timezone.utc),
     )
 
