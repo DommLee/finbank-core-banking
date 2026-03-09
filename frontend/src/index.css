@@ -1110,13 +1110,58 @@ body::before {
   }
 
   .sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 280px;
+    height: 100vh;
+    transform: translateX(-100%);
+    z-index: 1000;
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
   }
 
   .layout-main {
     max-width: 100%;
+    padding-bottom: 80px;
+    /* Space for the MobileBottomNav */
+  }
+
+  .mobile-header,
+  .mobile-only-header {
+    display: flex !important;
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .sidebar-overlay.mobile-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (min-width: 769px) {
+
+  .mobile-header,
+  .mobile-only-header {
+    display: none !important;
+  }
+
+  .sidebar-overlay {
+    display: none !important;
   }
 }
 

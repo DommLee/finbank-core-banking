@@ -5,7 +5,7 @@ import NotificationBell from "../components/NotificationBell";
 import MobileBottomNav from "../components/MobileBottomNav";
 import {
     LayoutDashboard, CreditCard, ArrowLeftRight,
-    BookOpen, LogOut, User, Settings, Moon, Sun, MessageSquare,
+    LogOut, User, Settings, Moon, Sun, MessageSquare, Menu,
     Receipt, Lock, Target, TrendingUp, BarChart3, Shield,
     FileCheck, History, Headphones, HandCoins, QrCode
 } from "lucide-react";
@@ -14,6 +14,7 @@ import {
 export default function CustomerLayout() {
     const { user, logout } = useAuth();
     const location = useLocation();
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     // Theme state
     const [theme, setTheme] = useState(localStorage.getItem('theme') || 'dark');
@@ -52,7 +53,13 @@ export default function CustomerLayout() {
 
     return (
         <div className="layout-wrapper layout-customer">
-            <aside className="sidebar" role="navigation" aria-label="Müşteri menüsü">
+            {/* Overlay for mobile */}
+            <div
+                className={`sidebar-overlay ${sidebarOpen ? 'mobile-open' : ''}`}
+                onClick={() => setSidebarOpen(false)}
+            />
+
+            <aside className={`sidebar ${sidebarOpen ? 'mobile-open' : ''}`} role="navigation" aria-label="Müşteri menüsü">
                 <div className="sidebar-brand">
                     <div className="sidebar-brand-icon">FB</div>
                     <span className="sidebar-brand-text">FinBank</span>
@@ -93,16 +100,29 @@ export default function CustomerLayout() {
             <MobileBottomNav />
 
             <main className="layout-main">
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 16 }} className="mobile-only-header">
-                    <NotificationBell />
-                    <button onClick={toggleTheme} style={{
-                        background: 'var(--bg-card)', border: 'none', borderRadius: '50%',
-                        width: 44, height: 44, display: 'flex', alignItems: 'center',
-                        justifyContent: 'center', color: 'var(--text-primary)',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                    }}>
-                        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }} className="mobile-only-header">
+                    <button
+                        onClick={() => setSidebarOpen(true)}
+                        style={{
+                            background: 'var(--bg-card)', border: 'none', borderRadius: '50%',
+                            width: 44, height: 44, display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', color: 'var(--text-primary)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                        }}
+                    >
+                        <Menu size={20} />
                     </button>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <NotificationBell />
+                        <button onClick={toggleTheme} style={{
+                            background: 'var(--bg-card)', border: 'none', borderRadius: '50%',
+                            width: 44, height: 44, display: 'flex', alignItems: 'center',
+                            justifyContent: 'center', color: 'var(--text-primary)',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                        }}>
+                            {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                        </button>
+                    </div>
                 </div>
                 <Outlet />
             </main>

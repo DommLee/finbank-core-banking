@@ -16,7 +16,7 @@ async def create_payment_request(
     current_user: dict = Depends(get_current_user),
     db = Depends(get_database)
 ):
-    requester_user_id = current_user["id"]
+    requester_user_id = current_user.get("user_id")
     
     # Needs to determine target user
     target_user_id = None
@@ -74,7 +74,7 @@ async def list_payment_requests(
     current_user: dict = Depends(get_current_user),
     db = Depends(get_database)
 ):
-    user_id = current_user["id"]
+    user_id = current_user.get("user_id")
     cursor = db.payment_requests.find(
         {"$or": [{"requester_user_id": user_id}, {"target_user_id": user_id}]}
     ).sort("created_at", -1)
@@ -93,7 +93,7 @@ async def approve_payment_request(
     current_user: dict = Depends(get_current_user),
     db = Depends(get_database)
 ):
-    user_id = current_user["id"]
+    user_id = current_user.get("user_id")
     
     req_doc = await db.payment_requests.find_one({"_id": ObjectId(request_id)})
     if not req_doc:
@@ -161,7 +161,7 @@ async def reject_payment_request(
     if not req_doc:
         raise HTTPException(status_code=404, detail="Ödeme isteği bulunamadı.")
         
-    if req_doc["target_user_id"] != current_user["id"]:
+    if req_doc["target_user_id"] != current_user.get("user_id"):
         raise HTTPException(status_code=403, detail="Yetkiniz yok.")
         
     if req_doc["status"] != "pending":
@@ -183,7 +183,7 @@ async def cancel_payment_request(
     if not req_doc:
         raise HTTPException(status_code=404, detail="Ödeme isteği bulunamadı.")
         
-    if req_doc["requester_user_id"] != current_user["id"]:
+    if req_doc["requester_user_id"] != current_user.get("user_id"):
         raise HTTPException(status_code=403, detail="Yetkiniz yok.")
         
     if req_doc["status"] != "pending":

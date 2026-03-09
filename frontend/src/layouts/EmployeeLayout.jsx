@@ -8,6 +8,7 @@ import {
     LayoutDashboard,
     LogOut,
     MessageSquare,
+    Menu,
     Moon,
     Sun,
     UserCog,
@@ -20,6 +21,7 @@ export default function EmployeeLayout() {
     const { user, logout } = useAuth();
     const location = useLocation();
     const [theme, setTheme] = useState(localStorage.getItem("theme") || "dark");
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     useEffect(() => {
         document.documentElement.setAttribute("data-theme", theme);
@@ -42,7 +44,13 @@ export default function EmployeeLayout() {
 
     return (
         <div className="layout-wrapper layout-employee">
-            <aside className="sidebar sidebar-employee" role="navigation" aria-label="Employee menu">
+            {/* Overlay for mobile */}
+            <div
+                className={`sidebar-overlay ${sidebarOpen ? 'mobile-open' : ''}`}
+                onClick={() => setSidebarOpen(false)}
+            />
+
+            <aside className={`sidebar sidebar-employee ${sidebarOpen ? 'mobile-open' : ''}`} role="navigation" aria-label="Employee menu">
                 <div className="sidebar-brand">
                     <div className="sidebar-brand-icon employee-icon">FB</div>
                     <span className="sidebar-brand-text">FinBank</span>
@@ -86,14 +94,20 @@ export default function EmployeeLayout() {
                 </div>
             </aside>
 
-            <div className="mobile-header">
+            <div className="mobile-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, padding: "0 16px" }}>
+                <button
+                    onClick={() => setSidebarOpen(true)}
+                    style={{ background: 'var(--bg-card)', border: 'none', borderRadius: '50%', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                >
+                    <Menu size={20} />
+                </button>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <div className="sidebar-brand-icon employee-icon" style={{ width: 32, height: 32, fontSize: 12 }}>FB</div>
                     <span style={{ fontWeight: 700 }}>Employee</span>
                 </div>
                 <button
                     onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                    style={{ background: "none", border: "none", color: "var(--text-primary)", cursor: "pointer" }}
+                    style={{ background: 'var(--bg-card)', border: 'none', borderRadius: '50%', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                     aria-label="Toggle theme"
                 >
                     {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
