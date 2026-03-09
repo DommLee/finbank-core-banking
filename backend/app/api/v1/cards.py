@@ -72,7 +72,30 @@ async def apply_for_credit_card(
 
     await db.credit_cards.insert_one(card_doc.copy())
 
+    from app.api.v1.accounts import _generate_account_number, _generate_iban
+    account_number = _generate_account_number()
+    iban = _generate_iban(account_number)
+    
+    account_doc = {
+        "account_id": str(uuid.uuid4()),
+        "customer_id": customer["customer_id"],
+        "user_id": current_user["user_id"],
+        "account_type": "credit",
+        "currency": "TRY",
+        "balance": 0.0,
+        "status": "active",
+        "account_name": f"Kredi Kartı ({card_doc['card_number'][-4:]})",
+        "overdraft_limit": float(assigned_limit),
+        "card_id": card_doc["id"],
+        "account_number": account_number,
+        "iban": iban,
+        "created_at": datetime.now(timezone.utc),
+    }
+    await db.accounts.insert_one(account_doc)
+
     card_doc.pop("_id", None)
+    card_doc["account_id"] = account_doc["account_id"]
+    card_doc["iban"] = account_doc["iban"]
     return card_doc
 
 @router.get("/", response_model=List[CreditCardResponse])
@@ -89,6 +112,10 @@ async def get_my_credit_cards(
     cards = await cursor.to_list(100)
     for c in cards:
         c.pop("_id", None)
+        acc = await db.accounts.find_one({"card_id": c["id"]})
+        if acc:
+            c["iban"] = acc.get("iban")
+            c["account_id"] = acc.get("account_id")
     return cards
 
 @router.post("/{card_id}/pay")

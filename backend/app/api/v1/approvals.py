@@ -181,8 +181,21 @@ async def review_approval(
     elif action.action == "APPROVE":
         if current_status == "PENDING_EMPLOYER":
             if current_user["role"] in ["employee", "admin"]:
-                new_status = "PENDING_CEO"
-                update_data["employer_notes"] = action.notes
+                if approval.get("request_type") == "DEPOSIT":
+                    new_status = "APPROVED"
+                    update_data["employer_notes"] = action.notes
+                    
+                    from app.services.ledger_service import LedgerService
+                    ledger = LedgerService(db)
+                    await ledger.deposit(
+                        account_id=approval.get("metadata", {}).get("account_id"),
+                        amount=approval.get("amount"),
+                        created_by=approval.get("user_id"),
+                        description=approval.get("description") or "Approved Deposit"
+                    )
+                else:
+                    new_status = "PENDING_CEO"
+                    update_data["employer_notes"] = action.notes
             else:
                 raise HTTPException(status_code=403, detail="Only Employees/Admins can do Employer approvals.")
         

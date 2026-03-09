@@ -18,6 +18,8 @@ class CreditCardResponse(BaseModel):
     available_limit: float
     interest_rate: float
     status: str # active, blocked, frozen
+    iban: Optional[str] = None
+    account_id: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

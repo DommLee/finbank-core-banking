@@ -71,6 +71,20 @@ class LedgerService:
         }
 
         await self.collection.insert_one(entry, session=session)
+        # Synchronize credit card limits if applicable
+        acc = await self.db.accounts.find_one({"account_id": account_id})
+        if acc and acc.get("account_type") == "credit":
+            card_id = acc.get("card_id")
+            if card_id:
+                curr_balance = await self.get_balance(account_id)
+                max_limit = acc.get("overdraft_limit", 0)
+                debt = -curr_balance if curr_balance < 0 else 0
+                available = max_limit + curr_balance
+                await self.db.credit_cards.update_one(
+                    {"id": card_id},
+                    {"$set": {"current_debt": float(debt), "available_limit": float(available), "updated_at": datetime.now(timezone.utc)}}
+                )
+
         # Fire-and-forget sync to Supabase
         try:
             await sync_transaction(entry)
@@ -115,7 +129,12 @@ class LedgerService:
         """Record a withdrawal via ledger entry (DEBIT)."""
         # Check balance first
         balance = await self.get_balance(account_id)
-        if balance < amount:
+        
+        # Check overdraft limit
+        acc = await self.db.accounts.find_one({"account_id": account_id})
+        overdraft_limit = acc.get("overdraft_limit", 0.0) if acc else 0.0
+        
+        if balance + overdraft_limit < amount:
             raise InsufficientFundsError()
 
         txn_ref = f"WDR-{uuid.uuid4().hex[:8].upper()}"
@@ -144,7 +163,11 @@ class LedgerService:
         """
         # Check balance before starting transaction
         balance = await self.get_balance(from_account_id)
-        if balance < amount:
+        
+        acc = await self.db.accounts.find_one({"account_id": from_account_id})
+        overdraft_limit = acc.get("overdraft_limit", 0.0) if acc else 0.0
+        
+        if balance + overdraft_limit < amount:
             raise InsufficientFundsError()
 
         txn_ref = f"TXN-{uuid.uuid4().hex[:8].upper()}"

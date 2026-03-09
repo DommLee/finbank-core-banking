@@ -46,8 +46,8 @@ export default function TransferPage() {
     }, []);
 
     const totalBalance = useMemo(
-        () => Object.values(balances).reduce((sum, value) => sum + Number(value || 0), 0),
-        [balances]
+        () => accounts.filter(a => a.account_type !== "credit").reduce((sum, acc) => sum + Number(acc.balance || 0), 0),
+        [accounts]
     );
 
     const loadData = async () => {
@@ -65,7 +65,9 @@ export default function TransferPage() {
             const nextBalances = {};
             for (const account of nextAccounts) {
                 const accountId = account.id || account.account_id;
-                nextBalances[accountId] = Number(account.balance || 0);
+                nextBalances[accountId] = account.account_type === 'credit'
+                    ? Number(account.balance || 0) + Number(account.overdraft_limit || 0)
+                    : Number(account.balance || 0);
             }
             setBalances(nextBalances);
 
@@ -105,7 +107,7 @@ export default function TransferPage() {
                 ...depositForm,
                 amount: Number(depositForm.amount),
             });
-            showReceipt("Para yatirma", depositForm.amount, depositForm.description);
+            toast.success("Para yatırma talebiniz alındı. Çalışan onayından sonra hesabınıza geçecektir.");
             setDepositForm((prev) => ({ ...prev, amount: "", description: "" }));
             await loadData();
         } catch (error) {
@@ -232,11 +234,14 @@ export default function TransferPage() {
                     <div style={{ fontSize: 28, fontWeight: 900 }}>{formatMoney(totalBalance)}</div>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    {accounts.map((account) => (
-                        <div key={account.id || account.account_id} style={{ padding: "8px 12px", borderRadius: 12, background: "var(--bg-secondary)", fontSize: 12, fontWeight: 600 }}>
-                            {account.account_number} - {formatMoney(account.balance)}
-                        </div>
-                    ))}
+                    {accounts.map((account) => {
+                        const accountId = account.id || account.account_id;
+                        return (
+                            <div key={accountId} style={{ padding: "8px 12px", borderRadius: 12, background: "var(--bg-secondary)", fontSize: 12, fontWeight: 600 }}>
+                                {account.account_name || account.account_number} - {formatMoney(balances[accountId])}
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
 
@@ -310,7 +315,7 @@ export default function TransferPage() {
                                         const accountId = account.id || account.account_id;
                                         return (
                                             <option key={accountId} value={accountId}>
-                                                {account.account_number} - {formatMoney(balances[accountId])}
+                                                {account.account_name || account.account_number} - {formatMoney(balances[accountId])}
                                             </option>
                                         );
                                     })}

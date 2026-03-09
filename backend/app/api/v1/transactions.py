@@ -59,40 +59,54 @@ async def deposit(
         db, body.account_id, current_user["user_id"], current_user["role"], allow_employee_override=True
     )
 
-    ledger = LedgerService(db)
-    entry = await ledger.deposit(
-        account_id=body.account_id,
-        amount=body.amount,
-        created_by=current_user["user_id"],
-        description=body.description or "Deposit",
-    )
+    from app.api.v1.approvals import _generate_mock_ai_risk_score
+    accounts = await db.accounts.find({
+        "user_id": current_user["user_id"],
+        "status": "active"
+    }).to_list(100)
+    total_balance = sum(acc.get("balance", 0) for acc in accounts)
+    risk_score = _generate_mock_ai_risk_score(body.amount or 0, total_balance)
+    
+    now = datetime.now(timezone.utc)
+    import str, uuid
+    import uuid
+    approval_doc = {
+        "user_id": current_user["user_id"],
+        "user_name": current_user.get("full_name", current_user["email"]),
+        "request_type": "DEPOSIT",
+        "amount": body.amount,
+        "currency": account.get("currency", "TRY"),
+        "description": body.description,
+        "status": "PENDING_EMPLOYER",
+        "risk_score": risk_score,
+        "metadata": {"account_id": body.account_id},
+        "created_at": now,
+        "updated_at": now,
+        "employer_notes": None,
+        "ceo_notes": None
+    }
+    await db.approvals.insert_one(approval_doc)
 
     ip, ua = get_client_info(request)
     await log_audit(
-        action="DEPOSIT_EXECUTED",
+        action="DEPOSIT_REQUESTED",
         outcome="SUCCESS",
         user_id=current_user["user_id"],
         user_email=current_user["email"],
         role=current_user["role"],
-        details=f"Deposit {body.amount} {account['currency']} to {account['account_number']}",
+        details=f"Deposit request {body.amount} {account['currency']} to {account['account_number']}",
         ip_address=ip,
         user_agent=ua,
     )
 
-    await send_webhook(WebhookEvent.DEPOSIT_COMPLETED, {
-        "account_id": body.account_id,
-        "amount": body.amount,
-        "transaction_ref": entry["transaction_ref"],
-    })
-
     response = TransactionResponse(
-        transaction_ref=entry["transaction_ref"],
+        transaction_ref="PENDING-" + str(uuid.uuid4())[:8],
         type="DEPOSIT",
         amount=body.amount,
-        status="completed",
+        status="pending_approval",
         to_account=body.account_id,
         description=body.description,
-        created_at=entry["created_at"],
+        created_at=now,
     )
 
     if idempotency_key:
