@@ -4,7 +4,7 @@ FinBank - Account Management API Routes
 import uuid
 import random
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, BackgroundTasks
 from app.core.database import get_database
 from app.core.security import get_current_user, require_admin, require_staff
 from app.models.account import (
@@ -34,6 +34,7 @@ def _generate_iban(account_number: str) -> str:
 async def create_account(
     body: AccountCreateRequest,
     request: Request,
+    background_tasks: BackgroundTasks,
     current_user: dict = Depends(get_current_user),
     db=Depends(get_database),
 ):
@@ -92,7 +93,7 @@ async def create_account(
         user_agent=ua,
     )
 
-    await send_webhook(WebhookEvent.ACCOUNT_CREATED, {
+    background_tasks.add_task(send_webhook, WebhookEvent.ACCOUNT_CREATED, {
         "account_id": account_doc["account_id"],
         "account_number": account_number,
         "customer_id": customer["customer_id"],
@@ -138,6 +139,43 @@ async def list_my_accounts(
         )
     return result
 
+
+@router.get("/debit-cards")
+async def get_debit_cards(
+    current_user: dict = Depends(get_current_user),
+    db=Depends(get_database),
+):
+    """Get all debit cards owned by the customer."""
+    customer = await db.customers.find_one({"user_id": current_user["user_id"]})
+    if not customer:
+        return []
+
+    cursor = db.debit_cards.find({"customer_id": customer["customer_id"]})
+    cards = await cursor.to_list(100)
+    
+    # Format them to mimic the credit card schema for the UI
+    result = []
+    for c in cards:
+        result.append({
+            "id": c.get("id"),
+            "account_id": c.get("account_id"),
+            "card_number": c.get("card_number"),
+            "expiry_date": c.get("expiry_date"),
+            "cvv": c.get("cvv"),
+            "card_type": c.get("card_type", "debit"),
+            "holder_name": c.get("holder_name"),
+            "cardholder_name": c.get("holder_name"),
+            "status": c.get("status"),
+            "is_virtual": False,
+            "created_at": c.get("created_at"),
+            "available_limit": 0,
+            "current_debt": 0,
+            "min_payment_due": 0,
+            "online_limit": 0,
+            "internet_shopping": True,
+            "contactless": True,
+        })
+    return result
 
 @router.get("/{account_id}/balance", response_model=AccountBalanceResponse)
 async def get_account_balance(

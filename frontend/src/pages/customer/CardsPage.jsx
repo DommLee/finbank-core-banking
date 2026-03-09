@@ -17,14 +17,17 @@ import {
     ShoppingCart,
     ShieldCheck,
     Smartphone,
+    Landmark,
 } from "lucide-react";
 import { accountApi, cardsApi, approvalsApi } from "../../services/api";
 
 export default function CardsPage() {
     const [cards, setCards] = useState([]);
+    const [debitCards, setDebitCards] = useState([]);
     const [accounts, setAccounts] = useState([]);
     const [transactions, setTransactions] = useState([]);
     const [selectedCardId, setSelectedCardId] = useState("");
+    const [cardTypeTab, setCardTypeTab] = useState("credit"); // "credit" or "debit"
     const [loading, setLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState(false);
     const [activeTab, setActiveTab] = useState("transactions");
@@ -51,13 +54,16 @@ export default function CardsPage() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [cardsRes, accountsRes] = await Promise.all([
+            const [cardsRes, accountsRes, debitRes] = await Promise.all([
                 cardsApi.getMyCards(),
                 accountApi.listMine(),
+                accountApi.getDebitCards().catch(() => ({ data: [] })),
             ]);
             const nextCards = Array.isArray(cardsRes.data) ? cardsRes.data : [];
+            const nextDebitCards = Array.isArray(debitRes.data) ? debitRes.data : [];
             const nextAccounts = Array.isArray(accountsRes.data) ? accountsRes.data.filter((account) => account.status === "active") : [];
             setCards(nextCards);
+            setDebitCards(nextDebitCards);
             setAccounts(nextAccounts);
 
             if (!selectedCardId && nextCards[0]) {
@@ -234,13 +240,17 @@ export default function CardsPage() {
         }
     };
 
-    const selectedCard = cards.find((card) => (card.id || card.card_id) === selectedCardId) || cards[0] || null;
+    const displayCards = cardTypeTab === "credit" ? cards : debitCards;
+    const selectedCard = displayCards.find((card) => (card.id || card.card_id) === selectedCardId) || displayCards[0] || null;
     const hasPhysicalCard = cards.some((card) => !card.is_virtual);
     const paymentAccounts = useMemo(() => accounts.map((account) => ({
         id: account.id || account.account_id,
         account_number: account.account_number,
         balance: Number(account.balance || 0),
     })), [accounts]);
+
+    const linkedAccount = paymentAccounts.find(a => a.account_number === selectedCard?.account_number) || {};
+    const linkedBalance = linkedAccount.balance || 0;
 
     if (loading) {
         return (
@@ -283,15 +293,25 @@ export default function CardsPage() {
                 </div>
             </div>
 
+            <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+                <TabButton active={cardTypeTab === "credit"} onClick={() => { setCardTypeTab("credit"); setSelectedCardId(""); }}>
+                    <CreditCard size={16} /> Kredi Kartları
+                </TabButton>
+                <TabButton active={cardTypeTab === "debit"} onClick={() => { setCardTypeTab("debit"); setSelectedCardId(""); }}>
+                    <Landmark size={16} /> Banka Kartları
+                </TabButton>
+            </div>
+
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
                 <div style={{ display: "grid", gap: 16 }}>
                     <div className="card">
                         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
                             <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Kart secimi</h3>
-                            <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{cards.length} kart</span>
+                            <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{displayCards.length} kart</span>
                         </div>
                         <div style={{ display: "grid", gap: 10 }}>
-                            {cards.map((card) => {
+                            {displayCards.length === 0 && <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>Bu kategoride kartınız bulunmuyor.</p>}
+                            {displayCards.map((card) => {
                                 const cardKey = card.id || card.card_id;
                                 const active = cardKey === (selectedCard?.id || selectedCard?.card_id);
                                 return (
@@ -309,26 +329,28 @@ export default function CardsPage() {
                         </div>
                     </div>
 
-                    <div className="card">
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
-                            <Smartphone size={18} color="#2563eb" />
-                            <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Sanal kart olustur</h3>
+                    {cardTypeTab === "credit" && (
+                        <div className="card">
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                                <Smartphone size={18} color="#2563eb" />
+                                <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Sanal kart olustur</h3>
+                            </div>
+                            <form onSubmit={handleCreateVirtualCard} style={{ display: "grid", gap: 14 }}>
+                                <div>
+                                    <label style={labelStyle}>Kart etiketi</label>
+                                    <input className="form-input" value={virtualCardForm.alias} onChange={(event) => setVirtualCardForm((prev) => ({ ...prev, alias: event.target.value }))} placeholder="Ornek: Steam, Netflix, reklam" />
+                                </div>
+                                <div>
+                                    <label style={labelStyle}>Online limit</label>
+                                    <input className="form-input" type="number" min="1" step="0.01" value={virtualCardForm.online_limit} onChange={(event) => setVirtualCardForm((prev) => ({ ...prev, online_limit: event.target.value }))} placeholder="Ornek: 2500" />
+                                </div>
+                                <button type="submit" disabled={actionLoading} style={{ ...primaryActionStyle, width: "100%" }}>
+                                    {actionLoading ? <RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} /> : <Layers3 size={18} />}
+                                    Sanal kart ekle
+                                </button>
+                            </form>
                         </div>
-                        <form onSubmit={handleCreateVirtualCard} style={{ display: "grid", gap: 14 }}>
-                            <div>
-                                <label style={labelStyle}>Kart etiketi</label>
-                                <input className="form-input" value={virtualCardForm.alias} onChange={(event) => setVirtualCardForm((prev) => ({ ...prev, alias: event.target.value }))} placeholder="Ornek: Steam, Netflix, reklam" />
-                            </div>
-                            <div>
-                                <label style={labelStyle}>Online limit</label>
-                                <input className="form-input" type="number" min="1" step="0.01" value={virtualCardForm.online_limit} onChange={(event) => setVirtualCardForm((prev) => ({ ...prev, online_limit: event.target.value }))} placeholder="Ornek: 2500" />
-                            </div>
-                            <button type="submit" disabled={actionLoading} style={{ ...primaryActionStyle, width: "100%" }}>
-                                {actionLoading ? <RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} /> : <Layers3 size={18} />}
-                                Sanal kart ekle
-                            </button>
-                        </form>
-                    </div>
+                    )}
                 </div>
 
                 {selectedCard ? (
@@ -338,17 +360,17 @@ export default function CardsPage() {
                             <div className={`flip-card ${isFlipped ? "flipped" : ""}`}>
                                 <div className="flip-card-inner">
                                     {/* Front Face */}
-                                    <div className="flip-card-front" style={{ ...cardVisualStyle, background: selectedCard.is_virtual ? "linear-gradient(135deg, #064e3b 0%, #10b981 100%)" : "linear-gradient(135deg, #111827 0%, #2563eb 55%, #0f172a 100%)" }}>
+                                    <div className="flip-card-front" style={{ ...cardVisualStyle, background: cardTypeTab === "debit" ? "linear-gradient(135deg, #1e293b 0%, #ef4444 55%, #0f172a 100%)" : selectedCard.is_virtual ? "linear-gradient(135deg, #064e3b 0%, #10b981 100%)" : "linear-gradient(135deg, #111827 0%, #2563eb 55%, #0f172a 100%)" }}>
                                         <div style={{ position: "absolute", top: -26, right: -16, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.14)" }} />
                                         <div style={{ position: "absolute", bottom: -36, left: -16, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
 
                                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 36, position: "relative", zIndex: 1 }}>
                                             <div>
                                                 <div style={{ fontWeight: 800, fontSize: 24, letterSpacing: -0.5 }}>FinBank</div>
-                                                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>{selectedCard.card_name || "Kart"}</div>
+                                                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>{selectedCard.card_name || (cardTypeTab === "debit" ? "Banka Kartı" : "Kart")}</div>
                                             </div>
                                             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                                                <span style={typeChipStyle(selectedCard.is_virtual)}>{selectedCard.is_virtual ? "Sanal Kart" : "Fiziksel Kart"}</span>
+                                                <span style={typeChipStyle(selectedCard.is_virtual)}>{cardTypeTab === "debit" ? "Banka Kartı" : selectedCard.is_virtual ? "Sanal Kart" : "Fiziksel Kart"}</span>
                                             </div>
                                         </div>
 
@@ -370,7 +392,7 @@ export default function CardsPage() {
                                         <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-end", position: "relative", zIndex: 1 }}>
                                             <div>
                                                 <div style={{ fontSize: 11, opacity: 0.7, textTransform: "uppercase", letterSpacing: 1.5 }}>Kart sahibi</div>
-                                                <div style={{ fontWeight: 700, marginTop: 6, fontSize: 15 }}>{selectedCard.cardholder_name || "Musteri"}</div>
+                                                <div style={{ fontWeight: 700, marginTop: 6, fontSize: 15 }}>{selectedCard.cardholder_name || selectedCard.holder_name || "Musteri"}</div>
                                             </div>
                                             <div style={{ textAlign: "right", paddingRight: 8 }}>
                                                 <button type="button" onClick={() => setIsFlipped(true)} style={{ ...miniButtonStyle, padding: "8px 16px" }}>
@@ -423,12 +445,19 @@ export default function CardsPage() {
                                 </div>
                             </div>
 
-                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                                <MetricCard label="Kullanilabilir limit" value={formatMoney(selectedCard.available_limit)} tone="#10b981" icon={<ShieldCheck size={18} />} />
-                                <MetricCard label="Guncel borc" value={formatMoney(selectedCard.current_debt)} tone="#ef4444" icon={<DollarSign size={18} />} />
-                                <MetricCard label="Asgari odeme" value={formatMoney(selectedCard.min_payment_due)} tone="#f59e0b" icon={<CalendarDays size={18} />} />
-                                <MetricCard label="Online limit" value={formatMoney(selectedCard.online_limit)} tone="#2563eb" icon={<Percent size={18} />} />
-                            </div>
+                            {cardTypeTab === "credit" ? (
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                                    <MetricCard label="Kullanilabilir limit" value={formatMoney(selectedCard.available_limit)} tone="#10b981" icon={<ShieldCheck size={18} />} />
+                                    <MetricCard label="Guncel borc" value={formatMoney(selectedCard.current_debt)} tone="#ef4444" icon={<DollarSign size={18} />} />
+                                    <MetricCard label="Asgari odeme" value={formatMoney(selectedCard.min_payment_due)} tone="#f59e0b" icon={<CalendarDays size={18} />} />
+                                    <MetricCard label="Online limit" value={formatMoney(selectedCard.online_limit)} tone="#2563eb" icon={<Percent size={18} />} />
+                                </div>
+                            ) : (
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                                    <MetricCard label="Bağlı Hesap Bakiyesi" value={formatMoney(linkedBalance)} tone="#10b981" icon={<ShieldCheck size={18} />} />
+                                    <MetricCard label="Hesap Türü" value={selectedCard.account_type === "checking" ? "Vadesiz" : "Tasarruf"} tone="#2563eb" icon={<Landmark size={18} />} />
+                                </div>
+                            )}
 
                             <div className="card">
                                 <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>Kart ayarlari</h3>
@@ -450,7 +479,7 @@ export default function CardsPage() {
                                 </div>
                             </div>
 
-                            {!selectedCard.is_virtual && (
+                            {cardTypeTab === "credit" && !selectedCard.is_virtual && (
                                 <div className="card" style={{ marginTop: 16 }}>
                                     <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>Limit İşlemleri</h3>
                                     <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 16 }}>
@@ -467,102 +496,104 @@ export default function CardsPage() {
                             )}
                         </div>
 
-                        <div>
-                            <div style={{ display: "flex", gap: 6, background: "var(--bg-secondary)", borderRadius: 14, padding: 4, marginBottom: 16 }}>
-                                <TabButton active={activeTab === "transactions"} onClick={() => setActiveTab("transactions")}><Activity size={14} /> Hareketler</TabButton>
-                                <TabButton active={activeTab === "pay"} onClick={() => setActiveTab("pay")}><DollarSign size={14} /> Borc ode</TabButton>
-                                <TabButton active={activeTab === "simulate"} onClick={() => setActiveTab("simulate")}><ShoppingCart size={14} /> Harcama</TabButton>
-                            </div>
+                        {cardTypeTab === "credit" && (
+                            <div>
+                                <div style={{ display: "flex", gap: 6, background: "var(--bg-secondary)", borderRadius: 14, padding: 4, marginBottom: 16 }}>
+                                    <TabButton active={activeTab === "transactions"} onClick={() => setActiveTab("transactions")}><Activity size={14} /> Hareketler</TabButton>
+                                    <TabButton active={activeTab === "pay"} onClick={() => setActiveTab("pay")}><DollarSign size={14} /> Borc ode</TabButton>
+                                    <TabButton active={activeTab === "simulate"} onClick={() => setActiveTab("simulate")}><ShoppingCart size={14} /> Harcama</TabButton>
+                                </div>
 
-                            <div style={{ background: "var(--bg-card)", borderRadius: 20, border: "1px solid var(--border-color)", minHeight: 420, overflow: "hidden" }}>
-                                {activeTab === "transactions" ? (
-                                    <div>
-                                        <div style={{ padding: "18px 20px", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                            <div>
-                                                <div style={{ fontSize: 16, fontWeight: 800 }}>Kart hareketleri</div>
-                                                <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>{selectedCard.card_name || "Kart"} icin son islemler</div>
-                                            </div>
-                                            <button type="button" onClick={() => loadTransactions(selectedCard.id || selectedCard.card_id)} style={secondaryActionStyle}>
-                                                <RefreshCw size={16} /> Yenile
-                                            </button>
-                                        </div>
-                                        {transactions.length === 0 ? (
-                                            <div style={{ padding: 56, textAlign: "center", color: "var(--text-secondary)" }}>Bu kart icin henuz hareket yok.</div>
-                                        ) : transactions.map((transaction) => {
-                                            const isPayment = transaction.type === "payment";
-                                            return (
-                                                <div key={transaction.id || transaction.transaction_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid var(--border-color)" }}>
-                                                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                                                        <div style={{ width: 40, height: 40, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", background: isPayment ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)", color: isPayment ? "#10b981" : "#ef4444" }}>
-                                                            {isPayment ? <ArrowDownRight size={18} /> : <ArrowUpRight size={18} />}
-                                                        </div>
-                                                        <div>
-                                                            <div style={{ fontWeight: 700 }}>{transaction.description || (isPayment ? "Kart odemesi" : "Kart harcamasi")}</div>
-                                                            <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>{new Date(transaction.created_at).toLocaleString("tr-TR")}</div>
-                                                        </div>
-                                                    </div>
-                                                    <div style={{ fontWeight: 800, color: isPayment ? "#10b981" : "#ef4444" }}>
-                                                        {isPayment ? "+" : "-"}{formatMoney(transaction.amount)}
-                                                    </div>
+                                <div style={{ background: "var(--bg-card)", borderRadius: 20, border: "1px solid var(--border-color)", minHeight: 420, overflow: "hidden" }}>
+                                    {activeTab === "transactions" ? (
+                                        <div>
+                                            <div style={{ padding: "18px 20px", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                <div>
+                                                    <div style={{ fontSize: 16, fontWeight: 800 }}>Kart hareketleri</div>
+                                                    <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>{selectedCard.card_name || "Kart"} icin son islemler</div>
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-                                ) : null}
+                                                <button type="button" onClick={() => loadTransactions(selectedCard.id || selectedCard.card_id)} style={secondaryActionStyle}>
+                                                    <RefreshCw size={16} /> Yenile
+                                                </button>
+                                            </div>
+                                            {transactions.length === 0 ? (
+                                                <div style={{ padding: 56, textAlign: "center", color: "var(--text-secondary)" }}>Bu kart icin henuz hareket yok.</div>
+                                            ) : transactions.map((transaction) => {
+                                                const isPayment = transaction.type === "payment";
+                                                return (
+                                                    <div key={transaction.id || transaction.transaction_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid var(--border-color)" }}>
+                                                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                                            <div style={{ width: 40, height: 40, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", background: isPayment ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)", color: isPayment ? "#10b981" : "#ef4444" }}>
+                                                                {isPayment ? <ArrowDownRight size={18} /> : <ArrowUpRight size={18} />}
+                                                            </div>
+                                                            <div>
+                                                                <div style={{ fontWeight: 700 }}>{transaction.description || (isPayment ? "Kart odemesi" : "Kart harcamasi")}</div>
+                                                                <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>{new Date(transaction.created_at).toLocaleString("tr-TR")}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div style={{ fontWeight: 800, color: isPayment ? "#10b981" : "#ef4444" }}>
+                                                            {isPayment ? "+" : "-"}{formatMoney(transaction.amount)}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : null}
 
-                                {activeTab === "pay" ? (
-                                    <div style={{ padding: 24 }}>
-                                        <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>Kart borcu odeme</h3>
-                                        <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 18 }}>Secili kartin borcunu aktif hesaplarinizdan biriyle odeyin.</p>
-                                        <form onSubmit={handlePayDebt} style={{ display: "grid", gap: 16, maxWidth: 420 }}>
-                                            <div>
-                                                <label style={labelStyle}>Odeme hesabi</label>
-                                                <select className="form-select" value={selectedAccount} onChange={(event) => setSelectedAccount(event.target.value)} required>
-                                                    <option value="">Hesap secin</option>
-                                                    {paymentAccounts.map((account) => (
-                                                        <option key={account.id} value={account.id}>{account.account_number} - {formatMoney(account.balance)}</option>
-                                                    ))}
-                                                </select>
-                                            </div>
-                                            <div>
-                                                <label style={labelStyle}>Odeme tutari</label>
-                                                <input className="form-input" type="number" min="1" max={selectedCard.current_debt} step="0.01" value={payAmount} onChange={(event) => setPayAmount(event.target.value)} required />
-                                            </div>
-                                            <button type="submit" disabled={actionLoading || Number(selectedCard.current_debt) <= 0} style={primaryActionStyle}>
-                                                {actionLoading ? <RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} /> : <DollarSign size={18} />}
-                                                Borcu ode
-                                            </button>
-                                        </form>
-                                    </div>
-                                ) : null}
+                                    {activeTab === "pay" ? (
+                                        <div style={{ padding: 24 }}>
+                                            <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>Kart borcu odeme</h3>
+                                            <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 18 }}>Secili kartin borcunu aktif hesaplarinizdan biriyle odeyin.</p>
+                                            <form onSubmit={handlePayDebt} style={{ display: "grid", gap: 16, maxWidth: 420 }}>
+                                                <div>
+                                                    <label style={labelStyle}>Odeme hesabi</label>
+                                                    <select className="form-select" value={selectedAccount} onChange={(event) => setSelectedAccount(event.target.value)} required>
+                                                        <option value="">Hesap secin</option>
+                                                        {paymentAccounts.map((account) => (
+                                                            <option key={account.id} value={account.id}>{account.account_number} - {formatMoney(account.balance)}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label style={labelStyle}>Odeme tutari</label>
+                                                    <input className="form-input" type="number" min="1" max={selectedCard.current_debt} step="0.01" value={payAmount} onChange={(event) => setPayAmount(event.target.value)} required />
+                                                </div>
+                                                <button type="submit" disabled={actionLoading || Number(selectedCard.current_debt) <= 0} style={primaryActionStyle}>
+                                                    {actionLoading ? <RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} /> : <DollarSign size={18} />}
+                                                    Borcu ode
+                                                </button>
+                                            </form>
+                                        </div>
+                                    ) : null}
 
-                                {activeTab === "simulate" ? (
-                                    <div style={{ padding: 24 }}>
-                                        <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>Kart harcamasi</h3>
-                                        <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 18 }}>Internet acik olan kartlar icin test harcamasi olusturabilirsiniz.</p>
-                                        <form onSubmit={handlePurchase} style={{ display: "grid", gap: 16, maxWidth: 420 }}>
-                                            <div>
-                                                <label style={labelStyle}>Harcama tutari</label>
-                                                <input className="form-input" type="number" min="1" max={selectedCard.available_limit} step="0.01" value={purchaseAmount} onChange={(event) => setPurchaseAmount(event.target.value)} required />
-                                            </div>
-                                            <div>
-                                                <label style={labelStyle}>Aciklama</label>
-                                                <input className="form-input" value={purchaseDescription} onChange={(event) => setPurchaseDescription(event.target.value)} placeholder="Ornek: reklam, oyun, market" required />
-                                            </div>
-                                            <button type="submit" disabled={actionLoading || Number(selectedCard.available_limit) <= 0} style={{ ...primaryActionStyle, background: "linear-gradient(135deg, #2563eb, #60a5fa)" }}>
-                                                {actionLoading ? <RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} /> : <ShoppingCart size={18} />}
-                                                Harcama yap
-                                            </button>
-                                        </form>
-                                    </div>
-                                ) : null}
+                                    {activeTab === "simulate" ? (
+                                        <div style={{ padding: 24 }}>
+                                            <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>Kart harcamasi</h3>
+                                            <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 18 }}>Internet acik olan kartlar icin test harcamasi olusturabilirsiniz.</p>
+                                            <form onSubmit={handlePurchase} style={{ display: "grid", gap: 16, maxWidth: 420 }}>
+                                                <div>
+                                                    <label style={labelStyle}>Harcama tutari</label>
+                                                    <input className="form-input" type="number" min="1" max={selectedCard.available_limit} step="0.01" value={purchaseAmount} onChange={(event) => setPurchaseAmount(event.target.value)} required />
+                                                </div>
+                                                <div>
+                                                    <label style={labelStyle}>Aciklama</label>
+                                                    <input className="form-input" value={purchaseDescription} onChange={(event) => setPurchaseDescription(event.target.value)} placeholder="Ornek: reklam, oyun, market" required />
+                                                </div>
+                                                <button type="submit" disabled={actionLoading || Number(selectedCard.available_limit) <= 0} style={{ ...primaryActionStyle, background: "linear-gradient(135deg, #2563eb, #60a5fa)" }}>
+                                                    {actionLoading ? <RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} /> : <ShoppingCart size={18} />}
+                                                    Harcama yap
+                                                </button>
+                                            </form>
+                                        </div>
+                                    ) : null}
+                                </div>
                             </div>
-                        </div>
+                        )}
                     </>
                 ) : null}
             </div>
             <style>{"@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }"}</style>
-        </div>
+        </div >
     );
 }
 
