@@ -52,7 +52,7 @@ export default function QRPage() {
 
         const data = {
             type: "FINBANK_QR",
-            alias: targetAcc.account_number,
+            alias: targetAcc.iban || targetAcc.account_number,
             name: user?.name || "Kullanıcı",
             amount: amount ? Number(amount) : null,
             desc: description

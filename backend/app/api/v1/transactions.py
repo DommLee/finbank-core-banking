@@ -233,11 +233,16 @@ async def transfer(
     elif body.target_alias:
         # Resolve Easy Address
         address = await db.easy_addresses.find_one({"alias_value": body.target_alias})
-        if not address:
-            raise HTTPException(status_code=404, detail="Easy address (target_alias) not found")
-        to_account = await db.accounts.find_one({"account_id": address["account_id"]})
+        if address:
+            to_account = await db.accounts.find_one({"account_id": address["account_id"]})
+        else:
+            # Fallback for account numbers mistakenly passed as alias (e.g., from old QR codes)
+            to_account = await db.accounts.find_one({"account_number": body.target_alias})
+            
         if to_account:
             body.to_account_id = to_account["account_id"]
+        else:
+            raise HTTPException(status_code=404, detail="Easy address (target_alias) not found")
 
     if not to_account:
         raise HTTPException(status_code=404, detail="Target account not found")
