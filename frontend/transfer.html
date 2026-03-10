@@ -1,0 +1,170 @@
+<html class="dark"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Outfit:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2525f4",
+                        "accent-purple": "#a855f7",
+                        "background-light": "#f5f5f8",
+                        "background-dark": "#0a0a14",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "outfit": ["Outfit", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "2xl": "2rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .mesh-gradient {
+            background-color: #0a0a14;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(37, 37, 244, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.1) 0px, transparent 50%);
+        }
+        .neo-glow {
+            text-shadow: 0 0 20px rgba(37, 37, 244, 0.6);
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #a855f7 0%, #2525f4 100%);
+            box-shadow: 0 10px 25px -5px rgba(37, 37, 244, 0.4);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 mesh-gradient min-h-screen">
+<div class="relative flex h-full min-h-screen w-full max-w-[430px] mx-auto flex-col overflow-x-hidden pb-10">
+<div class="flex items-center p-6 justify-between">
+<div class="flex size-10 items-center justify-center rounded-full glass cursor-pointer">
+<span class="material-symbols-outlined text-slate-100">arrow_back_ios_new</span>
+</div>
+<h2 class="text-slate-100 text-lg font-semibold font-outfit tracking-tight">Transfer Money</h2>
+<div class="flex size-10 items-center justify-center rounded-full glass cursor-pointer">
+<span class="material-symbols-outlined text-slate-100">history</span>
+</div>
+</div>
+<div class="px-6 mt-2">
+<p class="text-slate-400 text-xs font-medium uppercase tracking-widest mb-3 px-1">Source Account</p>
+<div class="glass rounded-2xl p-4 flex items-center justify-between cursor-pointer group">
+<div class="flex items-center gap-4">
+<div class="relative w-14 h-9 rounded-md bg-gradient-to-br from-primary to-accent-purple p-[1px] shadow-lg overflow-hidden">
+<div class="w-full h-full bg-slate-900/80 rounded-[5px] flex flex-col justify-between p-1.5 overflow-hidden">
+<div class="flex justify-between items-start">
+<div class="w-3 h-2 bg-yellow-500/80 rounded-sm"></div>
+<div class="flex gap-0.5">
+<div class="w-2 h-2 rounded-full bg-red-500/60"></div>
+<div class="w-2 h-2 rounded-full bg-yellow-500/60 -ml-1"></div>
+</div>
+</div>
+<div class="text-[6px] text-slate-400 font-mono">**** 4290</div>
+</div>
+</div>
+<div>
+<p class="text-slate-100 text-sm font-semibold">Premium Savings</p>
+<p class="text-primary text-xs font-medium">$12,450.00</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors">expand_more</span>
+</div>
+</div>
+<div class="mt-8 px-6">
+<p class="text-slate-400 text-xs font-medium uppercase tracking-widest mb-4 px-1">Quick Contacts</p>
+<div class="flex gap-4 overflow-x-auto pb-2 no-scrollbar">
+<div class="flex flex-col items-center gap-2 min-w-[64px]">
+<div class="w-16 h-16 rounded-full glass flex items-center justify-center border-dashed border-slate-700">
+<span class="material-symbols-outlined text-primary">add</span>
+</div>
+<p class="text-slate-400 text-[11px] font-medium">New</p>
+</div>
+<div class="flex flex-col items-center gap-2 min-w-[64px]">
+<div class="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-primary to-accent-purple">
+<div class="w-full h-full rounded-full border-2 border-background-dark bg-cover bg-center" data-alt="Avatar of Alex with vibrant glow" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCIb1SnvXvvh08eMNqWOC-5C7AJHRTMYxEBTRpO8ki5bQ0Hbf6lcF77g33387bLH6IHqAVFk7RjgE0KcZFetdpq1gOR1FSJwW4HbHSj3MvdYdVjq5xxeTCEzKQ1NPCGonELnpR998Du1qD9xVQckeRhTVh8VGo_BdI3-DYd1fEigv8E3szz0KelqgvTrgGya777PC5jEzOVtiOfEEv9Cnfnve7ZopGvrliFHQAhz8ayJ_Gj-BcbQnK-vqwW4voITzQ8Q8OLU5r8dnSy')"></div>
+</div>
+<p class="text-slate-100 text-[11px] font-medium">Alex</p>
+</div>
+<div class="flex flex-col items-center gap-2 min-w-[64px]">
+<div class="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-accent-purple to-pink-500">
+<div class="w-full h-full rounded-full border-2 border-background-dark bg-cover bg-center" data-alt="Avatar of Sarah with vibrant glow" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAzlHhbtbBinZnaz8puwuJvZ4ibNjLO86aRyzhoj5DdEAj9TSTl9XN3qp-yBBITRjtCWkwJgep0UOyr4LFxEuT1Df2x_fIqw2Z5w8snxX08B69L_Ec-73lO2BwrE4ymhsAVVbEcSszSjRajgy4kPD7AgzNJtKaTEvC2LlMspdwJrdRvc7gJ7gJzVVgC2aOiHhjyFeNnTqlfW9kvJSzxc_4PYMS9WAJXqsGIhJKL_d_z6TKHDii-aF1QNlBPf7DE4kjdjzRa5ZV34twO')"></div>
+</div>
+<p class="text-slate-100 text-[11px] font-medium">Sarah</p>
+</div>
+<div class="flex flex-col items-center gap-2 min-w-[64px]">
+<div class="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-blue-400 to-primary">
+<div class="w-full h-full rounded-full border-2 border-background-dark bg-cover bg-center" data-alt="Avatar of Mike with vibrant glow" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAfqtACbEZSEfNWG7_CpQSdv63OBzt39Flh8LG_pDbZCU0kge8kNlSLZ2uKPpKmAvj31sUyQzcqpxeqYkhA9dZS06BmDwUsUpnAXfuUXQU1oBp_-cqeTCqLQ3s52GsLeBh25ny1Se3ufGK5vxerRcF1KowtJxaN97C1cvFRIYuArKetiZPy71o6MzNPn17DN8kDREbMUGmFq_LJAEFZ2Ib1SEOuwbw21o8sAeiswPsN-N06WxAMyewQInScgQ2QifkBV9UtsSZoPV75')"></div>
+</div>
+<p class="text-slate-100 text-[11px] font-medium">Mike</p>
+</div>
+<div class="flex flex-col items-center gap-2 min-w-[64px]">
+<div class="w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr from-green-400 to-blue-500">
+<div class="w-full h-full rounded-full border-2 border-background-dark bg-cover bg-center" data-alt="Avatar of Elena with vibrant glow" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA3EjHF9InZE81A8tyNIIT8PqdDZbhgUgjBi1-4qMTSUMdj_qFMlCdKb9mXawAMZmJrIxfGRpx43Qf9vC_5f88nvYt7azEXE7HIgEWQ8AjZI4vEvW9iFDIJONos_-JSLLZxW1DhcAfZ_zyfnlIJBPg1OL4ewuc8tB_qWfNPXcc_oE2RTnF7FM2lowwaEewyU3ujMuS4IE7qZYcnvr_Dr5-tII6sesALubcUpXxFROY2VycIJiH3xht0ZLfNFxEYAz80lAuBKpWQE3XE')"></div>
+</div>
+<p class="text-slate-100 text-[11px] font-medium">Elena</p>
+</div>
+</div>
+</div>
+<div class="flex flex-col items-center justify-center py-10">
+<p class="text-slate-400 text-sm font-medium mb-1">Enter Amount</p>
+<div class="flex items-baseline gap-1">
+<span class="text-primary text-3xl font-outfit font-semibold">$</span>
+<span class="text-slate-100 text-6xl font-outfit font-bold neo-glow">2,450</span>
+<span class="text-slate-400 text-2xl font-outfit font-medium">.00</span>
+</div>
+</div>
+<div class="px-8 mb-6">
+<div class="grid grid-cols-3 gap-4">
+<button class="glass h-14 rounded-xl text-xl font-outfit font-semibold text-slate-100 active:scale-95 transition-transform">1</button>
+<button class="glass h-14 rounded-xl text-xl font-outfit font-semibold text-slate-100 active:scale-95 transition-transform">2</button>
+<button class="glass h-14 rounded-xl text-xl font-outfit font-semibold text-slate-100 active:scale-95 transition-transform">3</button>
+<button class="glass h-14 rounded-xl text-xl font-outfit font-semibold text-slate-100 active:scale-95 transition-transform">4</button>
+<button class="glass h-14 rounded-xl text-xl font-outfit font-semibold text-slate-100 active:scale-95 transition-transform">5</button>
+<button class="glass h-14 rounded-xl text-xl font-outfit font-semibold text-slate-100 active:scale-95 transition-transform">6</button>
+<button class="glass h-14 rounded-xl text-xl font-outfit font-semibold text-slate-100 active:scale-95 transition-transform">7</button>
+<button class="glass h-14 rounded-xl text-xl font-outfit font-semibold text-slate-100 active:scale-95 transition-transform">8</button>
+<button class="glass h-14 rounded-xl text-xl font-outfit font-semibold text-slate-100 active:scale-95 transition-transform">9</button>
+<button class="h-14 rounded-xl text-xl font-outfit font-semibold text-slate-100 flex items-center justify-center">.</button>
+<button class="glass h-14 rounded-xl text-xl font-outfit font-semibold text-slate-100 active:scale-95 transition-transform">0</button>
+<button class="h-14 rounded-xl text-xl font-outfit font-semibold text-slate-100 flex items-center justify-center active:scale-95 transition-transform">
+<span class="material-symbols-outlined">backspace</span>
+</button>
+</div>
+</div>
+<div class="px-6 mt-auto">
+<button class="w-full h-16 btn-gradient rounded-2xl flex items-center justify-center gap-3 active:scale-[0.98] transition-all group overflow-hidden relative">
+<div class="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<span class="text-white font-outfit font-bold text-lg">Confirm Transfer</span>
+<span class="material-symbols-outlined text-white">arrow_forward</span>
+</button>
+</div>
+<div class="h-8"></div>
+</div>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+
+```</body></html>

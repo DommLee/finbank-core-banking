@@ -55,32 +55,20 @@ export default function MobileBottomNav() {
     }
 
     return (
-        <div className="md:hidden fixed bottom-0 left-0 right-0 z-[1000] bg-deepblue-950/80 backdrop-blur-xl border-t border-white/10 pb-safe">
-            <div className="flex items-center justify-around px-2 py-3">
-                {links.map((link) => {
-                    const Icon = link.icon;
-                    return (
-                        <NavLink
-                            key={link.path}
-                            to={link.path}
-                            className={({ isActive }) =>
-                                `flex flex-col items-center justify-center w-16 h-12 rounded-xl transition-all duration-300 relative
-                                ${isActive ? "text-white" : "text-white/50 hover:text-white/80"}`
-                            }
-                        >
-                            {({ isActive }) => (
-                                <>
-                                    {isActive && (
-                                        <div className="absolute inset-0 bg-white/10 rounded-xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] -z-10" />
-                                    )}
-                                    <Icon size={20} className={`mb-1 transition-transform duration-300 ${isActive ? 'scale-110' : ''}`} />
-                                    <span className="text-[10px] font-medium tracking-wide">{link.label}</span>
-                                </>
-                            )}
-                        </NavLink>
-                    );
-                })}
-            </div>
+        <div className="bottom-nav">
+            {links.map((link) => {
+                const Icon = link.icon;
+                return (
+                    <NavLink
+                        key={link.path}
+                        to={link.path}
+                        className={({ isActive }) => `bottom-nav-item ${isActive ? "active" : ""}`}
+                    >
+                        <Icon size={20} className="mb-0.5" />
+                        <span>{link.label}</span>
+                    </NavLink>
+                );
+            })}
         </div>
     );
 }

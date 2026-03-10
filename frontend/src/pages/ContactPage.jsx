@@ -1,14 +1,12 @@
 import { useState } from "react";
-import { Headphones, Send, MapPin, Phone, Mail, Clock, CheckCircle2, Loader2, MessageSquare, ChevronDown } from "lucide-react";
+import { Headphones, Send, MapPin, Phone, Mail, Clock, CheckCircle2, Loader2, MessageSquare } from "lucide-react";
 import { messagesApi } from "../services/api";
 import toast from "react-hot-toast";
-import { motion, AnimatePresence } from "framer-motion";
 
 export default function ContactPage() {
     const [form, setForm] = useState({ subject: "", body: "", category: "general" });
     const [submitting, setSubmitting] = useState(false);
     const [sent, setSent] = useState(false);
-    const [openFaq, setOpenFaq] = useState(null);
 
     const handleChange = (e) => setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
 
@@ -31,213 +29,126 @@ export default function ContactPage() {
 
     if (sent) {
         return (
-            <div className="p-6 max-w-2xl mx-auto min-h-[80vh] flex flex-col justify-center">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-12 text-center shadow-2xl relative overflow-hidden"
-                >
-                    <div className="absolute -top-32 -left-32 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl pointer-events-none" />
-                    <div className="absolute -bottom-32 -right-32 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
-
-                    <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
-                        className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-emerald-500/20 mb-6 relative z-10"
-                    >
-                        <CheckCircle2 size={48} className="text-emerald-400" />
-                    </motion.div>
-                    <h2 className="text-3xl font-bold text-white mb-4 relative z-10">Mesajınız İletildi!</h2>
-                    <p className="text-white/60 text-base leading-relaxed mb-8 max-w-md mx-auto relative z-10">
+            <div style={{ padding: 24, maxWidth: 600, margin: "0 auto" }}>
+                <div style={{
+                    background: "var(--bg-card)", borderRadius: 20, padding: 48,
+                    border: "1px solid var(--border-color)", textAlign: "center",
+                }}>
+                    <CheckCircle2 size={56} color="#22c55e" style={{ marginBottom: 16 }} />
+                    <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 8 }}>Mesajınız İletildi! ✅</h2>
+                    <p style={{ color: "var(--text-secondary)", fontSize: 14, lineHeight: 1.6, marginBottom: 20 }}>
                         Destek ekibimiz en kısa sürede size dönüş yapacaktır. Ortalama yanıt süresi 2-4 saattir.
                     </p>
-                    <button
-                        onClick={() => { setSent(false); setForm({ subject: "", body: "", category: "general" }); }}
-                        className="px-8 py-3.5 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white font-medium rounded-xl transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 active:scale-95 relative z-10"
-                    >
-                        Yeni Mesaj Gönder
-                    </button>
-                </motion.div>
+                    <button onClick={() => { setSent(false); setForm({ subject: "", body: "", category: "general" }); }}
+                        style={primaryBtn}>Yeni Mesaj Gönder</button>
+                </div>
             </div>
         );
     }
 
-    const contactInfo = [
-        { icon: Phone, label: "Telefon", val: "0850 123 4567", color: "text-emerald-400", bg: "bg-emerald-400/10" },
-        { icon: Mail, label: "E-posta", val: "destek@finbank.com.tr", color: "text-blue-400", bg: "bg-blue-400/10" },
-        { icon: MapPin, label: "Merkez", val: "Levent, İstanbul", color: "text-amber-400", bg: "bg-amber-400/10" },
-        { icon: Clock, label: "Çalışma Saatleri", val: "09:00 - 18:00 (Hafta içi)", color: "text-purple-400", bg: "bg-purple-400/10" },
-    ];
-
-    const faqs = [
-        { q: "Hesap nasıl açılır?", a: "Panel → Hesaplar → Yeni Hesap Aç menüsünden saniyeler içinde yeni vadesiz veya vadeli hesap açabilirsiniz." },
-        { q: "KYC nedir?", a: "Kimlik doğrulama (Know Your Customer) sürecidir. Güvenliğiniz ve yasal zorunluluklar gereği bankacılık işlemleri için kimliğinizi doğrulamanız gereklidir." },
-        { q: "Şifre nasıl değiştirilir?", a: "Profil → Güvenlik sekmesinden mevcut şifrenizi girerek yeni şifre belirleyebilirsiniz." },
-        { q: "2FA nasıl etkinleştirilir?", a: "Güvenlik Ayarları → İki Aşamalı Doğrulama (2FA) sekmesinden Google Authenticator veya SMS ile ekstra güvenlik katmanı ekleyebilirsiniz." },
-    ];
-
     return (
-        <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-8">
-            {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="relative bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 overflow-hidden"
-            >
-                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-                <div className="flex items-center gap-4 mb-3 relative z-10">
-                    <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-                        <Headphones size={24} className="text-indigo-400" />
-                    </div>
-                    <h1 className="text-3xl font-bold text-white tracking-tight">İletişim & Destek</h1>
-                </div>
-                <p className="text-white/60 text-lg relative z-10 ml-16">
-                    Sorularınız, önerileriniz veya şikayetleriniz için 7/24 bize ulaşabilirsiniz.
-                </p>
-            </motion.div>
+        <div style={{ padding: 24, maxWidth: 800, margin: "0 auto" }}>
+            <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 8, display: "flex", alignItems: "center", gap: 10 }}>
+                <Headphones size={28} color="#6366f1" /> İletişim & Destek
+            </h1>
+            <p style={{ color: "var(--text-secondary)", fontSize: 14, marginBottom: 28 }}>
+                Sorularınız, önerileriniz veya şikayetleriniz için bize ulaşın.
+            </p>
 
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
-                {/* Sol Taraf: İletişim Bilgileri & SSS */}
-                <div className="lg:col-span-2 space-y-6">
-                    {/* İletişim Kartları */}
-                    <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4"
-                    >
-                        {contactInfo.map((info, i) => (
-                            <div key={i} className="group bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-5 flex items-center gap-4 hover:border-white/20 hover:bg-white/10 transition-all duration-300">
-                                <div className={`w-12 h-12 rounded-xl ${info.bg} flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300`}>
-                                    <info.icon size={22} className={info.color} />
-                                </div>
-                                <div>
-                                    <div className="text-[11px] font-medium text-white/50 uppercase tracking-wider mb-1">{info.label}</div>
-                                    <div className="text-[15px] font-semibold text-white">{info.val}</div>
-                                </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+                {/* Contact Info Cards */}
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    {[
+                        { icon: <Phone size={20} />, label: "Telefon", val: "0850 123 4567", color: "#22c55e" },
+                        { icon: <Mail size={20} />, label: "E-posta", val: "destek@finbank.com.tr", color: "#3b82f6" },
+                        { icon: <MapPin size={20} />, label: "Merkez", val: "Levent, İstanbul", color: "#f59e0b" },
+                        { icon: <Clock size={20} />, label: "Çalışma Saatleri", val: "09:00 - 18:00 (Hafta içi)", color: "#8b5cf6" },
+                    ].map((c, i) => (
+                        <div key={i} style={{
+                            background: "var(--bg-card)", borderRadius: 16, padding: 18,
+                            border: "1px solid var(--border-color)", display: "flex", alignItems: "center", gap: 14,
+                        }}>
+                            <div style={{
+                                width: 44, height: 44, borderRadius: 12,
+                                background: `${c.color}18`, display: "flex", alignItems: "center", justifyContent: "center",
+                                color: c.color,
+                            }}>{c.icon}</div>
+                            <div>
+                                <div style={{ fontSize: 11, color: "var(--text-secondary)" }}>{c.label}</div>
+                                <div style={{ fontSize: 14, fontWeight: 600 }}>{c.val}</div>
                             </div>
+                        </div>
+                    ))}
+
+                    {/* FAQ */}
+                    <div style={{
+                        background: "var(--bg-card)", borderRadius: 16, padding: 18,
+                        border: "1px solid var(--border-color)",
+                    }}>
+                        <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                            <MessageSquare size={18} color="#6366f1" /> Sık Sorulan Sorular
+                        </h3>
+                        {[
+                            { q: "Hesap nasıl açılır?", a: "Panel → Hesaplar → Yeni Hesap Aç" },
+                            { q: "KYC nedir?", a: "Kimlik doğrulama sürecidir, banka işlemleri için gereklidir." },
+                            { q: "Şifre nasıl değiştirilir?", a: "Profil → Şifre Değiştir bölümünden yapabilirsiniz." },
+                            { q: "2FA nasıl etkinleştirilir?", a: "Güvenlik Ayarları → 2FA sekmesinden Google Authenticator kullanın." },
+                        ].map((faq, i) => (
+                            <details key={i} style={{
+                                marginBottom: 6, borderBottom: "1px solid var(--border-color)", paddingBottom: 6,
+                            }}>
+                                <summary style={{
+                                    fontSize: 13, fontWeight: 600, cursor: "pointer", padding: "6px 0",
+                                    listStyle: "none", display: "flex", justifyContent: "space-between",
+                                }}>{faq.q}</summary>
+                                <p style={{ fontSize: 12, color: "var(--text-secondary)", padding: "4px 0 8px", lineHeight: 1.5 }}>{faq.a}</p>
+                            </details>
                         ))}
-                    </motion.div>
-
-                    {/* SSS */}
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.2 }}
-                        className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6"
-                    >
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 rounded-lg bg-indigo-500/20">
-                                <MessageSquare size={18} className="text-indigo-400" />
-                            </div>
-                            <h3 className="text-lg font-bold text-white">Sık Sorulan Sorular</h3>
-                        </div>
-
-                        <div className="space-y-3">
-                            {faqs.map((faq, i) => (
-                                <div key={i} className="border border-white/5 rounded-xl bg-white/5 overflow-hidden">
-                                    <button
-                                        type="button"
-                                        className="w-full px-4 py-3 flex items-center justify-between text-left hover:bg-white/5 transition-colors focus:outline-none"
-                                        onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                                    >
-                                        <span className="text-[13px] font-medium text-white pr-4">{faq.q}</span>
-                                        <ChevronDown size={16} className={`text-white/40 transition-transform duration-300 shrink-0 ${openFaq === i ? 'rotate-180' : ''}`} />
-                                    </button>
-                                    <AnimatePresence>
-                                        {openFaq === i && (
-                                            <motion.div
-                                                initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: "auto", opacity: 1 }}
-                                                exit={{ height: 0, opacity: 0 }}
-                                                className="overflow-hidden"
-                                            >
-                                                <p className="px-4 pb-4 text-[13px] text-white/60 leading-relaxed pt-1 border-t border-white/5 mx-4">
-                                                    {faq.a}
-                                                </p>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </div>
-                            ))}
-                        </div>
-                    </motion.div>
+                    </div>
                 </div>
 
-                {/* Sağ Taraf: İletişim Formu */}
-                <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="lg:col-span-3"
-                >
-                    <form onSubmit={handleSubmit} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 flex flex-col gap-6 relative shadow-xl">
-                        <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-br from-indigo-500/5 to-transparent rounded-3xl pointer-events-none" />
+                {/* Contact Form */}
+                <form onSubmit={handleSubmit} style={{
+                    background: "var(--bg-card)", borderRadius: 20, padding: 24,
+                    border: "1px solid var(--border-color)", display: "flex", flexDirection: "column", gap: 14,
+                }}>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 4 }}>📩 Mesaj Gönder</h3>
 
-                        <div>
-                            <h3 className="text-xl font-bold text-white mb-2 relative z-10">Bize Yazın</h3>
-                            <p className="text-sm text-white/50 relative z-10">Taleplerinizi detaylı bir şekilde iletin, uzman ekibimiz hızla çözüm sağlasın.</p>
-                        </div>
+                    <div>
+                        <label style={labelStyle}>Kategori</label>
+                        <select name="category" value={form.category} onChange={handleChange} style={inputStyle}>
+                            <option value="general">Genel</option>
+                            <option value="technical">Teknik Destek</option>
+                            <option value="complaint">Şikayet</option>
+                            <option value="suggestion">Öneri</option>
+                            <option value="account">Hesap İşlemleri</option>
+                        </select>
+                    </div>
 
-                        <div className="space-y-5 relative z-10">
-                            <div>
-                                <label className="text-[13px] font-semibold text-white/70 mb-2 block ml-1">Kategori</label>
-                                <div className="relative">
-                                    <select
-                                        name="category"
-                                        value={form.category}
-                                        onChange={handleChange}
-                                        className="w-full bg-deepblue-950/50 border border-white/10 text-white rounded-xl px-4 py-3.5 appearance-none outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all text-sm"
-                                    >
-                                        <option value="general" className="bg-deepblue-900">Genel Danışma</option>
-                                        <option value="technical" className="bg-deepblue-900">Teknik Destek</option>
-                                        <option value="complaint" className="bg-deepblue-900">Şikayet Bildirimi</option>
-                                        <option value="suggestion" className="bg-deepblue-900">Öneri & İstek</option>
-                                        <option value="account" className="bg-deepblue-900">Hesap İşlemleri</option>
-                                    </select>
-                                    <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 pointer-events-none" />
-                                </div>
-                            </div>
+                    <div>
+                        <label style={labelStyle}>Konu *</label>
+                        <input name="subject" value={form.subject} onChange={handleChange}
+                            placeholder="Mesajınızın konusu" style={inputStyle} />
+                    </div>
 
-                            <div>
-                                <label className="text-[13px] font-semibold text-white/70 mb-2 block ml-1">Konu <span className="text-red-400">*</span></label>
-                                <input
-                                    name="subject"
-                                    value={form.subject}
-                                    onChange={handleChange}
-                                    placeholder="Mesajınızın ana konusu..."
-                                    className="w-full bg-deepblue-950/50 border border-white/10 text-white placeholder-white/20 rounded-xl px-4 py-3.5 outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all text-sm"
-                                />
-                            </div>
+                    <div>
+                        <label style={labelStyle}>Mesaj *</label>
+                        <textarea name="body" value={form.body} onChange={handleChange}
+                            placeholder="Detaylı olarak açıklayın..." rows={6}
+                            style={{ ...inputStyle, resize: "vertical" }} />
+                    </div>
 
-                            <div>
-                                <label className="text-[13px] font-semibold text-white/70 mb-2 block ml-1">Mesaj Detayı <span className="text-red-400">*</span></label>
-                                <textarea
-                                    name="body"
-                                    value={form.body}
-                                    onChange={handleChange}
-                                    placeholder="Lütfen talebinizi detaylı olarak açıklayın..."
-                                    rows={8}
-                                    className="w-full bg-deepblue-950/50 border border-white/10 text-white placeholder-white/20 rounded-xl px-4 py-3.5 outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all text-sm resize-none"
-                                />
-                            </div>
-                        </div>
-
-                        <button
-                            type="submit"
-                            disabled={submitting}
-                            className="mt-2 w-full sm:w-auto self-end px-8 py-4 bg-gradient-to-r from-indigo-500 to-blue-500 hover:from-indigo-600 hover:to-blue-600 text-white font-semibold rounded-xl transition-all shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 active:scale-[0.98] flex items-center justify-center gap-2 relative z-10 disabled:opacity-70 disabled:pointer-events-none"
-                        >
-                            {submitting ? (
-                                <><Loader2 size={18} className="animate-spin" /> Gönderiliyor...</>
-                            ) : (
-                                <>Mesajı Gönder <Send size={18} /></>
-                            )}
-                        </button>
-                    </form>
-                </motion.div>
+                    <button type="submit" disabled={submitting} style={primaryBtn}>
+                        {submitting ? <><Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} /> Gönderiliyor...</> :
+                            <><Send size={16} /> Gönder</>}
+                    </button>
+                </form>
             </div>
+            <style>{`@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
         </div>
     );
 }
+
+const labelStyle = { fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 4, display: "block" };
+const inputStyle = { width: "100%", padding: "12px 16px", borderRadius: 12, border: "1px solid var(--border-color)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" };
+const primaryBtn = { padding: "12px 20px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", fontWeight: 600, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 };

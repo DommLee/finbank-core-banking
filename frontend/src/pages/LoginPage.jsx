@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { authApi } from "../services/api";
 import toast from "react-hot-toast";
@@ -7,8 +7,6 @@ import {
     User, Phone, CreditCard, CheckCircle, AlertCircle,
     Eye, EyeOff, ArrowRight, ArrowLeft, FileCheck, ChevronRight,
 } from "lucide-react";
-import LoginBackground3D from "../components/3d/LoginBackground3D";
-import { motion, AnimatePresence } from "framer-motion";
 
 // ── TC Kimlik Numarası Doğrulama Algoritması ──
 function validateTC(tc) {
@@ -22,11 +20,11 @@ function validateTC(tc) {
     const check10 = ((oddSum * 7) - evenSum) % 10;
     const digit10 = check10 < 0 ? check10 + 10 : check10;
     if (digit10 !== d[9]) {
-        return { valid: false, error: "TC Kimlik numarası geçersiz." };
+        return { valid: false, error: "TC Kimlik numarası geçersiz (10. hane kontrolü başarısız)." };
     }
     const sum10 = d.slice(0, 10).reduce((a, b) => a + b, 0);
     if (sum10 % 10 !== d[10]) {
-        return { valid: false, error: "TC Kimlik numarası geçersiz." };
+        return { valid: false, error: "TC Kimlik numarası geçersiz (11. hane kontrolü başarısız)." };
     }
     return { valid: true, error: null };
 }
@@ -41,27 +39,31 @@ function analyzePassword(password) {
         special: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
     };
     const score = Object.values(checks).filter(Boolean).length;
-    let level = "Çok Zayıf", color = "bg-red-500", text = "text-red-500";
-    if (score >= 5) { level = "Çok Güçlü"; color = "bg-emerald-500"; text = "text-emerald-500"; }
-    else if (score >= 4) { level = "Güçlü"; color = "bg-emerald-400"; text = "text-emerald-400"; }
-    else if (score >= 3) { level = "Orta"; color = "bg-amber-500"; text = "text-amber-500"; }
-    else if (score >= 2) { level = "Zayıf"; color = "bg-orange-500"; text = "text-orange-500"; }
-    return { checks, score, level, color, text, percent: (score / 5) * 100 };
+    let level = "Çok Zayıf";
+    let color = "#ef4444";
+    if (score >= 5) { level = "Çok Güçlü"; color = "#22c55e"; }
+    else if (score >= 4) { level = "Güçlü"; color = "#10b981"; }
+    else if (score >= 3) { level = "Orta"; color = "#f59e0b"; }
+    else if (score >= 2) { level = "Zayıf"; color = "#f97316"; }
+    return { checks, score, level, color, percent: (score / 5) * 100 };
 }
 
+// ── Telefon Formatı ──
 function formatPhone(value) {
     const digits = value.replace(/\D/g, "");
     if (digits.startsWith("90") && digits.length <= 12) {
+        const parts = digits.slice(2);
         let formatted = "+90";
-        if (digits.length > 2) formatted += " " + digits.slice(2, 5);
-        if (digits.length > 5) formatted += " " + digits.slice(5, 8);
-        if (digits.length > 8) formatted += " " + digits.slice(8, 10);
-        if (digits.length > 10) formatted += " " + digits.slice(10, 12);
+        if (parts.length > 0) formatted += " " + parts.slice(0, 3);
+        if (parts.length > 3) formatted += " " + parts.slice(3, 6);
+        if (parts.length > 6) formatted += " " + parts.slice(6, 8);
+        if (parts.length > 8) formatted += " " + parts.slice(8, 10);
         return formatted;
     }
     return value;
 }
 
+// ── Adım Başlıkları ──
 const STEPS = [
     { title: "Kişisel Bilgiler", icon: User, desc: "Temel kimlik bilgileriniz" },
     { title: "İletişim", icon: Phone, desc: "Telefon ve adres bilgileri" },
@@ -77,8 +79,10 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
 
     const [form, setForm] = useState({
-        email: "", password: "", full_name: "", phone: "", national_id: "",
-        date_of_birth: "", address: "", kvkk: false, terms: false,
+        email: "", password: "",
+        full_name: "", phone: "", national_id: "",
+        date_of_birth: "", address: "",
+        kvkk: false, terms: false,
     });
 
     const [errors, setErrors] = useState({});
@@ -103,19 +107,31 @@ export default function LoginPage() {
         }
     };
 
+    // ── Adım Validasyonları ──
     const validateStep = (s) => {
         const errs = {};
         if (s === 0) {
             if (!form.full_name || form.full_name.trim().length < 2) errs.full_name = "Ad Soyad en az 2 karakter olmalıdır.";
+            if (!form.full_name.trim().includes(" ")) errs.full_name = "Lütfen ad ve soyadınızı ayrı girin.";
             if (!form.national_id) errs.national_id = "TC Kimlik numarası zorunludur.";
             else {
                 const tc = validateTC(form.national_id);
                 if (!tc.valid) errs.national_id = tc.error;
             }
             if (!form.date_of_birth) errs.date_of_birth = "Doğum tarihi zorunludur.";
+            else {
+                const age = Math.floor((Date.now() - new Date(form.date_of_birth).getTime()) / (365.25 * 24 * 60 * 60 * 1000));
+                if (age < 18) errs.date_of_birth = "18 yaşından küçükler hesap açamaz.";
+                if (age > 120) errs.date_of_birth = "Geçersiz doğum tarihi.";
+            }
         } else if (s === 1) {
             if (!form.email) errs.email = "E-posta adresi zorunludur.";
+            else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = "Geçerli bir e-posta adresi girin.";
             if (!form.phone) errs.phone = "Telefon numarası zorunludur.";
+            else {
+                const digits = form.phone.replace(/\D/g, "");
+                if (digits.length < 10 || digits.length > 12) errs.phone = "Geçerli bir telefon numarası girin.";
+            }
         } else if (s === 2) {
             if (!form.password) errs.password = "Şifre zorunludur.";
             else {
@@ -123,215 +139,368 @@ export default function LoginPage() {
                 if (pwd.score < 3) errs.password = "Şifre en az 'Orta' güçlükte olmalıdır.";
             }
         } else if (s === 3) {
-            if (!form.kvkk) errs.kvkk = "KVKK kabul edilmeli.";
-            if (!form.terms) errs.terms = "Koşullar kabul edilmeli.";
+            if (!form.kvkk) errs.kvkk = "KVKK aydınlatma metnini kabul etmelisiniz.";
+            if (!form.terms) errs.terms = "Kullanım koşullarını kabul etmelisiniz.";
         }
         setErrors(errs);
         return Object.keys(errs).length === 0;
     };
 
-    const nextStep = () => validateStep(step) && setStep(step + 1);
+    const nextStep = () => {
+        if (validateStep(step)) setStep(step + 1);
+    };
     const prevStep = () => setStep(Math.max(0, step - 1));
 
+    // ── Kayıt ──
     const handleRegister = async () => {
         if (!validateStep(3)) return;
         setLoading(true);
         try {
             const phoneDigits = "+" + form.phone.replace(/\D/g, "");
             await authApi.register({
-                email: form.email, password: form.password, full_name: form.full_name.trim(),
-                phone: phoneDigits, national_id: form.national_id,
+                email: form.email,
+                password: form.password,
+                full_name: form.full_name.trim(),
+                phone: phoneDigits,
+                national_id: form.national_id,
             });
             toast.success("Hesabınız oluşturuldu! Giriş yapılıyor...");
             try {
                 const res = await authApi.login({ email: form.email, password: form.password });
                 login(res.data.access_token, { email: res.data.email, role: res.data.role });
+                toast.success("Hoş geldiniz! 🎉");
             } catch {
-                setIsRegister(false); setStep(0);
+                toast.success("Hesap oluşturuldu! Lütfen giriş yapın.");
+                setIsRegister(false);
+                setStep(0);
             }
         } catch (err) {
-            toast.error(err.response?.data?.detail || "Kayıt sırasında hata.");
-        } finally { setLoading(false); }
+            toast.error(err.response?.data?.detail || "Kayıt sırasında bir hata oluştu.");
+        } finally {
+            setLoading(false);
+        }
     };
 
+    // ── Giriş ──
     const handleLogin = async (e) => {
         e.preventDefault();
-        if (!form.email || !form.password) return toast.error("E-posta ve şifre gereklidir.");
+        if (!form.email || !form.password) {
+            toast.error("E-posta ve şifre gereklidir.");
+            return;
+        }
         setLoading(true);
         try {
             const res = await authApi.login({ email: form.email, password: form.password });
             login(res.data.access_token, { email: res.data.email, role: res.data.role });
             toast.success("Giriş başarılı!");
         } catch (err) {
-            toast.error(err.response?.data?.detail || "Giriş başarısız.");
-        } finally { setLoading(false); }
+            toast.error(err.response?.data?.detail || "Giriş başarısız. E-posta veya şifre hatalı.");
+        } finally {
+            setLoading(false);
+        }
     };
 
-    // Shared Input Style
-    const inputCls = "w-full bg-deepblue-950/50 border border-white/10 text-white placeholder-white/20 rounded-xl px-4 py-3.5 outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all text-sm";
-    const inputClsWithIcon = inputCls + " pl-10";
-
+    // ── Kayıt Multistep UI ──
     if (isRegister) {
         return (
-            <div className="relative min-h-screen flex items-center justify-center p-4">
-                <LoginBackground3D />
-                <div className="relative max-w-5xl w-full flex flex-col md:flex-row bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden z-10 min-h-[600px]">
-                    <div className="hidden md:flex flex-col flex-1 p-12 justify-center border-r border-white/10 bg-deepblue-950/40">
-                        <div className="flex items-center gap-3 mb-10">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center font-bold text-lg text-white shadow-lg shadow-blue-500/30">FB</div>
-                            <span className="text-2xl font-bold text-white tracking-tight">FinBank</span>
+            <div className="login-page">
+                <div className="login-branding">
+                    <div className="login-branding-content">
+                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 40 }}>
+                            <div style={{
+                                width: 48, height: 48, borderRadius: 14,
+                                background: "linear-gradient(135deg, var(--accent), #818cf8)",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                fontWeight: 700, fontSize: 18, color: "#fff",
+                            }}>FB</div>
+                            <span style={{ fontSize: 22, fontWeight: 700 }}>FinBank</span>
                         </div>
-                        <h1 className="text-4xl font-extrabold text-white leading-tight mb-4">Güvenli Hesap<br />Oluşturma</h1>
-                        <p className="text-blue-100/70 text-lg mb-8 leading-relaxed">Bankacılık düzeyinde güvenlik ile hesabınızı adım adım oluşturun. Bilgileriniz 256-bit şifreleme ile korunur.</p>
+                        <h1 style={{ fontSize: 34, fontWeight: 800, lineHeight: 1.2, marginBottom: 16 }}>
+                            Güvenli Hesap<br />Oluşturma
+                        </h1>
+                        <p style={{ color: "var(--text-secondary)", fontSize: 15, lineHeight: 1.6, marginBottom: 32 }}>
+                            Bankacılık düzeyinde güvenlik ile hesabınızı adım adım oluşturun. Bilgileriniz 256-bit şifreleme ile korunur.
+                        </p>
 
-                        <div className="flex flex-col gap-2">
+                        {/* Adım Listesi (sol panel) */}
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                             {STEPS.map((s, i) => (
-                                <div key={i} className={`flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 ${i === step ? 'bg-blue-500/20 border border-blue-500/30' : 'bg-transparent border border-transparent'}`}>
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 ${i < step ? 'bg-emerald-500 text-white shadow-emerald-500/20 shadow-lg' : i === step ? 'bg-blue-500 text-white shadow-blue-500/20 shadow-lg' : 'bg-white/5 text-white/40'}`}>
+                                <div key={i} style={{
+                                    display: "flex", alignItems: "center", gap: 14, padding: "14px 16px",
+                                    borderRadius: 14, transition: "all 0.3s",
+                                    background: i === step ? "rgba(99,102,241,0.12)" : "transparent",
+                                }}>
+                                    <div style={{
+                                        width: 40, height: 40, borderRadius: 12, flexShrink: 0,
+                                        display: "flex", alignItems: "center", justifyContent: "center",
+                                        background: i < step ? "#22c55e" : i === step ? "var(--accent)" : "rgba(255,255,255,0.08)",
+                                        color: i <= step ? "#fff" : "var(--text-muted)",
+                                        fontWeight: 700, fontSize: 14, transition: "all 0.3s",
+                                    }}>
                                         {i < step ? <CheckCircle size={20} /> : <s.icon size={20} />}
                                     </div>
                                     <div>
-                                        <div className={`text-sm ${i === step ? 'font-bold text-white' : 'font-medium text-white/60'}`}>{s.title}</div>
-                                        <div className="text-xs text-white/40">{s.desc}</div>
+                                        <div style={{ fontSize: 14, fontWeight: i === step ? 700 : 500, color: i <= step ? "var(--text-primary)" : "var(--text-muted)" }}>{s.title}</div>
+                                        <div style={{ fontSize: 11, color: "var(--text-muted)" }}>{s.desc}</div>
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
+                </div>
 
-                    <div className="flex-1 p-8 md:p-12 bg-deepblue-950/80 backdrop-blur-2xl">
-                        <div className="max-w-md mx-auto h-full flex flex-col justify-center">
-                            <div className="mb-8">
-                                <div className="flex justify-between mb-2">
-                                    <span className="text-xs font-bold text-blue-400">Adım {step + 1} / {STEPS.length}</span>
-                                    <span className="text-xs text-white/50">{STEPS[step].title}</span>
-                                </div>
-                                <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
-                                    <div className="h-full rounded-full transition-all duration-500 bg-gradient-to-r from-blue-500 to-indigo-500" style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
-                                </div>
+                <div className="login-form-side">
+                    <div className="auth-card" style={{ maxWidth: 460 }}>
+                        {/* Progress Bar */}
+                        <div style={{ marginBottom: 24 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                                <span style={{ fontSize: 13, fontWeight: 600, color: "var(--accent)" }}>
+                                    Adım {step + 1} / {STEPS.length}
+                                </span>
+                                <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                                    {STEPS[step].title}
+                                </span>
                             </div>
+                            <div style={{ width: "100%", height: 6, borderRadius: 99, background: "var(--bg-secondary)", overflow: "hidden" }}>
+                                <div style={{
+                                    width: `${((step + 1) / STEPS.length) * 100}%`,
+                                    height: "100%", borderRadius: 99, transition: "width 0.4s ease",
+                                    background: "linear-gradient(90deg, var(--accent), #a855f7)",
+                                }} />
+                            </div>
+                        </div>
 
-                            <h2 className="text-2xl font-bold text-white mb-1">{STEPS[step].title}</h2>
-                            <p className="text-sm text-white/50 mb-6">{STEPS[step].desc}</p>
+                        <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 4 }}>{STEPS[step].title}</h2>
+                        <p style={{ color: "var(--text-muted)", fontSize: 13, marginBottom: 20 }}>{STEPS[step].desc}</p>
 
-                            <AnimatePresence mode="wait">
-                                <motion.div key={step} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col gap-4">
-                                    {step === 0 && (
-                                        <>
-                                            <FormField label="Ad Soyad" error={errors.full_name}>
-                                                <div className="relative">
-                                                    <User size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
-                                                    <input name="full_name" value={form.full_name} onChange={handleChange} className={inputClsWithIcon} placeholder="Örn: Ahmet Yılmaz" required />
-                                                </div>
-                                            </FormField>
-                                            <FormField label="TC Kimlik Numarası" error={errors.national_id} success={tcResult?.valid ? "✅ TC Kimlik numarası geçerli" : null}>
-                                                <div className="relative">
-                                                    <CreditCard size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
-                                                    <input name="national_id" value={form.national_id} onChange={handleChange} className={inputClsWithIcon} placeholder="12345678901" maxLength={11} inputMode="numeric" required />
-                                                </div>
-                                            </FormField>
-                                            <FormField label="Doğum Tarihi" error={errors.date_of_birth}>
-                                                <input name="date_of_birth" type="date" value={form.date_of_birth} onChange={handleChange} className={`${inputCls} [color-scheme:dark]`} max={new Date(Date.now() - 18 * 365.25 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]} required />
-                                            </FormField>
-                                        </>
-                                    )}
-                                    {step === 1 && (
-                                        <>
-                                            <FormField label="E-posta Adresi" error={errors.email}>
-                                                <div className="relative">
-                                                    <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
-                                                    <input name="email" type="email" value={form.email} onChange={handleChange} className={inputClsWithIcon} placeholder="ornek@email.com" required />
-                                                </div>
-                                            </FormField>
-                                            <FormField label="Telefon Numarası" error={errors.phone}>
-                                                <div className="relative">
-                                                    <Phone size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
-                                                    <input name="phone" type="tel" value={form.phone} onChange={handleChange} className={inputClsWithIcon} placeholder="+90 555 123 45 67" required />
-                                                </div>
-                                            </FormField>
-                                            <FormField label="Adres (Opsiyonel)">
-                                                <textarea name="address" value={form.address} onChange={handleChange} className={`${inputCls} resize-none`} rows={2} placeholder="İl, İlçe, Mahalle..." />
-                                            </FormField>
-                                        </>
-                                    )}
-                                    {step === 2 && (
-                                        <>
-                                            <FormField label="Şifre" error={errors.password}>
-                                                <div className="relative">
-                                                    <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
-                                                    <input name="password" type={showPassword ? "text" : "password"} value={form.password} onChange={handleChange} className={`${inputClsWithIcon} pr-12`} placeholder="Güçlü bir şifre belirleyin" required />
-                                                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors">
-                                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                                    </button>
-                                                </div>
-                                            </FormField>
-                                            {pwdAnalysis && (
-                                                <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                                                    <div className="flex justify-between mb-2">
-                                                        <span className="text-xs font-semibold text-white/70">Güç</span>
-                                                        <span className={`text-xs font-bold ${pwdAnalysis.text}`}>{pwdAnalysis.level}</span>
-                                                    </div>
-                                                    <div className="w-full h-1.5 rounded-full bg-white/10 mb-3 overflow-hidden">
-                                                        <div className={`h-full transition-all duration-300 ${pwdAnalysis.color}`} style={{ width: `${pwdAnalysis.percent}%` }} />
-                                                    </div>
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        <PwdCheck ok={pwdAnalysis.checks.length} text="En az 8" />
-                                                        <PwdCheck ok={pwdAnalysis.checks.uppercase} text="Büyük harf" />
-                                                        <PwdCheck ok={pwdAnalysis.checks.lowercase} text="Küçük harf" />
-                                                        <PwdCheck ok={pwdAnalysis.checks.number} text="Rakam (0-9)" />
-                                                        <PwdCheck ok={pwdAnalysis.checks.special} text="Özel (!@#)" />
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </>
-                                    )}
-                                    {step === 3 && (
-                                        <>
-                                            <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                                                <h4 className="text-sm font-bold text-blue-400 mb-3">Bilgilerinizi Kontrol Edin</h4>
-                                                <div className="flex flex-col gap-2">
-                                                    <SummaryRow label="Ad Soyad" value={form.full_name} />
-                                                    <SummaryRow label="TC Kimlik" value={form.national_id.slice(0, 3) + "•••••" + form.national_id.slice(-3)} />
-                                                    <SummaryRow label="E-posta" value={form.email} />
-                                                    <SummaryRow label="Telefon" value={form.phone} />
-                                                </div>
-                                            </div>
+                        {/* ── ADIM 1: Kişisel Bilgiler ── */}
+                        {step === 0 && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                                <FormField label="Ad Soyad" error={errors.full_name} hint="Nüfus cüzdanınızdaki gibi yazın">
+                                    <div style={{ position: "relative" }}>
+                                        <User size={16} style={iconStyle} />
+                                        <input name="full_name" value={form.full_name} onChange={handleChange}
+                                            className="form-input" style={{ paddingLeft: 38 }}
+                                            placeholder="Örn: Ahmet Yılmaz" required aria-label="Ad Soyad" />
+                                    </div>
+                                </FormField>
 
-                                            <label className={`flex gap-3 p-3 rounded-xl border cursor-pointer ${form.kvkk ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/5 border-white/10'}`}>
-                                                <input type="checkbox" name="kvkk" checked={form.kvkk} onChange={handleChange} className="w-5 h-5 accent-emerald-500 shrink-0 mt-0.5" />
-                                                <div className="text-xs text-white/70"><span className="font-semibold text-white">KVKK Aydınlatma Metni</span>'ni okudum, kabul ediyorum.</div>
-                                            </label>
+                                <FormField label="TC Kimlik Numarası" error={errors.national_id}
+                                    hint="11 haneli TC Kimlik numaranız matematiksel olarak doğrulanır"
+                                    success={tcResult?.valid ? "✅ TC Kimlik numarası geçerli" : null}>
+                                    <div style={{ position: "relative" }}>
+                                        <CreditCard size={16} style={iconStyle} />
+                                        <input name="national_id" value={form.national_id} onChange={handleChange}
+                                            className="form-input" style={{ paddingLeft: 38 }}
+                                            placeholder="12345678901" maxLength={11}
+                                            inputMode="numeric" required aria-label="TC Kimlik Numarası" />
+                                    </div>
+                                </FormField>
 
-                                            <label className={`flex gap-3 p-3 rounded-xl border cursor-pointer ${form.terms ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-white/5 border-white/10'}`}>
-                                                <input type="checkbox" name="terms" checked={form.terms} onChange={handleChange} className="w-5 h-5 accent-emerald-500 shrink-0 mt-0.5" />
-                                                <div className="text-xs text-white/70"><span className="font-semibold text-white">Koşullar ve Gizlilik Politikası</span>'nı okudum.</div>
-                                            </label>
-                                            {(errors.kvkk || errors.terms) && <div className="text-xs text-red-500">Lütfen tüm onayları işaretleyin.</div>}
-                                        </>
-                                    )}
-                                </motion.div>
-                            </AnimatePresence>
+                                <FormField label="Doğum Tarihi" error={errors.date_of_birth} hint="Hesap açmak için 18 yaşından büyük olmalısınız">
+                                    <input name="date_of_birth" type="date" value={form.date_of_birth}
+                                        onChange={handleChange} className="form-input"
+                                        max={new Date(Date.now() - 18 * 365.25 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]}
+                                        required aria-label="Doğum Tarihi" />
+                                </FormField>
+                            </div>
+                        )}
 
-                            <div className="flex gap-3 mt-6">
-                                {step > 0 && (
-                                    <button type="button" onClick={prevStep} className="shrink-0 px-5 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-semibold flex flex-row items-center gap-2 transition-all">
-                                        <ArrowLeft size={18} /> Geri
-                                    </button>
+                        {/* ── ADIM 2: İletişim ── */}
+                        {step === 1 && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                                <FormField label="E-posta Adresi" error={errors.email} hint="Doğrulama ve bildirimler için kullanılacaktır">
+                                    <div style={{ position: "relative" }}>
+                                        <Mail size={16} style={iconStyle} />
+                                        <input name="email" type="email" value={form.email} onChange={handleChange}
+                                            className="form-input" style={{ paddingLeft: 38 }}
+                                            placeholder="ornek@email.com" required aria-label="E-posta adresi" />
+                                    </div>
+                                </FormField>
+
+                                <FormField label="Telefon Numarası" error={errors.phone} hint="Türkiye cep telefon numaranız">
+                                    <div style={{ position: "relative" }}>
+                                        <Phone size={16} style={iconStyle} />
+                                        <input name="phone" type="tel" value={form.phone} onChange={handleChange}
+                                            className="form-input" style={{ paddingLeft: 38 }}
+                                            placeholder="+90 555 123 45 67" required aria-label="Telefon" />
+                                    </div>
+                                </FormField>
+
+                                <FormField label="Adres (Opsiyonel)" hint="İleride KYC doğrulaması için gerekebilir">
+                                    <textarea name="address" value={form.address} onChange={handleChange}
+                                        className="form-input" rows={2} placeholder="İl, İlçe, Mahalle..."
+                                        style={{ resize: "vertical" }} aria-label="Adres" />
+                                </FormField>
+                            </div>
+                        )}
+
+                        {/* ── ADIM 3: Güvenlik ── */}
+                        {step === 2 && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                                <FormField label="Şifre" error={errors.password} hint="Hesabınızı koruyacak güçlü bir şifre belirleyin">
+                                    <div style={{ position: "relative" }}>
+                                        <Lock size={16} style={iconStyle} />
+                                        <input name="password" type={showPassword ? "text" : "password"}
+                                            value={form.password} onChange={handleChange}
+                                            className="form-input" style={{ paddingLeft: 38, paddingRight: 42 }}
+                                            placeholder="Güçlü bir şifre belirleyin" required aria-label="Şifre" />
+                                        <button type="button" onClick={() => setShowPassword(!showPassword)}
+                                            style={{
+                                                position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                                                background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: 4
+                                            }}
+                                            aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}>
+                                            {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                        </button>
+                                    </div>
+                                </FormField>
+
+                                {/* Şifre Güçlülük Göstergesi */}
+                                {pwdAnalysis && (
+                                    <div style={{ background: "var(--bg-secondary)", borderRadius: 14, padding: 16 }}>
+                                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
+                                            <span style={{ fontSize: 12, fontWeight: 600 }}>Şifre Güçlüğü</span>
+                                            <span style={{ fontSize: 12, fontWeight: 700, color: pwdAnalysis.color }}>{pwdAnalysis.level}</span>
+                                        </div>
+                                        <div style={{ width: "100%", height: 5, borderRadius: 99, background: "rgba(255,255,255,0.1)", marginBottom: 14 }}>
+                                            <div style={{
+                                                width: `${pwdAnalysis.percent}%`, height: "100%", borderRadius: 99,
+                                                background: pwdAnalysis.color, transition: "all 0.3s",
+                                            }} />
+                                        </div>
+                                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
+                                            <PwdCheck ok={pwdAnalysis.checks.length} text="En az 8 karakter" />
+                                            <PwdCheck ok={pwdAnalysis.checks.uppercase} text="Büyük harf (A-Z)" />
+                                            <PwdCheck ok={pwdAnalysis.checks.lowercase} text="Küçük harf (a-z)" />
+                                            <PwdCheck ok={pwdAnalysis.checks.number} text="Rakam (0-9)" />
+                                            <PwdCheck ok={pwdAnalysis.checks.special} text="Özel karakter (!@#)" />
+                                        </div>
+                                    </div>
                                 )}
-                                {step < 3 ? (
-                                    <button type="button" onClick={nextStep} className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 rounded-xl text-white font-semibold flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all outline-none">
-                                        Devam Et <ArrowRight size={18} />
-                                    </button>
-                                ) : (
-                                    <button type="button" onClick={handleRegister} disabled={loading} className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 disabled:opacity-50 rounded-xl text-white font-semibold flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all outline-none">
-                                        {loading ? <Loader2 size={18} className="animate-spin" /> : <><UserPlus size={18} /> Hesabımı Oluştur</>}
-                                    </button>
-                                )}
-                            </div>
 
-                            <div className="mt-6 text-center text-sm text-white/50">
-                                Zaten hesabınız var mı? <button onClick={() => { setIsRegister(false); setStep(0); }} className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">Giriş Yap</button>
+                                <div style={{ background: "rgba(245,158,11,0.08)", borderRadius: 14, padding: 14, border: "1px solid rgba(245,158,11,0.2)" }}>
+                                    <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                                        <Shield size={16} style={{ color: "#f59e0b", flexShrink: 0, marginTop: 2 }} />
+                                        <div style={{ fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                                            <strong style={{ color: "#f59e0b" }}>Güvenlik Uyarısı:</strong> Şifrenizi kimseyle paylaşmayın. FinBank personeli sizden asla şifrenizi istemez.
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+                        )}
+
+                        {/* ── ADIM 4: Onay ── */}
+                        {step === 3 && (
+                            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                                {/* Bilgi Özeti */}
+                                <div style={{ background: "var(--bg-secondary)", borderRadius: 14, padding: 16 }}>
+                                    <h4 style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, color: "var(--accent)" }}>Bilgilerinizi Kontrol Edin</h4>
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                        <SummaryRow label="Ad Soyad" value={form.full_name} />
+                                        <SummaryRow label="TC Kimlik" value={form.national_id.slice(0, 3) + "•••••" + form.national_id.slice(-3)} />
+                                        <SummaryRow label="Doğum Tarihi" value={form.date_of_birth ? new Date(form.date_of_birth).toLocaleDateString("tr-TR") : "-"} />
+                                        <SummaryRow label="E-posta" value={form.email} />
+                                        <SummaryRow label="Telefon" value={form.phone} />
+                                        {form.address && <SummaryRow label="Adres" value={form.address} />}
+                                    </div>
+                                </div>
+
+                                {/* KVKK */}
+                                <label style={{
+                                    display: "flex", gap: 12, padding: 14, borderRadius: 14, cursor: "pointer",
+                                    background: form.kvkk ? "rgba(34,197,94,0.06)" : "var(--bg-secondary)",
+                                    border: errors.kvkk ? "1px solid #ef4444" : "1px solid var(--border-color)",
+                                    transition: "all 0.2s",
+                                }}>
+                                    <input type="checkbox" name="kvkk" checked={form.kvkk} onChange={handleChange}
+                                        style={{ width: 20, height: 20, accentColor: "var(--accent)", flexShrink: 0, marginTop: 2 }} />
+                                    <div>
+                                        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                                            KVKK Aydınlatma Metni
+                                        </div>
+                                        <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5 }}>
+                                            6698 sayılı Kişisel Verilerin Korunması Kanunu kapsamında kişisel verilerimin işlenmesine ilişkin
+                                            <span style={{ color: "var(--accent)", fontWeight: 600 }}> aydınlatma metnini </span>
+                                            okudum ve anladım.
+                                        </div>
+                                    </div>
+                                </label>
+                                {errors.kvkk && <span style={{ fontSize: 11, color: "#ef4444", marginTop: -12 }}>{errors.kvkk}</span>}
+
+                                {/* Kullanım Koşulları */}
+                                <label style={{
+                                    display: "flex", gap: 12, padding: 14, borderRadius: 14, cursor: "pointer",
+                                    background: form.terms ? "rgba(34,197,94,0.06)" : "var(--bg-secondary)",
+                                    border: errors.terms ? "1px solid #ef4444" : "1px solid var(--border-color)",
+                                    transition: "all 0.2s",
+                                }}>
+                                    <input type="checkbox" name="terms" checked={form.terms} onChange={handleChange}
+                                        style={{ width: 20, height: 20, accentColor: "var(--accent)", flexShrink: 0, marginTop: 2 }} />
+                                    <div>
+                                        <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>
+                                            Kullanım Koşulları ve Gizlilik Politikası
+                                        </div>
+                                        <div style={{ fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5 }}>
+                                            FinBank
+                                            <span style={{ color: "var(--accent)", fontWeight: 600 }}> Kullanım Koşulları</span>'nı ve
+                                            <span style={{ color: "var(--accent)", fontWeight: 600 }}> Gizlilik Politikası</span>'nı okudum, kabul ediyorum.
+                                        </div>
+                                    </div>
+                                </label>
+                                {errors.terms && <span style={{ fontSize: 11, color: "#ef4444", marginTop: -12 }}>{errors.terms}</span>}
+
+                                <div style={{ background: "rgba(99,102,241,0.08)", borderRadius: 14, padding: 14, border: "1px solid rgba(99,102,241,0.2)" }}>
+                                    <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+                                        <Lock size={16} style={{ color: "var(--accent)", flexShrink: 0, marginTop: 2 }} />
+                                        <div style={{ fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                                            Verileriniz <strong>256-bit SSL/TLS</strong> şifreleme ile korunur.
+                                            Supabase Auth altyapısı ile endüstri standardı güvenlik uygulanır.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* ── Navigasyon Butonları ── */}
+                        <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
+                            {step > 0 && (
+                                <button type="button" onClick={prevStep}
+                                    style={{
+                                        flex: "0 0 auto", padding: "12px 20px", borderRadius: 12,
+                                        border: "1px solid var(--border-color)", background: "var(--bg-secondary)",
+                                        color: "var(--text-primary)", fontWeight: 600, cursor: "pointer",
+                                        fontSize: 14, display: "flex", alignItems: "center", gap: 6,
+                                    }}>
+                                    <ArrowLeft size={16} /> Geri
+                                </button>
+                            )}
+                            {step < 3 ? (
+                                <button type="button" onClick={nextStep}
+                                    className="btn btn-primary"
+                                    style={{ flex: 1, height: 48, fontSize: 15, fontWeight: 600 }}>
+                                    Devam Et <ArrowRight size={16} />
+                                </button>
+                            ) : (
+                                <button type="button" onClick={handleRegister} disabled={loading}
+                                    className="btn btn-primary"
+                                    style={{ flex: 1, height: 48, fontSize: 15, fontWeight: 600 }}>
+                                    {loading ? (
+                                        <div className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
+                                    ) : (
+                                        <>
+                                            <UserPlus size={16} /> Hesabımı Oluştur
+                                        </>
+                                    )}
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="auth-toggle" style={{ marginTop: 16 }}>
+                            Zaten hesabınız var mı?{" "}
+                            <a onClick={() => { setIsRegister(false); setStep(0); setErrors({}); }} style={{ cursor: "pointer" }}>
+                                Giriş Yap
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -339,57 +508,96 @@ export default function LoginPage() {
         );
     }
 
+    // ── Giriş Ekranı ──
     return (
-        <div className="relative min-h-screen flex items-center justify-center p-4">
-            <LoginBackground3D />
-            <div className="relative max-w-5xl w-full flex flex-col md:flex-row bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl overflow-hidden z-10 min-h-[500px]">
-                <div className="hidden md:flex flex-col flex-1 p-12 justify-center border-r border-white/10 bg-deepblue-950/40">
-                    <div className="flex items-center gap-3 mb-10">
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center font-bold text-lg text-white shadow-lg shadow-blue-500/30">FB</div>
-                        <span className="text-2xl font-bold text-white tracking-tight">FinBank</span>
+        <div className="login-page">
+            <div className="login-branding">
+                <div className="login-branding-content">
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 40 }}>
+                        <div style={{
+                            width: 48, height: 48, borderRadius: 14,
+                            background: "linear-gradient(135deg, var(--accent), #818cf8)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            fontWeight: 700, fontSize: 18, color: "#fff",
+                        }}>FB</div>
+                        <span style={{ fontSize: 22, fontWeight: 700 }}>FinBank</span>
                     </div>
-                    <h1 className="text-4xl font-extrabold text-white leading-tight mb-4">Finansal özgürlüğünüz<br />bir tık uzağınızda.</h1>
-                    <p className="text-blue-100/70 text-lg mb-10 leading-relaxed">Modern bankacılığı deneyimleyin. Hızlı transfer, güvenli hesap yönetimi ve 7/24 finansal kontrol.</p>
-                    <div className="flex flex-col gap-6">
-                        <FeatureItem icon={<Shield size={20} />} title="Güvenli" desc="256-bit şifreleme ile korunur" />
-                        <FeatureItem icon={<Zap size={20} />} title="Hızlı" desc="Anlık transfer ve işlemler" />
-                        <FeatureItem icon={<Globe size={20} />} title="Erişilebilir" desc="Her cihazdan, her yerden" />
+
+                    <h1 style={{ fontSize: 36, fontWeight: 800, lineHeight: 1.2, marginBottom: 16 }}>
+                        Finansal özgürlüğünüz<br />bir tık uzağınızda.
+                    </h1>
+                    <p style={{ color: "var(--text-secondary)", fontSize: 16, lineHeight: 1.6, marginBottom: 40 }}>
+                        Modern bankacılığı deneyimleyin. Hızlı transfer, güvenli hesap yönetimi ve 7/24 finansal kontrol.
+                    </p>
+
+                    <div className="login-features">
+                        <FeatureItem icon={<Shield size={18} />} title="Güvenli" desc="256-bit şifreleme ile korunur" />
+                        <FeatureItem icon={<Zap size={18} />} title="Hızlı" desc="Anlık transfer ve işlemler" />
+                        <FeatureItem icon={<Globe size={18} />} title="Erişilebilir" desc="Her cihazdan, her yerden" />
                     </div>
                 </div>
+            </div>
 
-                <div className="flex-1 p-8 md:p-14 bg-deepblue-950/80 backdrop-blur-2xl flex flex-col justify-center">
-                    <div className="max-w-md mx-auto w-full">
-                        <h2 className="text-2xl font-bold text-white mb-2">Hoş Geldiniz</h2>
-                        <p className="text-white/50 text-sm mb-8">Hesabınıza güvenli giriş yapın.</p>
+            <div className="login-form-side">
+                <div className="auth-card">
+                    <h2 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>Hoş Geldiniz</h2>
+                    <p style={{ color: "var(--text-muted)", fontSize: 14, marginBottom: 24 }}>
+                        Hesabınıza giriş yapın.
+                    </p>
 
-                        <form onSubmit={handleLogin} className="flex flex-col gap-5">
-                            <div>
-                                <label className="text-[13px] font-semibold text-white/80 block mb-2 ml-1">E-posta Adresi</label>
-                                <div className="relative">
-                                    <Mail size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
-                                    <input name="email" type="email" value={form.email} onChange={handleChange} className={inputClsWithIcon} placeholder="ornek@email.com" required />
-                                </div>
+                    <form onSubmit={handleLogin}>
+                        <div className="form-group">
+                            <label className="form-label" htmlFor="login-email">E-posta Adresi</label>
+                            <div style={{ position: "relative" }}>
+                                <Mail size={16} style={iconStyle} />
+                                <input id="login-email" name="email" type="email" className="form-input"
+                                    style={{ paddingLeft: 38 }} placeholder="ornek@email.com"
+                                    value={form.email} onChange={handleChange} required aria-label="E-posta adresi" />
                             </div>
-
-                            <div>
-                                <label className="text-[13px] font-semibold text-white/80 block mb-2 ml-1">Şifre</label>
-                                <div className="relative">
-                                    <Lock size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/40" />
-                                    <input name="password" type={showPassword ? "text" : "password"} value={form.password} onChange={handleChange} className={`${inputClsWithIcon} pr-12`} placeholder="Şifrenizi girin" required />
-                                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors">
-                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                    </button>
-                                </div>
-                            </div>
-
-                            <button type="submit" disabled={loading} className="w-full mt-2 py-3.5 bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 rounded-xl text-white font-semibold flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all outline-none">
-                                {loading ? <Loader2 size={18} className="animate-spin" /> : <><LogIn size={18} /> Giriş Yap</>}
-                            </button>
-                        </form>
-
-                        <div className="mt-8 text-center text-sm text-white/50">
-                            Hesabınız yok mu? <button onClick={() => { setIsRegister(true); setStep(0); }} className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">Kayıt Ol</button>
                         </div>
+
+                        <div className="form-group">
+                            <label className="form-label" htmlFor="login-password">Şifre</label>
+                            <div style={{ position: "relative" }}>
+                                <Lock size={16} style={iconStyle} />
+                                <input id="login-password" name="password" type={showPassword ? "text" : "password"}
+                                    className="form-input" style={{ paddingLeft: 38, paddingRight: 42 }}
+                                    placeholder="Şifrenizi girin"
+                                    value={form.password} onChange={handleChange} required aria-label="Şifre" />
+                                <button type="button" onClick={() => setShowPassword(!showPassword)}
+                                    style={{
+                                        position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                                        background: "none", border: "none", color: "var(--text-muted)", cursor: "pointer", padding: 4
+                                    }}
+                                    aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}>
+                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                            </div>
+                        </div>
+
+                        <button type="submit" className="btn btn-primary" disabled={loading}
+                            style={{ width: "100%", marginTop: 8, height: 48, fontSize: 15 }}>
+                            {loading ? (
+                                <div className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
+                            ) : (
+                                <><LogIn size={16} /> Giriş Yap</>
+                            )}
+                        </button>
+                    </form>
+
+                    <div className="auth-toggle">
+                        Hesabınız yok mu?{" "}
+                        <a onClick={() => { setIsRegister(true); setStep(0); setErrors({}); }} style={{ cursor: "pointer" }}>
+                            Kayıt Ol
+                        </a>
+                    </div>
+
+                    <div style={{
+                        marginTop: 20, paddingTop: 16, borderTop: "1px solid var(--border-color)",
+                        fontSize: 11, color: "var(--text-muted)", textAlign: "center",
+                    }}>
+                        Giriş yaparak <span style={{ color: "var(--accent)" }}>Kullanım Koşullarını</span> ve{" "}
+                        <span style={{ color: "var(--accent)" }}>Gizlilik Politikasını</span> kabul etmiş olursunuz.
                     </div>
                 </div>
             </div>
@@ -397,21 +605,34 @@ export default function LoginPage() {
     );
 }
 
-function FormField({ label, error, success, children }) {
+// ── Yardımcı Bileşenler ──
+
+function FormField({ label, error, hint, success, children }) {
     return (
         <div>
-            <label className="text-[13px] font-semibold text-white/80 block mb-1.5 ml-1">{label}</label>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)", marginBottom: 6, display: "block" }}>
+                {label}
+            </label>
             {children}
-            {success && <div className="text-[11px] text-emerald-400 mt-1.5 font-semibold ml-1">{success}</div>}
-            {error && <div className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1 ml-1"><AlertCircle size={12} /> {error}</div>}
+            {hint && !error && !success && (
+                <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>{hint}</div>
+            )}
+            {success && (
+                <div style={{ fontSize: 11, color: "#22c55e", marginTop: 4, fontWeight: 600 }}>{success}</div>
+            )}
+            {error && (
+                <div style={{ fontSize: 11, color: "#ef4444", marginTop: 4, display: "flex", alignItems: "center", gap: 4 }}>
+                    <AlertCircle size={12} /> {error}
+                </div>
+            )}
         </div>
     );
 }
 
 function PwdCheck({ ok, text }) {
     return (
-        <div className={`flex items-center gap-1.5 text-[11px] ${ok ? 'text-emerald-400' : 'text-white/40'}`}>
-            {ok ? <CheckCircle size={12} /> : <div className="w-3 h-3 rounded-full border border-white/40" />}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: ok ? "#22c55e" : "var(--text-muted)" }}>
+            {ok ? <CheckCircle size={12} /> : <div style={{ width: 12, height: 12, borderRadius: "50%", border: "1.5px solid var(--text-muted)" }} />}
             {text}
         </div>
     );
@@ -419,23 +640,32 @@ function PwdCheck({ ok, text }) {
 
 function SummaryRow({ label, value }) {
     return (
-        <div className="flex justify-between py-1.5 border-b border-white/5 last:border-0 text-xs text-white/70">
-            <span>{label}</span>
-            <span className="font-semibold text-white">{value}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid var(--border-color)", fontSize: 13 }}>
+            <span style={{ color: "var(--text-muted)", fontWeight: 500 }}>{label}</span>
+            <span style={{ fontWeight: 600, textAlign: "right", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis" }}>{value}</span>
         </div>
     );
 }
 
 function FeatureItem({ icon, title, desc }) {
     return (
-        <div className="flex gap-4 items-center">
-            <div className="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0">
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+            <div style={{
+                width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                background: "rgba(99, 102, 241, 0.1)", color: "var(--accent)",
+                display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
                 {icon}
             </div>
             <div>
-                <div className="font-bold text-white text-sm">{title}</div>
-                <div className="text-xs text-blue-100/50">{desc}</div>
+                <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 2 }}>{title}</div>
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{desc}</div>
             </div>
         </div>
     );
 }
+
+const iconStyle = {
+    position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)",
+    color: "var(--text-muted)", pointerEvents: "none",
+};

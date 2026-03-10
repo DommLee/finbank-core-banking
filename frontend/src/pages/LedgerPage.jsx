@@ -1,27 +1,26 @@
 import { useEffect, useState } from "react";
-import { BookOpen, ChevronLeft, ChevronRight, Users, Plus, X, Check, RefreshCw, HandCoins, ArrowDownRight, ArrowUpRight, Receipt, CreditCard, Target } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, Users, Plus, X, Check, RefreshCw } from "lucide-react";
 import { ledgerApi, paymentRequestsApi } from "../services/api";
 import { toast } from "react-hot-toast";
-import { motion, AnimatePresence } from "framer-motion";
 
 const CATEGORY_LABELS = {
-    DEPOSIT: "Para Yatırma",
-    WITHDRAWAL: "Para Çekme",
-    TRANSFER_IN: "Gelen Transfer",
-    TRANSFER_OUT: "Giden Transfer",
-    BILL_PAYMENT: "Fatura Ödeme",
-    CARD_PAYMENT: "Kart Ödemesi",
-    GOAL_CONTRIBUTION: "Hedef Birikim",
+    DEPOSIT: "Para yatirma",
+    WITHDRAWAL: "Para cekme",
+    TRANSFER_IN: "Gelen transfer",
+    TRANSFER_OUT: "Giden transfer",
+    BILL_PAYMENT: "Fatura odeme",
+    CARD_PAYMENT: "Kart odemesi",
+    GOAL_CONTRIBUTION: "Hedef birikim",
 };
 
-const CATEGORY_ICONS = {
-    DEPOSIT: <ArrowDownRight size={24} className="text-emerald-400" />,
-    WITHDRAWAL: <ArrowUpRight size={24} className="text-rose-400" />,
-    TRANSFER_IN: <ArrowDownRight size={24} className="text-emerald-400" />,
-    TRANSFER_OUT: <ArrowUpRight size={24} className="text-rose-400" />,
-    BILL_PAYMENT: <Receipt size={24} className="text-blue-400" />,
-    CARD_PAYMENT: <CreditCard size={24} className="text-purple-400" />,
-    GOAL_CONTRIBUTION: <Target size={24} className="text-teal-400" />,
+const CATEGORY_EMOJIS = {
+    DEPOSIT: "[+]",
+    WITHDRAWAL: "[-]",
+    TRANSFER_IN: "[IN]",
+    TRANSFER_OUT: "[OUT]",
+    BILL_PAYMENT: "[BILL]",
+    CARD_PAYMENT: "[CARD]",
+    GOAL_CONTRIBUTION: "[SAVE]",
 };
 
 export default function LedgerPage() {
@@ -49,7 +48,6 @@ export default function LedgerPage() {
         } catch (error) {
             setEntries([]);
             setTotal(0);
-            toast.error("Hesap hareketleri yüklenemedi.");
         } finally {
             setLoading(false);
         }
@@ -106,63 +104,57 @@ export default function LedgerPage() {
     };
 
     if (loading && entries.length === 0) {
-        return (
-            <div className="flex justify-center items-center min-h-[60vh]">
-                <div className="w-12 h-12 border-4 border-white/10 border-t-blue-500 rounded-full animate-spin"></div>
-            </div>
-        );
+        return <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "50vh" }}><div className="spinner" /></div>;
     }
 
     return (
-        <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8 pb-24">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-10">
-                <div className="text-center md:text-left">
-                    <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-2">Hesap Defteri</h1>
-                    <p className="text-white/60 text-sm md:text-base">
-                        Tüm finansal hareketlerinizin detaylı kaydı. Toplam {total} işlem listeleniyor.
-                    </p>
-                </div>
-                <div className="bg-white/5 border border-white/10 rounded-2xl p-3 flex items-center gap-3 backdrop-blur-md">
-                    <BookOpen className="text-blue-400" size={24} />
-                    <div>
-                        <div className="text-[10px] text-white/50 uppercase font-bold tracking-widest">Kayıtlar</div>
-                        <div className="text-white font-bold leading-none">{total} Adet</div>
-                    </div>
-                </div>
+        <div>
+            <div className="page-header">
+                <h1>Hesap defteri</h1>
+                <p>Tum finansal hareketlerin kaydi. Toplam {total} islem listeleniyor.</p>
             </div>
 
             {entries.length === 0 ? (
-                <div className="bg-black/20 border border-white/5 rounded-3xl p-12 text-center max-w-lg mx-auto">
-                    <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <BookOpen size={48} className="text-white/20" />
-                    </div>
-                    <h3 className="text-xl font-bold text-white mb-2">Henüz Kayıt Yok</h3>
-                    <p className="text-white/60 mb-8">Hesabınızda henüz herhangi bir finansal işlem gerçekleşmedi.</p>
+                <div className="empty-state">
+                    <BookOpen size={48} style={{ opacity: 0.3 }} />
+                    <p style={{ marginTop: 12 }}>Henuz hesap defteri kaydi yok.</p>
                 </div>
             ) : (
                 <>
-                    <div className="space-y-4">
-                        {entries.map((entry, index) => {
+                    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                        {entries.map((entry) => {
                             const isCredit = entry.type === "CREDIT";
                             return (
-                                <motion.div
-                                    key={entry.id || entry.entry_id}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                                    className="bg-black/30 backdrop-blur-md border border-white/10 rounded-3xl p-5 md:p-6 flex flex-col md:flex-row items-start md:items-center gap-4 hover:border-white/20 transition-all group"
-                                >
-                                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110
-                                        ${isCredit ? "bg-emerald-500/10 shadow-[0_0_15px_rgba(16,185,129,0.2)]" : "bg-rose-500/10 shadow-[0_0_15px_rgba(244,63,94,0.2)]"}
-                                    `}>
-                                        {CATEGORY_ICONS[entry.category] || <HandCoins size={24} className="text-white/60" />}
+                                <div key={entry.id || entry.entry_id} style={{
+                                    background: "var(--bg-card)",
+                                    borderRadius: 24,
+                                    padding: 20,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 16,
+                                    border: "1px solid var(--border-color)",
+                                    boxShadow: "var(--shadow)",
+                                }}>
+                                    <div style={{
+                                        width: 72,
+                                        height: 72,
+                                        borderRadius: 20,
+                                        background: isCredit ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        color: isCredit ? "#10b981" : "#ef4444",
+                                        fontWeight: 800,
+                                        fontSize: 14,
+                                    }}>
+                                        {CATEGORY_EMOJIS[entry.category] || "[TX]"}
                                     </div>
 
-                                    <div className="flex-1 w-full">
-                                        <div className="text-lg font-bold text-white mb-1">
-                                            {CATEGORY_LABELS[entry.category] || entry.category || "Finansal İşlem"}
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontSize: 18, fontWeight: 800, color: "var(--text-primary)" }}>
+                                            {CATEGORY_LABELS[entry.category] || entry.category || "Finansal islem"}
                                         </div>
-                                        <div className="text-xs font-semibold text-white/50 mb-2">
+                                        <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}>
                                             {new Date(entry.created_at).toLocaleString("tr-TR", {
                                                 day: "2-digit",
                                                 month: "2-digit",
@@ -172,50 +164,69 @@ export default function LedgerPage() {
                                             })}
                                         </div>
                                         {entry.description && (
-                                            <div className="text-sm text-white/70 italic bg-white/5 px-3 py-2 rounded-xl inline-block">
+                                            <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 6, fontStyle: "italic" }}>
                                                 {entry.description}
                                             </div>
                                         )}
                                     </div>
 
-                                    <div className="flex flex-row md:flex-col items-center md:items-end justify-between w-full md:w-auto mt-4 md:mt-0 gap-2">
-                                        <div className={`text-xl md:text-2xl font-black drop-shadow-md whitespace-nowrap
-                                            ${isCredit ? "text-emerald-400" : "text-rose-400"}
-                                        `}>
+                                    <div style={{
+                                        fontSize: 22,
+                                        fontWeight: 900,
+                                        color: isCredit ? "var(--success)" : "#ef4444",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "flex-end",
+                                        gap: 8
+                                    }}>
+                                        <div>
                                             {isCredit ? "+" : "-"}
                                             {Number(entry.amount || 0).toLocaleString("tr-TR", { minimumFractionDigits: 2 })} TL
                                         </div>
-
                                         {!isCredit && (
                                             <button
                                                 onClick={() => {
                                                     setSplitModal({ show: true, entry });
                                                     setSplitTargets([{ alias: "", amount: "" }]);
                                                 }}
-                                                className="bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-2 transition-colors whitespace-nowrap"
+                                                style={{
+                                                    background: "rgba(37,99,235,0.1)", color: "#2563eb", border: "none",
+                                                    padding: "6px 12px", borderRadius: 8, fontSize: 13, fontWeight: 700,
+                                                    display: "flex", alignItems: "center", gap: 6, cursor: "pointer", transition: "all 0.2s"
+                                                }}
+                                                onMouseOver={(e) => {
+                                                    e.currentTarget.style.background = "#2563eb";
+                                                    e.currentTarget.style.color = "#ffffff";
+                                                }}
+                                                onMouseOut={(e) => {
+                                                    e.currentTarget.style.background = "rgba(37,99,235,0.1)";
+                                                    e.currentTarget.style.color = "#2563eb";
+                                                }}
                                             >
                                                 <Users size={14} /> Bölüştür
                                             </button>
                                         )}
                                     </div>
-                                </motion.div>
+                                </div>
                             );
                         })}
                     </div>
 
-                    <div className="flex justify-between items-center pt-8 mt-8 border-t border-white/10">
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "24px 0 60px 0" }}>
                         <button
-                            className="bg-white/5 hover:bg-white/10 text-white font-bold py-3 px-6 rounded-2xl transition-all border border-white/10 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="btn btn-outline"
+                            style={{ borderRadius: "var(--radius-full)", padding: "12px 24px", fontWeight: 700 }}
                             onClick={() => setSkip(Math.max(0, skip - limit))}
                             disabled={skip === 0}
                         >
-                            <ChevronLeft size={20} /> Önceki
+                            <ChevronLeft size={20} /> Onceki
                         </button>
-                        <span className="text-sm font-bold text-white/50 bg-black/30 border border-white/10 px-5 py-2 rounded-full">
+                        <span style={{ fontSize: 15, fontWeight: 700, color: "var(--text-secondary)", background: "var(--bg-card)", padding: "8px 16px", borderRadius: 20 }}>
                             {skip + 1} - {Math.min(skip + limit, total)} / {total}
                         </span>
                         <button
-                            className="bg-white/5 hover:bg-white/10 text-white font-bold py-3 px-6 rounded-2xl transition-all border border-white/10 flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="btn btn-outline"
+                            style={{ borderRadius: "var(--radius-full)", padding: "12px 24px", fontWeight: 700 }}
                             onClick={() => setSkip(skip + limit)}
                             disabled={skip + limit >= total}
                         >
@@ -224,126 +235,86 @@ export default function LedgerPage() {
                     </div>
                 </>
             )}
-
             {/* Split Bill Modal */}
-            <AnimatePresence>
-                {splitModal.show && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                            onClick={() => setSplitModal({ show: false, entry: null })}
-                        ></motion.div>
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="relative w-full max-w-lg bg-deepblue-900/90 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 shadow-2xl max-h-[90vh] overflow-y-auto custom-scrollbar"
-                        >
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-2xl font-black text-white flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-blue-500/20 flex items-center justify-center">
-                                        <Users size={20} className="text-blue-400" />
-                                    </div>
-                                    Hesabı Bölüştür
-                                </h2>
-                                <button
-                                    onClick={() => setSplitModal({ show: false, entry: null })}
-                                    className="text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-full p-2 transition-colors"
-                                >
-                                    <X size={20} />
+            {splitModal.show && (
+                <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 999 }}>
+                    <div style={{ background: "var(--bg-card)", borderRadius: 24, padding: 24, width: "100%", maxWidth: 480, boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                            <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0, display: "flex", alignItems: "center", gap: 10 }}>
+                                <Users size={22} color="#2563eb" /> Hesabı Bölüştür
+                            </h2>
+                            <button onClick={() => setSplitModal({ show: false, entry: null })} style={{ background: "transparent", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}><X size={24} /></button>
+                        </div>
+
+                        <div style={{ background: "var(--bg-secondary)", padding: 16, borderRadius: 12, marginBottom: 20 }}>
+                            <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>Toplam Tutar</div>
+                            <div style={{ fontSize: 24, fontWeight: 900, color: "var(--text-primary)" }}>
+                                {Number(splitModal.entry.amount).toLocaleString("tr-TR", { minimumFractionDigits: 2 })} TL
+                            </div>
+                            <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}>
+                                {splitModal.entry.description || CATEGORY_LABELS[splitModal.entry.category]}
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleSplitSubmit} style={{ display: "grid", gap: 16 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <label style={{ fontSize: 14, fontWeight: 700 }}>Kişiler</label>
+                                <button type="button" onClick={splitEqually} style={{ background: "transparent", border: "none", color: "#2563eb", fontSize: 13, fontWeight: 600, cursor: "pointer", transition: "all 0.2s" }}>
+                                    Eşit Böl (%{(100 / (splitTargets.length + 1)).toFixed(0)})
                                 </button>
                             </div>
 
-                            <div className="bg-black/30 border border-white/5 p-5 rounded-2xl mb-6">
-                                <div className="text-xs font-bold text-white/50 uppercase tracking-widest">Toplam Tutar</div>
-                                <div className="text-3xl font-black text-white my-1">
-                                    {Number(splitModal.entry.amount).toLocaleString("tr-TR", { minimumFractionDigits: 2 })} TL
-                                </div>
-                                <div className="text-sm font-semibold text-white/60">
-                                    {splitModal.entry.description || CATEGORY_LABELS[splitModal.entry.category]}
-                                </div>
-                            </div>
-
-                            <form onSubmit={handleSplitSubmit} className="space-y-4">
-                                <div className="flex justify-between items-end pb-2 border-b border-white/5">
-                                    <label className="text-xs font-bold text-white/50 uppercase tracking-widest">Kişiler</label>
+                            {splitTargets.map((target, index) => (
+                                <div key={index} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                                    <div style={{ flex: 1 }}>
+                                        <input
+                                            className="form-input"
+                                            placeholder="Telefon, E-Posta veya TC"
+                                            value={target.alias}
+                                            onChange={e => {
+                                                const newTargets = [...splitTargets];
+                                                newTargets[index].alias = e.target.value;
+                                                setSplitTargets(newTargets);
+                                            }}
+                                            required
+                                        />
+                                    </div>
+                                    <div style={{ width: 120 }}>
+                                        <input
+                                            className="form-input"
+                                            type="number" min="0.01" step="0.01"
+                                            placeholder="Tutar"
+                                            value={target.amount}
+                                            onChange={e => {
+                                                const newTargets = [...splitTargets];
+                                                newTargets[index].amount = e.target.value;
+                                                setSplitTargets(newTargets);
+                                            }}
+                                            required
+                                        />
+                                    </div>
                                     <button
                                         type="button"
-                                        onClick={splitEqually}
-                                        className="text-blue-400 hover:text-blue-300 font-bold text-sm bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-lg transition-colors"
+                                        onClick={() => removeSplitTarget(index)}
+                                        style={{ width: 44, height: 44, background: "var(--bg-secondary)", border: "1px solid var(--border-color)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444", cursor: "pointer", transition: "all 0.2s" }}
                                     >
-                                        Eşit Böl (%{(100 / (splitTargets.length + 1)).toFixed(0)})
+                                        <X size={18} />
                                     </button>
                                 </div>
+                            ))}
 
-                                <div className="space-y-3">
-                                    {splitTargets.map((target, index) => (
-                                        <div key={index} className="flex gap-3 items-start relative group">
-                                            <div className="flex-1">
-                                                <input
-                                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 font-semibold transition-colors"
-                                                    placeholder="E-Posta (TC vs.)"
-                                                    value={target.alias}
-                                                    onChange={e => {
-                                                        const newTargets = [...splitTargets];
-                                                        newTargets[index].alias = e.target.value;
-                                                        setSplitTargets(newTargets);
-                                                    }}
-                                                    required
-                                                />
-                                            </div>
-                                            <div className="w-32">
-                                                <div className="relative">
-                                                    <input
-                                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 pr-8 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 text-right font-mono transition-colors"
-                                                        type="number" min="0.01" step="0.01"
-                                                        placeholder="0.00"
-                                                        value={target.amount}
-                                                        onChange={e => {
-                                                            const newTargets = [...splitTargets];
-                                                            newTargets[index].amount = e.target.value;
-                                                            setSplitTargets(newTargets);
-                                                        }}
-                                                        required
-                                                    />
-                                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 text-sm font-bold">₺</span>
-                                                </div>
-                                            </div>
-                                            <button
-                                                type="button"
-                                                onClick={() => removeSplitTarget(index)}
-                                                className="w-12 h-[50px] bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl flex items-center justify-center text-rose-400 transition-colors flex-shrink-0"
-                                            >
-                                                <X size={18} />
-                                            </button>
-                                        </div>
-                                    ))}
-                                </div>
+                            <button type="button" onClick={addSplitTarget} style={{ background: "transparent", border: "1px dashed var(--border-color)", color: "var(--text-secondary)", padding: 12, borderRadius: 12, fontSize: 14, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", transition: "all 0.2s" }}>
+                                <Plus size={16} /> Kişi Ekle
+                            </button>
 
-                                <button
-                                    type="button"
-                                    onClick={addSplitTarget}
-                                    className="w-full bg-transparent border border-dashed border-white/20 hover:border-white/40 hover:bg-white/5 text-white/70 font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all mt-2"
-                                >
-                                    <Plus size={18} /> Kişi Ekle
-                                </button>
-
-                                <button
-                                    type="submit"
-                                    disabled={splitLoading}
-                                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl flex justify-center items-center gap-2 transition-all shadow-lg shadow-blue-500/20 disabled:opacity-50 mt-6"
-                                >
-                                    {splitLoading ? (
-                                        <RefreshCw size={20} className="animate-spin" />
-                                    ) : (
-                                        <Check size={20} />
-                                    )}
-                                    İstekleri Gönder
-                                </button>
-                            </form>
-                        </motion.div>
+                            <button type="submit" style={{ background: "#2563eb", color: "#fff", border: "none", padding: "14px", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 10, transition: "opacity 0.2s" }} disabled={splitLoading}>
+                                {splitLoading ? <RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} /> : <Check size={18} />}
+                                İstekleri Gönder
+                            </button>
+                        </form>
                     </div>
-                )}
-            </AnimatePresence>
+                </div>
+            )}
         </div>
     );
 }

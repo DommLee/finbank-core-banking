@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Headphones, Mail, Phone, MapPin, Send, MessageSquare, HelpCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { messagesApi } from "../../services/api";
 import { toast } from "react-hot-toast";
-import { motion, AnimatePresence } from "framer-motion";
 
 const FAQ = [
     { q: "Hesap açmak için ne gerekli?", a: "TC Kimlik numaranız ve geçerli bir e-posta adresiniz ile kayıt olduktan sonra KYC sürecini tamamlamanız yeterlidir." },
@@ -38,167 +37,130 @@ export default function CustomerSupportPage() {
     };
 
     return (
-        <div className="max-w-6xl mx-auto p-4 md:p-6 lg:p-8">
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-4 mb-8 md:mb-10"
-            >
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-red-600 flex items-center justify-center shadow-lg shadow-rose-500/30">
-                    <Headphones size={28} className="text-white" />
-                </div>
+        <div style={{ maxWidth: 900, margin: "0 auto", padding: 24 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
+                <Headphones size={28} color="#ef4444" />
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
-                        Destek & İletişim
-                    </h1>
-                    <p className="text-sm md:text-base text-gray-400">Size yardımcı olmaktan mutluluk duyarız.</p>
+                    <h1 style={{ fontSize: 24, fontWeight: 700, margin: 0 }}>Destek & İletişim</h1>
+                    <p style={{ fontSize: 14, color: "var(--text-secondary)", margin: 0 }}>Size yardımcı olmaktan mutluluk duyarız.</p>
                 </div>
-            </motion.div>
+            </div>
 
             {/* Contact Cards */}
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8 md:mb-10"
-            >
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 32 }}>
                 {[
-                    { icon: <Phone size={24} />, label: "Telefon", value: "0850 123 45 67", sub: "7/24 Hizmet", color: "from-blue-500 to-indigo-600", shadow: "shadow-blue-500/20" },
-                    { icon: <Mail size={24} />, label: "E-Posta", value: "destek@finbank.com", sub: "24 saat içinde yanıt", color: "from-emerald-500 to-teal-600", shadow: "shadow-emerald-500/20" },
-                    { icon: <MapPin size={24} />, label: "Adres", value: "Levent, İstanbul", sub: "Merkez Şube", color: "from-amber-500 to-orange-600", shadow: "shadow-amber-500/20" },
+                    { icon: <Phone size={20} />, label: "Telefon", value: "0850 123 45 67", sub: "7/24 Hizmet" },
+                    { icon: <Mail size={20} />, label: "E-Posta", value: "destek@finbank.com", sub: "24 saat içinde yanıt" },
+                    { icon: <MapPin size={20} />, label: "Adres", value: "Levent, İstanbul", sub: "Merkez Şube" },
                 ].map((item, i) => (
-                    <motion.div
-                        whileHover={{ scale: 1.02, y: -5 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                        key={i}
-                        className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 flex flex-col items-center text-center gap-4 relative overflow-hidden group"
-                    >
-                        <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
-
-                        <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${item.color} flex items-center justify-center shadow-lg ${item.shadow} text-white mb-2`}>
+                    <div key={i} style={{
+                        background: "var(--bg-card)", borderRadius: 16, padding: 20,
+                        border: "1px solid var(--border-color)", display: "flex", gap: 14, alignItems: "center",
+                    }}>
+                        <div style={{
+                            width: 44, height: 44, borderRadius: 12, background: "rgba(239,68,68,0.1)",
+                            display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444",
+                        }}>
                             {item.icon}
                         </div>
                         <div>
-                            <div className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{item.label}</div>
-                            <div className="text-lg md:text-xl font-bold text-white mb-1">{item.value}</div>
-                            <div className="text-sm text-gray-400">{item.sub}</div>
+                            <div style={{ fontSize: 11, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: 1 }}>{item.label}</div>
+                            <div style={{ fontSize: 15, fontWeight: 600 }}>{item.value}</div>
+                            <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{item.sub}</div>
                         </div>
-                    </motion.div>
+                    </div>
                 ))}
-            </motion.div>
+            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
                 {/* Message Form */}
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.2 }}
-                    className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 shadow-xl"
-                >
-                    <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-indigo-500/20 text-indigo-400">
-                            <MessageSquare size={20} />
-                        </div>
-                        Bize Yazın
+                <div style={{
+                    background: "var(--bg-card)", borderRadius: 20, padding: 28,
+                    border: "1px solid var(--border-color)",
+                }}>
+                    <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
+                        <MessageSquare size={20} color="#ef4444" /> Bize Yazın
                     </h2>
-
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-300 ml-1">Konu</label>
-                            <input
-                                type="text"
-                                value={subject}
-                                onChange={(e) => setSubject(e.target.value)}
-                                placeholder="Mesajınızın konusu"
-                                required
-                                className="w-full px-5 py-4 rounded-2xl border border-white/10 bg-white/5 text-white placeholder-gray-500 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-inner"
-                            />
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-gray-300 ml-1">Mesajınız</label>
-                            <textarea
-                                value={message}
-                                onChange={(e) => setMessage(e.target.value)}
-                                placeholder="Size nasıl yardımcı olabiliriz?"
-                                rows={6}
-                                required
-                                className="w-full px-5 py-4 rounded-2xl border border-white/10 bg-white/5 text-white placeholder-gray-500 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all shadow-inner resize-y custom-scrollbar"
-                            />
-                        </div>
-
+                    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                        <input
+                            type="text"
+                            value={subject}
+                            onChange={(e) => setSubject(e.target.value)}
+                            placeholder="Konu"
+                            required
+                            style={{
+                                padding: "12px 16px", borderRadius: 12,
+                                border: "1px solid var(--border-color)", background: "var(--bg-secondary)",
+                                color: "var(--text-primary)", fontSize: 14, outline: "none",
+                            }}
+                        />
+                        <textarea
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            placeholder="Mesajınızı buraya yazın..."
+                            rows={5}
+                            required
+                            style={{
+                                padding: "12px 16px", borderRadius: 12,
+                                border: "1px solid var(--border-color)", background: "var(--bg-secondary)",
+                                color: "var(--text-primary)", fontSize: 14, outline: "none", resize: "vertical",
+                            }}
+                        />
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`w-full py-4 rounded-2xl font-bold text-white shadow-lg flex items-center justify-center gap-2 transition-all duration-300 mt-2 ${loading
-                                    ? 'bg-indigo-500/50 cursor-wait'
-                                    : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 hover:shadow-indigo-500/25 hover:scale-[1.02] active:scale-95'
-                                }`}
+                            style={{
+                                padding: "14px", borderRadius: 12, border: "none",
+                                background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                                color: "white", fontSize: 15, fontWeight: 600, cursor: "pointer",
+                                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                                opacity: loading ? 0.7 : 1,
+                            }}
                         >
-                            <Send size={20} className={loading ? "animate-pulse" : ""} />
-                            {loading ? "Gönderiliyor..." : "Mesajı Gönder"}
+                            <Send size={18} /> {loading ? "Gönderiliyor..." : "Mesaj Gönder"}
                         </button>
                     </form>
-                </motion.div>
+                </div>
 
                 {/* FAQ */}
-                <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3 }}
-                    className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 shadow-xl flex flex-col h-full"
-                >
-                    <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
-                            <HelpCircle size={20} />
-                        </div>
-                        Sık Sorulan Sorular
+                <div style={{
+                    background: "var(--bg-card)", borderRadius: 20, padding: 28,
+                    border: "1px solid var(--border-color)",
+                }}>
+                    <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
+                        <HelpCircle size={20} color="#6366f1" /> Sık Sorulan Sorular
                     </h2>
-
-                    <div className="flex flex-col gap-3 flex-1 overflow-y-auto custom-scrollbar pr-2">
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         {FAQ.map((item, i) => (
-                            <motion.div
-                                key={i}
-                                className={`rounded-2xl border transition-all duration-300 overflow-hidden ${openFaq === i
-                                        ? 'bg-white/10 border-indigo-500/30 shadow-md shadow-indigo-500/5'
-                                        : 'bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/10'
-                                    }`}
-                            >
+                            <div key={i} style={{
+                                borderRadius: 12, border: "1px solid var(--border-color)",
+                                overflow: "hidden", transition: "all 0.2s",
+                            }}>
                                 <button
                                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                                    className="w-full px-5 py-4 flex justify-between items-center text-left focus:outline-none"
+                                    style={{
+                                        width: "100%", padding: "14px 16px", background: "transparent",
+                                        border: "none", display: "flex", justifyContent: "space-between",
+                                        alignItems: "center", cursor: "pointer", color: "var(--text-primary)",
+                                        fontSize: 14, fontWeight: 500, textAlign: "left",
+                                    }}
                                 >
-                                    <span className="font-medium text-sm md:text-base text-gray-200 pr-4">{item.q}</span>
-                                    <div className={`p-1 rounded-full transition-colors ${openFaq === i ? 'bg-indigo-500/20 text-indigo-400' : 'text-gray-400'}`}>
-                                        <motion.div
-                                            initial={false}
-                                            animate={{ rotate: openFaq === i ? 180 : 0 }}
-                                            transition={{ duration: 0.3 }}
-                                        >
-                                            <ChevronDown size={20} />
-                                        </motion.div>
-                                    </div>
+                                    {item.q}
+                                    {openFaq === i ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
                                 </button>
-
-                                <AnimatePresence>
-                                    {openFaq === i && (
-                                        <motion.div
-                                            initial={{ height: 0, opacity: 0 }}
-                                            animate={{ height: "auto", opacity: 1 }}
-                                            exit={{ height: 0, opacity: 0 }}
-                                            transition={{ duration: 0.3 }}
-                                        >
-                                            <div className="px-5 pb-5 text-sm md:text-base leading-relaxed text-gray-400">
-                                                <div className="h-px w-full bg-white/10 mb-4" />
-                                                {item.a}
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </motion.div>
+                                {openFaq === i && (
+                                    <div style={{
+                                        padding: "0 16px 14px", fontSize: 13, lineHeight: 1.6,
+                                        color: "var(--text-secondary)", borderTop: "1px solid var(--border-color)",
+                                        paddingTop: 12,
+                                    }}>
+                                        {item.a}
+                                    </div>
+                                )}
+                            </div>
                         ))}
                     </div>
-                </motion.div>
+                </div>
             </div>
         </div>
     );

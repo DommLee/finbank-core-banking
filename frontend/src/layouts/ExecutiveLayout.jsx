@@ -27,89 +27,72 @@ export default function ExecutiveLayout() {
     const isActive = (path) => location.pathname === path;
 
     return (
-        <div className="flex min-h-screen bg-[#020617]">
+        <div className="layout-wrapper layout-executive">
             {/* Overlay for mobile */}
             <div
-                className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[999] transition-opacity duration-300 md:hidden ${sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+                className={`sidebar-overlay ${sidebarOpen ? 'mobile-open' : ''}`}
                 onClick={() => setSidebarOpen(false)}
             />
 
-            <aside
-                className={`fixed md:sticky top-0 left-0 h-screen w-[280px] flex flex-col z-[1000] md:z-40 transition-transform duration-300
-                           bg-deepblue-950/60 backdrop-blur-2xl border-r border-white/10 shadow-2xl
-                           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
-                role="navigation"
-                aria-label="Yönetim menüsü"
-            >
-                <div className="p-6 flex items-center gap-3 border-b border-white/10">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-600 flex items-center justify-center font-bold text-lg text-white shadow-lg shadow-amber-500/30">FB</div>
-                    <div className="flex flex-col">
-                        <span className="text-xl font-bold text-white tracking-tight">FinBank</span>
-                        <span className="text-[10px] text-amber-300 bg-amber-500/10 px-1.5 py-0.5 rounded">CEO workspace</span>
-                    </div>
+            <aside className={`sidebar sidebar-executive ${sidebarOpen ? 'mobile-open' : ''}`} role="navigation" aria-label="Yönetim menüsü">
+                <div className="sidebar-brand">
+                    <div className="sidebar-brand-icon executive-icon">FB</div>
+                    <span className="sidebar-brand-text">FinBank</span>
+                    <span className="sidebar-brand-sub">Yönetim</span>
                 </div>
 
-                <nav className="flex-1 overflow-y-auto flex flex-col gap-2 p-4 custom-scrollbar">
+                <nav className="sidebar-nav">
                     {links.map((link) => (
                         <Link
                             key={link.to}
                             to={link.to}
-                            className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200
-                                ${isActive(link.to)
-                                    ? "bg-amber-500/20 text-amber-400 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] border border-amber-500/30"
-                                    : "text-white/60 hover:bg-white/5 hover:text-white"}`}
+                            className={`sidebar-link ${isActive(link.to) ? "active" : ""}`}
                             aria-current={isActive(link.to) ? "page" : undefined}
                         >
-                            <link.icon size={18} className={isActive(link.to) ? "text-amber-400" : "text-white/50"} />
+                            <link.icon size={18} />
                             <span>{link.label}</span>
                         </Link>
                     ))}
                 </nav>
 
-                <div className="p-6 border-t border-white/10 flex flex-col gap-4 bg-black/20">
-                    <button
-                        className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-white/60 hover:bg-white/5 hover:text-white transition-all w-full"
-                        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                        aria-label="Tema değiştir"
-                    >
-                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-                        <span>{theme === 'dark' ? ' Açık Mod' : ' Koyu Mod'}</span>
-                    </button>
-
-                    <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
-                        <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-400">
-                            <Crown size={16} />
-                        </div>
-                        <div className="flex flex-col overflow-hidden">
-                            <span className="text-[10px] uppercase font-bold tracking-wider text-amber-500">CEO</span>
-                            <span className="text-xs text-white/70 truncate">{user?.email}</span>
+                <div className="sidebar-footer">
+                    <div className="sidebar-user">
+                        <Crown size={16} />
+                        <div className="sidebar-user-info">
+                            <span className="sidebar-role-badge executive">CEO</span>
+                            <span className="sidebar-email">{user?.email}</span>
                         </div>
                     </div>
-
                     <button
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-amber-400 hover:bg-amber-400/10 border border-transparent hover:border-amber-400/20 transition-all w-full"
-                        onClick={logout}
+                        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                        className="btn-logout"
+                        style={{ marginBottom: 8, background: "var(--bg-secondary)", border: "1px solid var(--border-color)" }}
+                        aria-label="Tema değiştir"
                     >
+                        {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+                        {theme === "dark" ? " Açık Mod" : " Koyu Mod"}
+                    </button>
+                    <button className="btn-logout" onClick={logout} aria-label="Çıkış yap">
                         <LogOut size={16} /> Çıkış
                     </button>
                 </div>
             </aside>
 
             {/* ── Mobile Header ── */}
-            <div className="md:hidden flex justify-between items-center p-4 bg-deepblue-950/80 backdrop-blur-xl border-b border-white/10 sticky top-0 z-50 w-full">
+            <div className="mobile-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16, padding: "0 16px" }}>
                 <button
                     onClick={() => setSidebarOpen(true)}
-                    className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white"
+                    style={{ background: 'var(--bg-card)', border: 'none', borderRadius: '50%', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                 >
                     <Menu size={20} />
                 </button>
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center font-bold text-xs text-amber-400 border border-amber-500/30">FB</div>
-                    <span className="font-bold text-white">CEO</span>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <div className="sidebar-brand-icon executive-icon" style={{ width: 32, height: 32, fontSize: 12 }}>FB</div>
+                    <span style={{ fontWeight: 700, color: "#d4af37" }}>CEO</span>
                 </div>
                 <button
                     onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                    className="w-11 h-11 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white"
+                    style={{ background: 'var(--bg-card)', border: 'none', borderRadius: '50%', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                 >
                     {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
                 </button>
@@ -117,10 +100,8 @@ export default function ExecutiveLayout() {
 
             <MobileBottomNav />
 
-            <main className="flex-1 w-full md:max-w-[calc(100vw-280px)] min-h-screen flex flex-col bg-transparent pb-24 md:pb-0">
-                <div className="flex-1 p-4 md:p-8 overflow-y-auto">
-                    <Outlet />
-                </div>
+            <main className="layout-main">
+                <Outlet />
             </main>
         </div>
     );

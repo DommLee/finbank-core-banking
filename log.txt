@@ -1,0 +1,20 @@
+﻿900a74c fix: add error boundary to 3D + npmrc for peer deps
+6f3ab18 fix: downgrade react-three to React 18 compatible + fix Dockerfile
+aa94c82 revert: restore react-three versions
+116c646 fix: downgrade @react-three packages for React 18 compatibility
+2767a1a fix(ci): add legacy-peer-deps for npm install and regenerate package-lock
+d7c4c85 fix: increase PWA cache limit and add chunk splitting to fix CI build
+983581d Refactor admin and employee panels to Tailwind glassmorphism
+e211d9d Fix Easy Address UI crashes and Virtual Card creation lookup errors
+86c369d Allow CEO and management to access full ledger, audit logs, and account lists
+ea88aad Fix QR transfer bug (fallback to account number & use IBAN)
+be9e23f Fix syntax error in deposits, implement virtual card API, and update credit card models
+78a2311 docs: Update README with Credit Card transfers and 3D UI features
+9685d5d Fix transfer bug, allow credit card transfers, add 3D flip card animation
+13b4ce0 feat: Implement savings goals, analytics endpoints, deposit approvals, and credit card shadow accounts
+d6a5274 feat: add debit card 3D flip UI and backend route
+c271ebb  fix: resolve payment requests user access error and improve mobile sidebar responsiveness
+140e958 feat: implement 3D flip card UI in CardsPage
+dceeb94 feat: implement audit fixes (dynamic interest, idempotency, deterministic credit limits, CORS tightening)
+26e94f4 feat(employee): add missing financial routes and fix role-based redirections
+11cbc4b fix: remove nonexistent import 'PaymentService' from payment_requests causing crash on render

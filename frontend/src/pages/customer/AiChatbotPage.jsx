@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Sparkles } from "lucide-react";
+import { Send, Bot, User, Sparkles, RefreshCw } from "lucide-react";
 import { chatbotApi } from "../../services/api";
 import { toast } from "react-hot-toast";
-import { motion } from "framer-motion";
 
 export default function AiChatbotPage() {
     const [messages, setMessages] = useState([
@@ -30,7 +29,6 @@ export default function AiChatbotPage() {
             setMessages(prev => [...prev, { role: "assistant", content: res.data.reply || res.data.response || "Yanıt alınamadı." }]);
         } catch (error) {
             setMessages(prev => [...prev, { role: "assistant", content: "Üzgünüm, bir hata oluştu. Lütfen tekrar deneyin." }]);
-            toast.error("Mesaj gönderilemedi");
         } finally {
             setLoading(false);
         }
@@ -44,120 +42,116 @@ export default function AiChatbotPage() {
     ];
 
     return (
-        <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 h-[calc(100vh-100px)] flex flex-col">
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex items-center gap-4 mb-6 md:mb-8"
-            >
-                <div className="w-12 h-12 md:w-14 md:h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                    <Sparkles size={24} className="text-white" />
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: 24, display: "flex", flexDirection: "column", height: "calc(100vh - 120px)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
+                <div style={{ width: 48, height: 48, borderRadius: "50%", background: "linear-gradient(135deg, #6366f1, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <Sparkles size={24} color="white" />
                 </div>
                 <div>
-                    <h1 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70">
-                        FinBank AI Asistan
-                    </h1>
-                    <p className="text-sm md:text-base text-gray-400">Gemini AI ile güçlendirilmiş 7/24 destek</p>
+                    <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>FinBank AI Asistan</h1>
+                    <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>Gemini AI ile desteklenmektedir</p>
                 </div>
-            </motion.div>
+            </div>
 
             {/* Quick Questions */}
             {messages.length <= 1 && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="flex flex-wrap gap-2 md:gap-3 mb-6"
-                >
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
                     {quickQuestions.map((q, i) => (
                         <button
                             key={i}
                             onClick={() => { setInput(q); }}
-                            className="px-4 py-2 md:px-5 md:py-2.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 text-gray-300 text-xs md:text-sm font-medium transition-all duration-300 hover:scale-105 active:scale-95"
+                            style={{
+                                padding: "8px 16px", borderRadius: 20, border: "1px solid var(--border-color)",
+                                background: "var(--bg-card)", color: "var(--text-primary)", fontSize: 13,
+                                cursor: "pointer", transition: "all 0.2s",
+                            }}
                         >
                             {q}
                         </button>
                     ))}
-                </motion.div>
+                </div>
             )}
 
             {/* Chat Messages */}
-            <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="flex-1 overflow-y-auto rounded-3xl bg-white/5 border border-white/10 p-4 md:p-6 flex flex-col gap-4 md:gap-6 backdrop-blur-xl shadow-2xl custom-scrollbar"
-            >
+            <div style={{
+                flex: 1, overflowY: "auto", borderRadius: 16,
+                background: "var(--bg-secondary)", border: "1px solid var(--border-color)",
+                padding: 16, display: "flex", flexDirection: "column", gap: 12,
+            }}>
                 {messages.map((msg, i) => (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10, x: msg.role === "user" ? 20 : -20 }}
-                        animate={{ opacity: 1, y: 0, x: 0 }}
-                        transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                        key={i}
-                        className={`flex gap-3 md:gap-4 items-end ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
-                    >
-                        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full shrink-0 flex items-center justify-center shadow-lg ${msg.role === "user"
-                                ? "bg-gradient-to-br from-emerald-500 to-teal-600"
-                                : "bg-gradient-to-br from-indigo-500 to-purple-600"
-                            }`}>
-                            {msg.role === "user" ? <User size={18} className="text-white" /> : <Bot size={18} className="text-white" />}
+                    <div key={i} style={{
+                        display: "flex", gap: 10,
+                        flexDirection: msg.role === "user" ? "row-reverse" : "row",
+                        alignItems: "flex-start",
+                    }}>
+                        <div style={{
+                            width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                            background: msg.role === "user" ? "#ef4444" : "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                            {msg.role === "user" ? <User size={16} color="white" /> : <Bot size={16} color="white" />}
                         </div>
-                        <div className={`max-w-[85%] md:max-w-[75%] px-4 md:px-6 py-3 md:py-4 text-sm md:text-base leading-relaxed ${msg.role === "user"
-                                ? "bg-gradient-to-br from-emerald-500 to-teal-600 text-white rounded-2xl rounded-tr-sm shadow-emerald-500/20 shadow-lg"
-                                : "bg-white/10 text-gray-200 rounded-2xl rounded-tl-sm border border-white/5 shadow-inner backdrop-blur-md"
-                            }`}>
+                        <div style={{
+                            maxWidth: "75%", padding: "12px 16px", borderRadius: 16,
+                            background: msg.role === "user" ? "#ef4444" : "var(--bg-card)",
+                            color: msg.role === "user" ? "white" : "var(--text-primary)",
+                            fontSize: 14, lineHeight: 1.6,
+                            borderTopRightRadius: msg.role === "user" ? 4 : 16,
+                            borderTopLeftRadius: msg.role === "user" ? 16 : 4,
+                        }}>
                             {msg.content}
                         </div>
-                    </motion.div>
+                    </div>
                 ))}
-
                 {loading && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="flex gap-3 md:gap-4 items-end"
-                    >
-                        <div className="w-8 h-8 md:w-10 md:h-10 rounded-full shrink-0 flex items-center justify-center shadow-lg bg-gradient-to-br from-indigo-500 to-purple-600">
-                            <Bot size={18} className="text-white" />
+                    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                        <div style={{
+                            width: 32, height: 32, borderRadius: "50%",
+                            background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                        }}>
+                            <Bot size={16} color="white" />
                         </div>
-                        <div className="px-5 py-4 bg-white/10 rounded-2xl rounded-tl-sm border border-white/5 flex gap-2">
-                            <motion.span animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} className="w-2 h-2 rounded-full bg-indigo-400" />
-                            <motion.span animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} className="w-2 h-2 rounded-full bg-indigo-400" />
-                            <motion.span animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} className="w-2 h-2 rounded-full bg-indigo-400" />
+                        <div style={{ display: "flex", gap: 4 }}>
+                            <span className="typing-dot" style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--text-secondary)", animation: "pulse 1s infinite" }}></span>
+                            <span className="typing-dot" style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--text-secondary)", animation: "pulse 1s infinite 0.2s" }}></span>
+                            <span className="typing-dot" style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--text-secondary)", animation: "pulse 1s infinite 0.4s" }}></span>
                         </div>
-                    </motion.div>
+                    </div>
                 )}
-                <div ref={chatEndRef} className="h-2" />
-            </motion.div>
+                <div ref={chatEndRef} />
+            </div>
 
             {/* Input Area */}
-            <motion.form
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                onSubmit={handleSend}
-                className="flex gap-2 md:gap-3 mt-4 md:mt-6 items-center"
-            >
-                <div className="flex-1 relative">
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        placeholder="Yapay zeka asistanına sor..."
-                        disabled={loading}
-                        className="w-full px-5 py-4 md:py-5 rounded-2xl border border-white/10 bg-white/5 text-white placeholder-gray-500 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:bg-white/10 transition-all shadow-inner backdrop-blur-xl disabled:opacity-50"
-                    />
-                </div>
+            <form onSubmit={handleSend} style={{
+                display: "flex", gap: 8, marginTop: 16, alignItems: "center",
+            }}>
+                <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    placeholder="Mesajınızı yazın..."
+                    disabled={loading}
+                    style={{
+                        flex: 1, padding: "14px 20px", borderRadius: 16,
+                        border: "1px solid var(--border-color)", background: "var(--bg-card)",
+                        color: "var(--text-primary)", fontSize: 14, outline: "none",
+                    }}
+                />
                 <button
                     type="submit"
                     disabled={loading || !input.trim()}
-                    className={`w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300 ${loading || !input.trim()
-                            ? 'bg-white/10 text-gray-500 cursor-not-allowed border border-white/5'
-                            : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:scale-105 hover:shadow-lg hover:shadow-emerald-500/25 active:scale-95'
-                        }`}
+                    style={{
+                        width: 48, height: 48, borderRadius: 16, border: "none",
+                        background: "linear-gradient(135deg, #ef4444, #dc2626)",
+                        color: "white", cursor: "pointer", display: "flex",
+                        alignItems: "center", justifyContent: "center",
+                        opacity: loading || !input.trim() ? 0.5 : 1,
+                    }}
                 >
-                    <Send size={24} className={input.trim() && !loading ? "ml-1" : ""} />
+                    <Send size={20} />
                 </button>
-            </motion.form>
+            </form>
         </div>
     );
 }

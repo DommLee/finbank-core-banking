@@ -5,15 +5,14 @@ import {
 } from "lucide-react";
 import { billsApi, billApi, accountApi } from "../services/api";
 import toast from "react-hot-toast";
-import { motion, AnimatePresence } from "framer-motion";
 
 const BILL_TYPES = [
-    { id: "electric", label: "Elektrik", icon: Zap, color: "text-amber-500", bg: "bg-amber-500/20", gradient: "from-amber-500 to-amber-600" },
-    { id: "water", label: "Su", icon: Droplets, color: "text-blue-500", bg: "bg-blue-500/20", gradient: "from-blue-500 to-blue-600" },
-    { id: "gas", label: "Doğalgaz", icon: Flame, color: "text-rose-500", bg: "bg-rose-500/20", gradient: "from-rose-500 to-rose-600" },
-    { id: "internet", label: "İnternet", icon: Wifi, color: "text-violet-500", bg: "bg-violet-500/20", gradient: "from-violet-500 to-violet-600" },
-    { id: "phone", label: "Telefon", icon: Phone, color: "text-emerald-500", bg: "bg-emerald-500/20", gradient: "from-emerald-500 to-emerald-600" },
-    { id: "other", label: "Diğer", icon: FileText, color: "text-gray-400", bg: "bg-gray-500/20", gradient: "from-gray-500 to-gray-600" },
+    { id: "electric", label: "Elektrik", icon: Zap, color: "#f59e0b" },
+    { id: "water", label: "Su", icon: Droplets, color: "#3b82f6" },
+    { id: "gas", label: "Doğalgaz", icon: Flame, color: "#ef4444" },
+    { id: "internet", label: "İnternet", icon: Wifi, color: "#8b5cf6" },
+    { id: "phone", label: "Telefon", icon: Phone, color: "#10b981" },
+    { id: "other", label: "Diğer", icon: FileText, color: "#6b7280" },
 ];
 
 export default function BillPayPage() {
@@ -133,63 +132,279 @@ export default function BillPayPage() {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center min-h-[60vh]">
-                <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
+            <div className="page-container" style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+                <div className="spinner" style={{ width: 40, height: 40 }} />
             </div>
         );
     }
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6">
-            <div className="mb-8 pl-2 border-l-4 border-blue-500">
-                <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center">
-                        <Zap size={24} />
-                    </div>
-                    Fatura Ödeme
-                </h1>
-                <p className="text-white/60 mt-2 font-medium">
-                    Elektrik, su, doğalgaz ve diğer faturalarınızı kolayca ödeyin ve otomatik talimat verin.
+        <div className="page-container" style={{ maxWidth: 900 }}>
+            <div style={{ marginBottom: 20 }}>
+                <h1 style={{ fontSize: 26, fontWeight: 800, marginBottom: 4 }}>💡 Fatura Ödeme</h1>
+                <p style={{ color: "var(--text-muted)", fontSize: 14 }}>
+                    Elektrik, su, doğalgaz ve daha fazla faturanızı kolayca ödeyin.
                 </p>
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-2 mb-6 overflow-x-auto pb-2 scrollbar-hide">
-                <TabBtn active={activeTab === "pay"} onClick={() => setActiveTab("pay")} icon={<CreditCard size={18} />}>
-                    Fatura Öde
+            <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", background: "var(--bg-secondary)", padding: 6, borderRadius: 16 }}>
+                <TabBtn active={activeTab === "pay"} onClick={() => setActiveTab("pay")}>
+                    💳 Fatura Öde
                 </TabBtn>
-                <TabBtn active={activeTab === "auto"} onClick={() => setActiveTab("auto")} icon={<RefreshCw size={18} />}>
-                    Otomatik Ödemeler
+                <TabBtn active={activeTab === "auto"} onClick={() => setActiveTab("auto")}>
+                    🔄 Otomatik Ödemeler
                 </TabBtn>
-                <TabBtn active={activeTab === "history"} onClick={() => setActiveTab("history")} icon={<Clock size={18} />}>
-                    Ödeme Geçmişi ({history.length})
+                <TabBtn active={activeTab === "history"} onClick={() => setActiveTab("history")}>
+                    📜 Ödeme Geçmişi ({history.length})
                 </TabBtn>
             </div>
 
             {/* Pay Tab */}
-            <AnimatePresence mode="wait">
-                {activeTab === "pay" && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-                        className="bg-deepblue-900/40 backdrop-blur-xl rounded-3xl border border-white/10 p-6 sm:p-8 shadow-2xl"
-                    >
-                        {/* Bill Type Selection */}
-                        <div className="mb-8">
-                            <label className="block text-sm font-bold text-white/80 mb-4 uppercase tracking-wider">Fatura Türü Seçin</label>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+            {activeTab === "pay" && (
+                <div className="card" style={{ padding: 24 }}>
+                    {/* Bill Type Selection */}
+                    <div style={{ marginBottom: 20 }}>
+                        <label className="form-label">Fatura Türü</label>
+                        <div style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
+                            gap: 10,
+                        }}>
+                            {BILL_TYPES.map((bt) => {
+                                const Icon = bt.icon;
+                                return (
+                                    <button
+                                        key={bt.id}
+                                        onClick={() => setSelectedType(bt.id)}
+                                        style={{
+                                            padding: "14px 10px", borderRadius: 14, border: "none",
+                                            cursor: "pointer", textAlign: "center",
+                                            background: selectedType === bt.id
+                                                ? `linear-gradient(135deg, ${bt.color}, ${bt.color}88)`
+                                                : "var(--bg-secondary)",
+                                            color: selectedType === bt.id ? "#fff" : "var(--text-secondary)",
+                                            transition: "all 0.2s",
+                                        }}
+                                    >
+                                        <Icon size={22} style={{ marginBottom: 6, display: "block", margin: "0 auto 6px" }} />
+                                        <div style={{ fontSize: 12, fontWeight: 600 }}>{bt.label}</div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {selectedType && (
+                        <form onSubmit={handlePay}>
+                            <div className="form-group">
+                                <label className="form-label">Hesap Seçin</label>
+                                <select
+                                    className="form-input"
+                                    value={form.account_id}
+                                    onChange={(e) => setForm({ ...form, account_id: e.target.value })}
+                                    required
+                                >
+                                    <option value="">Hesap seçin...</option>
+                                    {accounts.filter(a => a.status === "active").map((a) => (
+                                        <option key={a.id} value={a.id}>
+                                            {a.account_number} ({a.currency})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                                <div className="form-group">
+                                    <label className="form-label">Kurum / Sağlayıcı</label>
+                                    <input
+                                        className="form-input"
+                                        placeholder="Örn: TEDAŞ, İGDAŞ..."
+                                        value={form.provider}
+                                        onChange={(e) => setForm({ ...form, provider: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="form-label">Abone No</label>
+                                    <input
+                                        className="form-input"
+                                        placeholder="Abone numaranız"
+                                        value={form.subscriber_no}
+                                        onChange={(e) => setForm({ ...form, subscriber_no: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="form-group">
+                                <label className="form-label">Tutar (₺)</label>
+                                <input
+                                    className="form-input"
+                                    type="number"
+                                    step="0.01"
+                                    min="1"
+                                    placeholder="0.00"
+                                    value={form.amount}
+                                    onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                                    required
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                className="btn btn-primary"
+                                disabled={paying}
+                                style={{ width: "100%", height: 48, fontSize: 16, fontWeight: 600, marginTop: 8 }}
+                            >
+                                {paying ? (
+                                    <div className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} />
+                                ) : (
+                                    <><Send size={18} /> Fatura Öde</>
+                                )}
+                            </button>
+                        </form>
+                    )}
+                </div>
+            )}
+
+            {/* History Tab */}
+            {activeTab === "history" && (
+                <div>
+                    {history.length === 0 ? (
+                        <div className="card" style={{ padding: 40, textAlign: "center" }}>
+                            <Clock size={40} style={{ color: "var(--text-muted)", marginBottom: 12 }} />
+                            <p style={{ color: "var(--text-muted)" }}>Henüz fatura ödemesi bulunmuyor.</p>
+                        </div>
+                    ) : history.map((bill, i) => {
+                        const bt = BILL_TYPES.find(b => b.id === bill.bill_type) || BILL_TYPES[5];
+                        const Icon = bt.icon;
+                        return (
+                            <div key={bill.bill_id || i} className="card" style={{
+                                padding: 16, marginBottom: 10,
+                                display: "flex", alignItems: "center", gap: 14,
+                            }}>
+                                <div style={{
+                                    width: 44, height: 44, borderRadius: 12,
+                                    background: `${bt.color}20`, color: bt.color,
+                                    display: "flex", alignItems: "center", justifyContent: "center",
+                                    flexShrink: 0,
+                                }}>
+                                    <Icon size={20} />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                    <div style={{ fontWeight: 600, fontSize: 14 }}>
+                                        {bill.provider} — {bt.label}
+                                    </div>
+                                    <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                                        Abone: {bill.subscriber_no} · {formatDate(bill.paid_at)}
+                                    </div>
+                                </div>
+                                <div style={{ textAlign: "right" }}>
+                                    <div style={{ fontWeight: 700, fontSize: 15 }}>
+                                        {formatCurrency(bill.amount)}
+                                    </div>
+                                    <span style={{
+                                        fontSize: 11, padding: "2px 8px", borderRadius: 6,
+                                        background: "rgba(16,185,129,0.15)", color: "#10b981", fontWeight: 600,
+                                    }}>
+                                        <CheckCircle size={10} /> Ödendi
+                                    </span>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* Auto Bills Tab */}
+            {activeTab === "auto" && (
+                <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                        <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Otomatik Ödeme Talimatları</h3>
+                        <button
+                            onClick={() => setShowAutoModal(true)}
+                            style={{ background: "#f59e0b", color: "#fff", border: "none", padding: "10px 16px", borderRadius: 12, fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
+                        >
+                            <Plus size={18} /> Yeni Talimat
+                        </button>
+                    </div>
+
+                    {autoBills.length === 0 ? (
+                        <div className="card" style={{ padding: 40, textAlign: "center" }}>
+                            <RefreshCw size={40} style={{ color: "var(--text-muted)", marginBottom: 12 }} />
+                            <p style={{ color: "var(--text-muted)" }}>Henüz otomatik ödeme talimatınız bulunmuyor.</p>
+                        </div>
+                    ) : (
+                        <div style={{ display: "grid", gap: 16 }}>
+                            {autoBills.map(ab => {
+                                const bt = BILL_TYPES.find(b => b.id === ab.bill_type) || BILL_TYPES[5];
+                                const Icon = bt.icon;
+                                return (
+                                    <div key={ab.auto_bill_id} className="card" style={{ padding: 20, display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 20 }}>
+                                        <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                                            <div style={{ width: 48, height: 48, borderRadius: 14, background: `${bt.color}20`, color: bt.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                                <Icon size={24} />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontWeight: 700, fontSize: 16 }}>{ab.provider}</div>
+                                                <div style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 4 }}>Abone: {ab.subscriber_no}</div>
+                                                <div style={{ fontSize: 12, fontWeight: 600, color: "#f59e0b", marginTop: 4 }}>
+                                                    Her ayın {ab.payment_day}. günü
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+                                            {ab.max_amount && (
+                                                <div style={{ textAlign: "right" }}>
+                                                    <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>Maks. Limit</div>
+                                                    <div style={{ fontWeight: 800 }}>{formatCurrency(ab.max_amount)}</div>
+                                                </div>
+                                            )}
+                                            <button
+                                                onClick={() => handleCancelAuto(ab.auto_bill_id)}
+                                                style={{ background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "none", padding: "8px 12px", borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: "pointer", transition: "all 0.2s" }}
+                                                disabled={actionLoading}
+                                            >
+                                                İptal Et
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Auto Bill Create Modal */}
+            {showAutoModal && (
+                <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: 20 }}>
+                    <div style={{ background: "var(--bg-card)", padding: 24, borderRadius: 24, width: "100%", maxWidth: 500, maxHeight: "90vh", overflowY: "auto" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                            <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>Yeni Otomatik Talimat</h2>
+                            <button onClick={() => { setShowAutoModal(false); setSelectedType(null); }} style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}><XCircle size={24} /></button>
+                        </div>
+
+                        <div style={{ marginBottom: 20 }}>
+                            <label className="form-label" style={{ marginBottom: 10 }}>Fatura Türü</label>
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                                 {BILL_TYPES.map((bt) => {
                                     const Icon = bt.icon;
-                                    const isActive = selectedType === bt.id;
                                     return (
                                         <button
                                             key={bt.id}
                                             onClick={() => setSelectedType(bt.id)}
-                                            className={`p-4 rounded-2xl border transition-all duration-300 flex flex-col items-center justify-center gap-2 group
-                                                ${isActive ? `bg-gradient-to-br ${bt.gradient} border-transparent shadow-lg shadow-${bt.color.split('-')[1]}-500/20 text-white scale-105`
-                                                    : 'bg-black/20 border-white/5 hover:bg-white/5 hover:border-white/20 text-white/60 hover:text-white'}`}
+                                            style={{
+                                                padding: "10px", borderRadius: 12, border: "1px solid var(--border-color)",
+                                                cursor: "pointer", textAlign: "center",
+                                                background: selectedType === bt.id ? `${bt.color}20` : "transparent",
+                                                color: selectedType === bt.id ? bt.color : "var(--text-secondary)",
+                                                fontWeight: selectedType === bt.id ? 700 : 500,
+                                            }}
                                         >
-                                            <Icon size={28} className={isActive ? "text-white" : bt.color} />
-                                            <div className="text-sm font-semibold">{bt.label}</div>
+                                            <Icon size={20} style={{ margin: "0 auto 4px" }} />
+                                            <div style={{ fontSize: 12 }}>{bt.label}</div>
                                         </button>
                                     );
                                 })}
@@ -197,324 +412,82 @@ export default function BillPayPage() {
                         </div>
 
                         {selectedType && (
-                            <motion.form
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: "auto" }}
-                                onSubmit={handlePay}
-                                className="space-y-6 pt-6 border-t border-white/10"
-                            >
+                            <form onSubmit={handleCreateAuto} style={{ display: "grid", gap: 16 }}>
                                 <div>
-                                    <label className="block text-sm font-medium text-white/70 mb-2">Ödenecek Hesap</label>
+                                    <label className="form-label">Hesap Seçin</label>
                                     <select
-                                        className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3.5 text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none appearance-none"
-                                        value={form.account_id}
-                                        onChange={(e) => setForm({ ...form, account_id: e.target.value })}
+                                        className="form-input"
+                                        value={autoForm.account_id}
+                                        onChange={(e) => setAutoForm({ ...autoForm, account_id: e.target.value })}
                                         required
                                     >
-                                        <option value="" className="bg-deepblue-900">Hesap seçin...</option>
+                                        <option value="">Hesap seçin...</option>
                                         {accounts.filter(a => a.status === "active").map((a) => (
-                                            <option key={a.id} value={a.id} className="bg-deepblue-900">
-                                                {a.account_number} ({formatCurrency(a.balance)} {a.currency})
+                                            <option key={a.id || a.account_id} value={a.id || a.account_id}>
+                                                {a.account_number} ({a.balance} TL)
                                             </option>
                                         ))}
                                     </select>
                                 </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
                                     <div>
-                                        <label className="block text-sm font-medium text-white/70 mb-2">Kurum / Sağlayıcı</label>
+                                        <label className="form-label">Kurum / Sağlayıcı</label>
                                         <input
-                                            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none"
-                                            placeholder="Örn: TEDAŞ, İGDAŞ..."
-                                            value={form.provider}
-                                            onChange={(e) => setForm({ ...form, provider: e.target.value })}
-                                            required
+                                            className="form-input" placeholder="Örn: TEDAŞ" required
+                                            value={autoForm.provider} onChange={(e) => setAutoForm({ ...autoForm, provider: e.target.value })}
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-white/70 mb-2">Abone No</label>
+                                        <label className="form-label">Abone No</label>
                                         <input
-                                            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none"
-                                            placeholder="Abone numaranız"
-                                            value={form.subscriber_no}
-                                            onChange={(e) => setForm({ ...form, subscriber_no: e.target.value })}
-                                            required
+                                            className="form-input" placeholder="Abone numarası" required
+                                            value={autoForm.subscriber_no} onChange={(e) => setAutoForm({ ...autoForm, subscriber_no: e.target.value })}
                                         />
                                     </div>
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-white/70 mb-2">Tutar</label>
-                                    <div className="relative">
-                                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/50 font-medium font-mono">₺</span>
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+                                    <div>
+                                        <label className="form-label">Ödeme Günü (1-31)</label>
                                         <input
-                                            className="w-full bg-black/20 border border-white/10 rounded-xl pl-10 pr-4 py-4 text-white font-mono text-xl focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all outline-none"
-                                            type="number"
-                                            step="0.01"
-                                            min="1"
-                                            placeholder="0.00"
-                                            value={form.amount}
-                                            onChange={(e) => setForm({ ...form, amount: e.target.value })}
-                                            required
+                                            className="form-input" type="number" min="1" max="31" required
+                                            value={autoForm.payment_day} onChange={(e) => setAutoForm({ ...autoForm, payment_day: e.target.value })}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="form-label">Maks. Tutar (Opsiyonel)</label>
+                                        <input
+                                            className="form-input" type="number" step="0.01" min="1" placeholder="Limitsiz"
+                                            value={autoForm.max_amount} onChange={(e) => setAutoForm({ ...autoForm, max_amount: e.target.value })}
+                                            title="Bu tutarı aşan faturalar otomatik ödenmez."
                                         />
                                     </div>
                                 </div>
 
-                                <button
-                                    type="submit"
-                                    className="w-full py-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/25 disabled:opacity-70"
-                                    disabled={paying}
-                                >
-                                    {paying ? (
-                                        <RefreshCw className="w-6 h-6 animate-spin" />
-                                    ) : (
-                                        <><Send size={20} /> İşlemi Tamamla</>
-                                    )}
+                                <button type="submit" style={{ background: "#10b981", color: "#fff", border: "none", padding: "14px", borderRadius: 14, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", justifyContent: "center", alignItems: "center", gap: 8, marginTop: 8 }} disabled={actionLoading}>
+                                    {actionLoading ? <RefreshCw size={20} style={{ animation: "spin 1s linear infinite" }} /> : <><CheckCircle size={20} /> Talimatı Kaydet</>}
                                 </button>
-                            </motion.form>
+                            </form>
                         )}
-                    </motion.div>
-                )}
-
-                {/* History Tab */}
-                {activeTab === "history" && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                        {history.length === 0 ? (
-                            <div className="bg-deepblue-900/40 backdrop-blur-xl rounded-3xl border border-white/5 p-12 text-center shadow-xl">
-                                <FileText size={48} className="mx-auto text-white/20 mb-4" />
-                                <p className="text-white/60 font-medium">Henüz fatura ödemesi bulunmuyor.</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {history.map((bill, i) => {
-                                    const bt = BILL_TYPES.find(b => b.id === bill.bill_type) || BILL_TYPES[5];
-                                    const Icon = bt.icon;
-                                    return (
-                                        <div key={bill.bill_id || i} className="bg-deepblue-900/40 backdrop-blur-xl rounded-2xl p-5 border border-white/5 flex flex-wrap sm:flex-nowrap items-center gap-4 hover:bg-white/5 transition-colors shadow-lg">
-                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${bt.bg} ${bt.color}`}>
-                                                <Icon size={24} />
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="font-bold text-white text-lg">{bill.provider} — {bt.label}</div>
-                                                <div className="text-sm text-white/50 mt-1">
-                                                    Abone: {bill.subscriber_no}
-                                                </div>
-                                            </div>
-                                            <div className="text-right w-full sm:w-auto mt-2 sm:mt-0 flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center">
-                                                <div className="font-mono font-bold text-white text-lg">
-                                                    {formatCurrency(bill.amount)}
-                                                </div>
-                                                <div className="text-xs text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded font-bold mt-1 inline-flex items-center gap-1">
-                                                    <CheckCircle size={12} /> Ödendi
-                                                </div>
-                                                <div className="text-xs text-white/40 mt-1 sm:hidden ml-2">{formatDate(bill.paid_at)}</div>
-                                            </div>
-                                            <div className="text-xs text-white/40 hidden sm:block text-right self-end ml-4">
-                                                {formatDate(bill.paid_at)}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </motion.div>
-                )}
-
-                {/* Auto Bills Tab */}
-                {activeTab === "auto" && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                        <div className="flex flex-wrap justify-between items-center mb-6 gap-4">
-                            <h3 className="text-xl font-bold text-white">Aktif Talimatlar</h3>
-                            <button
-                                onClick={() => setShowAutoModal(true)}
-                                className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-amber-950 rounded-xl font-bold flex items-center gap-2 transition-colors shadow-lg shadow-amber-500/20"
-                            >
-                                <Plus size={18} /> Yeni Talimat
-                            </button>
-                        </div>
-
-                        {autoBills.length === 0 ? (
-                            <div className="bg-deepblue-900/40 backdrop-blur-xl rounded-3xl border border-white/5 p-12 text-center shadow-xl">
-                                <RefreshCw size={48} className="mx-auto text-white/20 mb-4" />
-                                <p className="text-white/60 font-medium">Henüz otomatik ödeme talimatınız bulunmuyor.</p>
-                            </div>
-                        ) : (
-                            <div className="grid gap-4">
-                                {autoBills.map(ab => {
-                                    const bt = BILL_TYPES.find(b => b.id === ab.bill_type) || BILL_TYPES[5];
-                                    const Icon = bt.icon;
-                                    return (
-                                        <div key={ab.auto_bill_id} className="bg-deepblue-900/40 backdrop-blur-xl rounded-2xl p-5 border border-white/5 flex flex-wrap justify-between items-center gap-4 hover:border-white/10 transition-colors shadow-lg group">
-                                            <div className="flex gap-4 items-center">
-                                                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${bt.bg} ${bt.color}`}>
-                                                    <Icon size={24} />
-                                                </div>
-                                                <div>
-                                                    <div className="font-bold text-white text-lg">{ab.provider}</div>
-                                                    <div className="text-sm text-white/50 mt-1 flex items-center gap-2">
-                                                        <span>Abone: {ab.subscriber_no}</span>
-                                                        <span className="w-1 h-1 rounded-full bg-white/30"></span>
-                                                        <span className="text-amber-400 font-medium">Her ayın {ab.payment_day}. günü</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-6 w-full sm:w-auto justify-between sm:justify-end">
-                                                {ab.max_amount && (
-                                                    <div className="text-right">
-                                                        <div className="text-xs text-white/40 mb-1 uppercase tracking-wider font-semibold">Limit</div>
-                                                        <div className="font-mono font-bold text-white max-w-[120px] truncate">{formatCurrency(ab.max_amount)}</div>
-                                                    </div>
-                                                )}
-                                                <button
-                                                    onClick={() => handleCancelAuto(ab.auto_bill_id)}
-                                                    className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg text-sm font-bold transition-colors opacity-80 group-hover:opacity-100"
-                                                    disabled={actionLoading}
-                                                >
-                                                    İptal Et
-                                                </button>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* Auto Bill Create Modal */}
-            <AnimatePresence>
-                {showAutoModal && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                            onClick={() => setShowAutoModal(false)}
-                        />
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="relative w-full max-w-lg bg-deepblue-900/90 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden scrollbar-hide"
-                        >
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-2xl font-bold text-white truncate">Yeni Otomatik Talimat</h2>
-                                <button onClick={() => { setShowAutoModal(false); setSelectedType(null); }} className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-white/60 hover:text-white transition-colors">
-                                    <XCircle size={24} />
-                                </button>
-                            </div>
-
-                            <div className="mb-6">
-                                <label className="block text-sm font-medium text-white/70 mb-3">Fatura Türü</label>
-                                <div className="grid grid-cols-3 gap-3">
-                                    {BILL_TYPES.map((bt) => {
-                                        const Icon = bt.icon;
-                                        const isActive = selectedType === bt.id;
-                                        return (
-                                            <button
-                                                key={bt.id}
-                                                onClick={() => setSelectedType(bt.id)}
-                                                className={`p-3 rounded-xl border transition-all duration-200 flex flex-col items-center justify-center gap-1.5
-                                                    ${isActive ? `${bt.bg} border-${bt.color.split('-')[1]}-500/50 ${bt.color} shadow-inner` : 'bg-black/20 border-white/5 hover:bg-white/5 text-white/60'}`}
-                                            >
-                                                <Icon size={20} />
-                                                <div className="text-xs font-semibold">{bt.label}</div>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-
-                            {selectedType && (
-                                <motion.form
-                                    initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
-                                    onSubmit={handleCreateAuto}
-                                    className="space-y-5"
-                                >
-                                    <div>
-                                        <label className="block text-sm font-medium text-white/70 mb-2">Ödenecek Hesap</label>
-                                        <select
-                                            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none appearance-none"
-                                            value={autoForm.account_id}
-                                            onChange={(e) => setAutoForm({ ...autoForm, account_id: e.target.value })}
-                                            required
-                                        >
-                                            <option value="" className="bg-deepblue-900">Hesap seçin...</option>
-                                            {accounts.filter(a => a.status === "active").map((a) => (
-                                                <option key={a.id || a.account_id} value={a.id || a.account_id} className="bg-deepblue-900">
-                                                    {a.account_number} ({formatCurrency(a.balance)} {a.currency})
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                        <div>
-                                            <label className="block text-sm font-medium text-white/70 mb-2">Kurum / Sağlayıcı</label>
-                                            <input
-                                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
-                                                placeholder="Örn: TEDAŞ" required
-                                                value={autoForm.provider} onChange={(e) => setAutoForm({ ...autoForm, provider: e.target.value })}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-white/70 mb-2">Abone No</label>
-                                            <input
-                                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
-                                                placeholder="Abone numarası" required
-                                                value={autoForm.subscriber_no} onChange={(e) => setAutoForm({ ...autoForm, subscriber_no: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                                        <div>
-                                            <label className="block text-sm font-medium text-white/70 mb-2">Ödeme Günü (1-31)</label>
-                                            <input
-                                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none"
-                                                type="number" min="1" max="31" required
-                                                value={autoForm.payment_day} onChange={(e) => setAutoForm({ ...autoForm, payment_day: e.target.value })}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-medium text-white/70 mb-2">Maks. Tutar <span className="text-white/40 text-xs font-normal">(Opsiyonel)</span></label>
-                                            <input
-                                                className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:border-blue-500 outline-none font-mono"
-                                                type="number" step="0.01" min="1" placeholder="Limitsiz"
-                                                value={autoForm.max_amount} onChange={(e) => setAutoForm({ ...autoForm, max_amount: e.target.value })}
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        type="submit"
-                                        className="w-full mt-4 py-4 bg-emerald-500 hover:bg-emerald-400 text-emerald-950 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors shadow-lg shadow-emerald-500/20 disabled:opacity-70"
-                                        disabled={actionLoading}
-                                    >
-                                        {actionLoading ? <RefreshCw className="w-6 h-6 animate-spin" /> : <><CheckCircle size={20} /> Talimatı Kaydet</>}
-                                    </button>
-                                </motion.form>
-                            )}
-                        </motion.div>
                     </div>
-                )}
-            </AnimatePresence>
+                </div>
+            )}
         </div>
     );
 }
 
-function TabBtn({ active, onClick, icon, children }) {
+function TabBtn({ active, onClick, children }) {
     return (
-        <button
-            onClick={onClick}
-            className={`px-5 py-3 rounded-xl font-bold whitespace-nowrap transition-all duration-300 flex items-center justify-center gap-2 flex-1
-                ${active
-                    ? "bg-white/10 text-white shadow-lg border border-white/20"
-                    : "bg-black/20 hover:bg-white/5 text-white/60 hover:text-white border border-white/5"}`}
-        >
-            {icon}
+        <button onClick={onClick} style={{
+            flex: 1, padding: "12px 16px", borderRadius: 12, border: "none",
+            fontWeight: active ? 800 : 600, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap",
+            background: active ? "var(--bg-card)" : "transparent",
+            color: active ? "var(--text-primary)" : "var(--text-secondary)",
+            boxShadow: active ? "0 2px 8px rgba(0,0,0,0.05)" : "none",
+            transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 8
+        }}>
             {children}
         </button>
     );
-}
-function Loader2({ className }) {
-    return <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56" /></svg>;
 }

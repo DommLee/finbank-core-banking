@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { BarChart3, PieChart, TrendingDown, TrendingUp, Loader2, ArrowUpRight, ArrowDownRight, Activity } from "lucide-react";
+import { BarChart3, PieChart, TrendingDown, TrendingUp, ArrowLeft, Loader2, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { analyticsApi } from "../services/api";
-import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
 const CATEGORY_LABELS = {
     WITHDRAWAL: "Para Çekme",
@@ -10,21 +10,8 @@ const CATEGORY_LABELS = {
     TRANSFER_IN: "Transfer (Gelen)",
 };
 
-const CATEGORY_COLORS = {
-    WITHDRAWAL: "from-rose-500 to-red-600",
-    TRANSFER_OUT: "from-amber-400 to-orange-500",
-    DEPOSIT: "from-emerald-400 to-green-500",
-    TRANSFER_IN: "from-blue-400 to-indigo-500",
-};
-
-const CATEGORY_TEXT_COLORS = {
-    WITHDRAWAL: "text-rose-400",
-    TRANSFER_OUT: "text-amber-400",
-    DEPOSIT: "text-emerald-400",
-    TRANSFER_IN: "text-blue-400",
-};
-
 export default function SpendingAnalysisPage() {
+    const navigate = useNavigate();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
 
@@ -43,193 +30,146 @@ export default function SpendingAnalysisPage() {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center min-h-[60vh]">
-                <Loader2 size={40} className="animate-spin text-purple-500" />
+            <div className="flex items-center justify-center min-h-[60vh]">
+                <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
             </div>
         );
     }
 
     const totalSpent = data?.by_category?.reduce((s, c) => s + c.total, 0) || 0;
+    const totalCount = data?.by_category?.reduce((s, c) => s + c.count, 0) || 0;
+    const catCount = data?.by_category?.length || 0;
 
     return (
-        <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-6">
+        <div className="relative min-h-[calc(100vh-80px)] w-full flex-col overflow-x-hidden mesh-gradient pb-24 font-display">
             {/* Header */}
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 md:p-8 relative overflow-hidden"
-            >
-                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-                <div className="relative z-10 flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/30">
-                        <BarChart3 size={28} />
+            <header className="flex items-center px-6 pt-8 pb-6">
+                <button onClick={() => navigate(-1)} className="size-10 flex items-center justify-center rounded-full glass-card hover:bg-white/10 transition-colors mr-4">
+                    <ArrowLeft size={20} className="text-slate-900 dark:text-slate-100" />
+                </button>
+                <div className="flex items-center gap-3">
+                    <div className="size-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                        <BarChart3 size={20} className="text-primary" />
                     </div>
-                    <div>
-                        <h1 className="text-2xl md:text-3xl font-bold text-white tracking-tight mb-1">Harcama Analizi</h1>
-                        <p className="text-white/60 text-sm md:text-base">Finansal hareketlerinizi detaylı inceleyin.</p>
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100 font-outfit">Analizler</h1>
+                </div>
+            </header>
+
+            <div className="px-6 space-y-6">
+                {/* Summary Cards */}
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="glass-card p-4 rounded-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <TrendingDown size={40} className="text-rose-500" />
+                        </div>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Giden (30 G)</p>
+                        <p className="text-xl font-bold text-slate-900 dark:text-slate-100 font-outfit neon-glow">{fmt(totalSpent)}</p>
+                    </div>
+
+                    <div className="glass-card p-4 rounded-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <PieChart size={40} className="text-emerald-500" />
+                        </div>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">İşlem Sayısı</p>
+                        <p className="text-xl font-bold text-slate-900 dark:text-slate-100 font-outfit">{totalCount} <span className="text-sm font-medium text-slate-500">adet</span></p>
                     </div>
                 </div>
-            </motion.div>
 
-            {/* Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                <SummaryCard
-                    icon={<TrendingDown size={24} />}
-                    label="Toplam Harcama (Son 30 gün)"
-                    value={fmt(totalSpent)}
-                    colorClass="text-rose-400"
-                    bgClass="bg-rose-500/10 border-rose-500/20"
-                    delay={0.1}
-                />
-                <SummaryCard
-                    icon={<Activity size={24} />}
-                    label="Toplam İşlem Sayısı"
-                    value={data?.by_category?.reduce((s, c) => s + c.count, 0) || 0}
-                    colorClass="text-indigo-400"
-                    bgClass="bg-indigo-500/10 border-indigo-500/20"
-                    delay={0.2}
-                />
-                <SummaryCard
-                    icon={<PieChart size={24} />}
-                    label="Farklı Kategori"
-                    value={data?.by_category?.length || 0}
-                    colorClass="text-emerald-400"
-                    bgClass="bg-emerald-500/10 border-emerald-500/20"
-                    delay={0.3}
-                />
-            </div>
+                {/* Category Breakdown (3D Bar Style) */}
+                <div className="glass-card p-5 rounded-3xl relative overflow-hidden">
+                    {/* Decorative element */}
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent"></div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Category Breakdown */}
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 }}
-                    className="lg:col-span-5 bg-white/5 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-white/10 flex flex-col h-full"
-                >
-                    <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                        <PieChart size={20} className="text-purple-400" />
-                        Kategorilere Göre Dağılım
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-6 font-outfit flex items-center gap-2">
+                        <PieChart size={18} className="text-primary" /> Kategoriler
                     </h2>
 
                     {(!data?.by_category || data.by_category.length === 0) ? (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-                            <PieChart size={48} className="text-white/10 mb-4" />
-                            <p className="text-white/50 text-sm">Harcama verisi bulunamadı.</p>
+                        <div className="py-8 text-center">
+                            <p className="text-slate-500 text-sm">Henüz işlem verisi bulunmuyor.</p>
                         </div>
                     ) : (
-                        <div className="space-y-6">
-                            {data.by_category.sort((a, b) => b.total - a.total).map((c, idx) => {
+                        <div className="space-y-5">
+                            {data.by_category.map((c, i) => {
                                 const pct = totalSpent > 0 ? Math.round((c.total / totalSpent) * 100) : 0;
-                                const gradient = CATEGORY_COLORS[c.category] || "from-purple-400 to-indigo-500";
-                                const textColor = CATEGORY_TEXT_COLORS[c.category] || "text-purple-400";
+                                // Assign distinct colors based on index or category
+                                const isIncome = c.category === 'DEPOSIT' || c.category === 'TRANSFER_IN';
+                                const colorClass = isIncome ? 'bg-emerald-500' :
+                                    (i % 3 === 0 ? 'bg-primary' : i % 3 === 1 ? 'bg-rose-500' : 'bg-amber-500');
+                                const shadowClass = isIncome ? 'shadow-emerald-500/50' :
+                                    (i % 3 === 0 ? 'shadow-primary/50' : i % 3 === 1 ? 'shadow-rose-500/50' : 'shadow-amber-500/50');
 
                                 return (
-                                    <div key={c.category} className="group">
+                                    <div key={c.category} className="group cursor-default">
                                         <div className="flex justify-between items-end mb-2">
                                             <div>
-                                                <div className="text-sm font-semibold text-white mb-0.5">{CATEGORY_LABELS[c.category] || c.category}</div>
-                                                <div className="text-xs font-medium text-white/40">{c.count} işlem</div>
+                                                <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200">{CATEGORY_LABELS[c.category] || c.category}</h3>
+                                                <p className="text-[10px] text-slate-500">{c.count} işlem</p>
                                             </div>
                                             <div className="text-right">
-                                                <div className={`text-sm font-bold ${textColor}`}>{fmt(c.total)}</div>
-                                                <div className="text-xs font-bold text-white/60">{pct}%</div>
+                                                <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{fmt(c.total)}</p>
+                                                <p className="text-[10px] text-slate-500 font-mono">{pct}%</p>
                                             </div>
                                         </div>
-                                        <div className="h-2.5 rounded-full bg-deepblue-950/80 overflow-hidden border border-white/5">
-                                            <motion.div
-                                                initial={{ width: 0 }}
-                                                animate={{ width: `${pct}%` }}
-                                                transition={{ duration: 1, delay: 0.5 + (idx * 0.1), ease: "easeOut" }}
-                                                className={`h-full bg-gradient-to-r ${gradient} rounded-full`}
-                                            />
+
+                                        {/* 3D Progress Bar */}
+                                        <div className="h-3 w-full bg-black/10 dark:bg-white/5 rounded-full overflow-hidden p-[2px]">
+                                            <div
+                                                className={`h-full rounded-full ${colorClass} ${shadowClass} shadow-[0_0_10px_rgba(0,0,0,0.5)] transition-all duration-1000 ease-out relative overflow-hidden`}
+                                                style={{ width: `${Math.max(pct, 2)}%` }} // Give at least 2% so the bubble shows
+                                            >
+                                                {/* Glossy highlight for 3D effect */}
+                                                <div className="absolute top-0 left-0 right-0 h-1/3 bg-white/30 rounded-t-full"></div>
+                                            </div>
                                         </div>
                                     </div>
                                 );
                             })}
                         </div>
                     )}
-                </motion.div>
+                </div>
 
-                {/* Daily Trends */}
-                <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.5 }}
-                    className="lg:col-span-7 bg-white/5 backdrop-blur-xl rounded-3xl p-6 md:p-8 border border-white/10 flex flex-col h-full"
-                >
-                    <h2 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
-                        <Activity size={20} className="text-blue-400" />
-                        Günlük Hareketler
+                {/* Daily Trends Timeline */}
+                <div className="glass-card p-5 rounded-3xl relative overflow-hidden mb-8">
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-6 font-outfit flex items-center gap-2">
+                        <TrendingUp size={18} className="text-primary" /> Günlük Döküm
                     </h2>
 
                     {(!data?.daily || data.daily.length === 0) ? (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-                            <Activity size={48} className="text-white/10 mb-4" />
-                            <p className="text-white/50 text-sm">Günlük hareket verisi bulunmuyor.</p>
+                        <div className="py-8 text-center">
+                            <p className="text-slate-500 text-sm">Günlük hareket bulunmuyor.</p>
                         </div>
                     ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr>
-                                        <th className="pb-4 font-semibold text-white/50 text-xs uppercase tracking-wider border-b border-white/10 pl-2">Tarih</th>
-                                        <th className="pb-4 font-semibold text-white/50 text-xs uppercase tracking-wider border-b border-white/10 px-4">Tür</th>
-                                        <th className="pb-4 font-semibold text-white/50 text-xs uppercase tracking-wider border-b border-white/10 text-right pr-2">Tutar</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {data.daily.map((d, i) => (
-                                        <motion.tr
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: 0.6 + (i * 0.05) }}
-                                            key={i}
-                                            className="group hover:bg-white/[0.02] transition-colors"
-                                        >
-                                            <td className="py-4 border-b border-white/5 text-sm font-medium text-white/80 whitespace-nowrap pl-2">
-                                                {new Date(d.date).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                            </td>
-                                            <td className="py-4 border-b border-white/5 px-4">
-                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wide border ${d.type === "CREDIT"
-                                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                                                        : "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                                                    }`}>
-                                                    {d.type === "CREDIT" ? <ArrowDownRight size={12} /> : <ArrowUpRight size={12} />}
-                                                    {d.type === "CREDIT" ? "GELEN" : "GİDEN"}
-                                                </span>
-                                            </td>
-                                            <td className={`py-4 border-b border-white/5 text-right font-bold text-sm whitespace-nowrap pr-2 ${d.type === "CREDIT" ? "text-emerald-400" : "text-rose-400"
-                                                }`}>
-                                                {d.type === "CREDIT" ? "+" : "-"}{fmt(d.total)}
-                                            </td>
-                                        </motion.tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        <div className="relative border-l border-black/10 dark:border-white/10 ml-3 space-y-6 pb-2">
+                            {data.daily.map((d, i) => {
+                                const isIncome = d.type === "CREDIT";
+                                return (
+                                    <div key={i} className="relative pl-6">
+                                        {/* Timeline dot */}
+                                        <div className={`absolute -left-[5px] top-1 h-[9px] w-[9px] rounded-full ring-4 ring-[#0a0a16] ${isIncome ? 'bg-emerald-500' : 'bg-rose-500'}`}></div>
+
+                                        <div className="bg-black/5 dark:bg-white/5 rounded-2xl p-3 flex justify-between items-center border border-black/5 dark:border-white/5 backdrop-blur-sm hover:bg-black/10 dark:hover:bg-white/10 transition-colors">
+                                            <div>
+                                                <p className="text-xs font-bold text-slate-500 mb-0.5">{d.date}</p>
+                                                <div className="flex items-center gap-1.5">
+                                                    {isIncome ? <ArrowDownRight size={14} className="text-emerald-500" /> : <ArrowUpRight size={14} className="text-rose-500" />}
+                                                    <span className={`text-xs font-semibold ${isIncome ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                        {isIncome ? "Giriş" : "Çıkış"}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className={`font-bold font-outfit ${isIncome ? 'text-emerald-500' : 'text-slate-900 dark:text-slate-100'}`}>
+                                                {isIncome ? '+' : '-'}{fmt(d.total)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
-                </motion.div>
+                </div>
             </div>
         </div>
     );
 }
 
-function SummaryCard({ icon, label, value, colorClass, bgClass, delay }) {
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay }}
-            className="bg-white/5 backdrop-blur-xl rounded-3xl p-6 border border-white/10 flex items-center gap-5 hover:bg-white/10 transition-colors"
-        >
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border ${bgClass} ${colorClass}`}>
-                {icon}
-            </div>
-            <div>
-                <div className="text-xs font-semibold text-white/50 uppercase tracking-wider mb-1">{label}</div>
-                <div className="text-2xl font-bold text-white tracking-tight">{value}</div>
-            </div>
-        </motion.div>
-    );
-}

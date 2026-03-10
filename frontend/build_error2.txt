@@ -1,0 +1,25 @@
+
+> finbank-frontend@1.0.0 build
+> vite build
+
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+[32m✓[39m 1719 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mregisterSW.js              [39m[1m[2m  0.13 kB[22m[1m[22m
+[2mdist/[22m[32mmanifest.webmanifest       [39m[1m[2m  0.35 kB[22m[1m[22m
+[2mdist/[22m[32mindex.html                 [39m[1m[2m  1.33 kB[22m[1m[22m[2m │ gzip:   0.64 kB[22m
+[2mdist/[22m[35massets/index-D34_oWlO.css  [39m[1m[2m 71.59 kB[22m[1m[22m[2m │ gzip:  12.31 kB[22m
+[2mdist/[22m[36massets/three-BE4orbO1.js   [39m[1m[2m  0.15 kB[22m[1m[22m[2m │ gzip:   0.13 kB[22m
+[2mdist/[22m[36massets/ui-C78-huLS.js      [39m[1m[2m 39.40 kB[22m[1m[22m[2m │ gzip:   7.71 kB[22m
+[2mdist/[22m[36massets/vendor-C1LIkxXs.js  [39m[1m[2m164.13 kB[22m[1m[22m[2m │ gzip:  53.56 kB[22m
+[2mdist/[22m[36massets/index-BHftMzIN.js   [39m[1m[2m757.00 kB[22m[1m[22m[2m │ gzip: 205.53 kB[22m
+[32m✓ built in 5.77s[39m
+
+PWA v1.2.0
+mode      generateSW
+precache  8 entries (1011.37 KiB)
+files generated
+  dist/sw.js
+  dist/workbox-8c29f6e4.js

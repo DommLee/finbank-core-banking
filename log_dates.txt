@@ -1,0 +1,20 @@
+﻿900a74c - Tue Mar 10 10:24:09 2026 +0300 : fix: add error boundary to 3D + npmrc for peer deps
+6f3ab18 - Tue Mar 10 10:14:26 2026 +0300 : fix: downgrade react-three to React 18 compatible + fix Dockerfile
+aa94c82 - Tue Mar 10 10:06:24 2026 +0300 : revert: restore react-three versions
+116c646 - Tue Mar 10 09:53:34 2026 +0300 : fix: downgrade @react-three packages for React 18 compatibility
+2767a1a - Tue Mar 10 09:08:23 2026 +0300 : fix(ci): add legacy-peer-deps for npm install and regenerate package-lock
+d7c4c85 - Tue Mar 10 08:54:52 2026 +0300 : fix: increase PWA cache limit and add chunk splitting to fix CI build
+983581d - Tue Mar 10 02:31:20 2026 +0300 : Refactor admin and employee panels to Tailwind glassmorphism
+e211d9d - Tue Mar 10 01:32:52 2026 +0300 : Fix Easy Address UI crashes and Virtual Card creation lookup errors
+86c369d - Tue Mar 10 01:27:36 2026 +0300 : Allow CEO and management to access full ledger, audit logs, and account lists
+ea88aad - Tue Mar 10 01:22:42 2026 +0300 : Fix QR transfer bug (fallback to account number & use IBAN)
+be9e23f - Tue Mar 10 01:10:45 2026 +0300 : Fix syntax error in deposits, implement virtual card API, and update credit card models
+78a2311 - Tue Mar 10 00:44:14 2026 +0300 : docs: Update README with Credit Card transfers and 3D UI features
+9685d5d - Tue Mar 10 00:36:35 2026 +0300 : Fix transfer bug, allow credit card transfers, add 3D flip card animation
+13b4ce0 - Tue Mar 10 00:06:22 2026 +0300 : feat: Implement savings goals, analytics endpoints, deposit approvals, and credit card shadow accounts
+d6a5274 - Mon Mar 9 23:25:37 2026 +0300 : feat: add debit card 3D flip UI and backend route
+c271ebb - Mon Mar 9 23:02:07 2026 +0300 :  fix: resolve payment requests user access error and improve mobile sidebar responsiveness
+140e958 - Mon Mar 9 22:26:28 2026 +0300 : feat: implement 3D flip card UI in CardsPage
+dceeb94 - Mon Mar 9 21:56:37 2026 +0300 : feat: implement audit fixes (dynamic interest, idempotency, deterministic credit limits, CORS tightening)
+26e94f4 - Sun Mar 8 18:11:20 2026 +0300 : feat(employee): add missing financial routes and fix role-based redirections
+11cbc4b - Sun Mar 8 16:31:58 2026 +0300 : fix: remove nonexistent import 'PaymentService' from payment_requests causing crash on render

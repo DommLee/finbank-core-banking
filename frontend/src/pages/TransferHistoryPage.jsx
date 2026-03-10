@@ -9,50 +9,36 @@ import {
     Search,
     SplitSquareHorizontal,
     XCircle,
-    RefreshCw,
-    Receipt,
-    CreditCard,
-    Target
+    RefreshCw
 } from "lucide-react";
 import { transactionApi, paymentRequestsApi } from "../services/api";
 import { toast } from "react-hot-toast";
-import { motion, AnimatePresence } from "framer-motion";
 
 const CATEGORY_OPTIONS = [
-    { value: "", label: "Tüm Kategoriler" },
-    { value: "DEPOSIT", label: "Para Yatırma" },
-    { value: "WITHDRAWAL", label: "Para Çekme" },
-    { value: "TRANSFER_IN", label: "Gelen Transfer" },
-    { value: "TRANSFER_OUT", label: "Giden Transfer" },
-    { value: "BILL_PAYMENT", label: "Fatura Ödeme" },
-    { value: "CARD_PAYMENT", label: "Kart Ödeme" },
-    { value: "GOAL_CONTRIBUTION", label: "Hedef Birikim" },
+    { value: "", label: "Tum kategoriler" },
+    { value: "DEPOSIT", label: "Para yatirma" },
+    { value: "WITHDRAWAL", label: "Para cekme" },
+    { value: "TRANSFER_IN", label: "Gelen transfer" },
+    { value: "TRANSFER_OUT", label: "Giden transfer" },
+    { value: "BILL_PAYMENT", label: "Fatura odeme" },
+    { value: "CARD_PAYMENT", label: "Kart odeme" },
+    { value: "GOAL_CONTRIBUTION", label: "Hedef birikim" },
 ];
 
 const TYPE_OPTIONS = [
-    { value: "", label: "Tüm Yönler" },
+    { value: "", label: "Tum yonler" },
     { value: "CREDIT", label: "Gelen" },
     { value: "DEBIT", label: "Giden" },
 ];
 
 const CATEGORY_LABELS = {
-    DEPOSIT: "Para Yatırma",
-    WITHDRAWAL: "Para Çekme",
-    TRANSFER_IN: "Gelen Transfer",
-    TRANSFER_OUT: "Giden Transfer",
-    BILL_PAYMENT: "Fatura Ödeme",
-    CARD_PAYMENT: "Kart Ödemesi",
-    GOAL_CONTRIBUTION: "Hedefe Aktarım",
-};
-
-const CATEGORY_ICONS = {
-    DEPOSIT: <ArrowDownLeft size={20} className="text-emerald-400" />,
-    WITHDRAWAL: <ArrowUpRight size={20} className="text-rose-400" />,
-    TRANSFER_IN: <ArrowDownLeft size={20} className="text-emerald-400" />,
-    TRANSFER_OUT: <ArrowUpRight size={20} className="text-rose-400" />,
-    BILL_PAYMENT: <Receipt size={20} className="text-blue-400" />,
-    CARD_PAYMENT: <CreditCard size={20} className="text-purple-400" />,
-    GOAL_CONTRIBUTION: <Target size={20} className="text-teal-400" />,
+    DEPOSIT: "Para yatirma",
+    WITHDRAWAL: "Para cekme",
+    TRANSFER_IN: "Gelen transfer",
+    TRANSFER_OUT: "Giden transfer",
+    BILL_PAYMENT: "Fatura odeme",
+    CARD_PAYMENT: "Kart odemesi",
+    GOAL_CONTRIBUTION: "Hedefe aktarim",
 };
 
 export default function TransferHistoryPage() {
@@ -102,7 +88,7 @@ export default function TransferHistoryPage() {
         const rows = entries.map((entry) => {
             const date = new Date(entry.created_at).toLocaleString("tr-TR");
             const type = entry.type === "CREDIT" ? "Gelen" : "Giden";
-            const category = CATEGORY_LABELS[entry.category] || entry.category || "İşlem";
+            const category = CATEGORY_LABELS[entry.category] || entry.category || "Islem";
             const description = (entry.description || "").replaceAll(",", " ");
             return `${date},${type},${category},${description},${entry.amount}`;
         });
@@ -127,7 +113,7 @@ export default function TransferHistoryPage() {
         setSplitForm({
             target_alias: "",
             amount: (Number(entry.amount) / 2).toFixed(2),
-            description: `Ortak ödeme: ${entry.description || CATEGORY_LABELS[entry.category] || "İşlem"}`
+            description: `Ortak odeme: ${entry.description || CATEGORY_LABELS[entry.category] || "Islem"}`
         });
         setSplitModal({ show: true, entry });
     };
@@ -151,270 +137,313 @@ export default function TransferHistoryPage() {
     };
 
     return (
-        <div className="max-w-5xl mx-auto p-4 sm:p-6 lg:p-8 pb-24">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
-                <div className="text-center md:text-left">
-                    <h1 className="text-3xl font-black text-white tracking-tight mb-2 flex items-center gap-3 justify-center md:justify-start">
-                        <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                            <History size={24} className="text-blue-400" />
-                        </div>
-                        Transfer Geçmişi
+        <div style={{ padding: 24, maxWidth: 960, margin: "0 auto" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
+                <div>
+                    <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, display: "flex", alignItems: "center", gap: 10 }}>
+                        <History size={28} color="#2563eb" /> Transfer gecmisi
                     </h1>
-                    <p className="text-white/60 text-sm md:text-base">
-                        Para hareketlerinizi, transferlerinizi ve ödemelerinizi tek ekranda izleyin.
+                    <p style={{ color: "var(--text-secondary)", margin: "8px 0 0" }}>
+                        Para hareketlerinizi, transferlerinizi ve odemelerinizi tek ekranda izleyin.
                     </p>
                 </div>
-                <button
-                    onClick={exportCsv}
-                    className="bg-white/5 hover:bg-white/10 text-white font-bold py-3 px-6 rounded-2xl flex items-center gap-2 transition-all border border-white/10"
-                >
-                    <Download size={18} /> CSV İndir
+                <button onClick={exportCsv} style={secondaryButtonStyle}>
+                    <Download size={16} /> CSV indir
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <SummaryCard label="Toplam Gelen" value={`+${formatMoney(totalIn)}`} accent="emerald" />
-                <SummaryCard label="Toplam Giden" value={`-${formatMoney(totalOut)}`} accent="rose" />
-                <SummaryCard label="Net Hareket" value={formatMoney(totalIn - totalOut)} accent="blue" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 20 }}>
+                <SummaryCard label="Toplam gelen" value={`+${formatMoney(totalIn)}`} accent="#10b981" />
+                <SummaryCard label="Toplam giden" value={`-${formatMoney(totalOut)}`} accent="#ef4444" />
+                <SummaryCard label="Net hareket" value={formatMoney(totalIn - totalOut)} accent="#2563eb" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="relative">
-                    <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginBottom: 16 }}>
+                <div style={{ position: "relative" }}>
+                    <Search size={16} style={{ position: "absolute", left: 12, top: 12, color: "var(--text-secondary)" }} />
                     <input
                         value={filter.search}
                         onChange={(event) => {
                             setPage(1);
                             setFilter((prev) => ({ ...prev, search: event.target.value }));
                         }}
-                        placeholder="Açıklama veya kategori ara"
-                        className="w-full bg-black/30 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 transition-colors font-medium backdrop-blur-md"
+                        placeholder="Aciklama veya kategori ara"
+                        style={{ ...inputStyle, paddingLeft: 38 }}
                     />
                 </div>
 
-                <div className="relative">
-                    <Filter size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
-                    <select
-                        value={filter.type}
-                        onChange={(event) => {
-                            setPage(1);
-                            setFilter((prev) => ({ ...prev, type: event.target.value }));
-                        }}
-                        className="w-full bg-black/30 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white appearance-none focus:outline-none focus:border-blue-500/50 transition-colors font-medium backdrop-blur-md"
-                    >
-                        {TYPE_OPTIONS.map((option) => (
-                            <option key={option.value || "all"} value={option.value} className="bg-slate-800">{option.label}</option>
-                        ))}
-                    </select>
-                </div>
+                <select
+                    value={filter.type}
+                    onChange={(event) => {
+                        setPage(1);
+                        setFilter((prev) => ({ ...prev, type: event.target.value }));
+                    }}
+                    style={inputStyle}
+                >
+                    {TYPE_OPTIONS.map((option) => (
+                        <option key={option.value || "all"} value={option.value}>{option.label}</option>
+                    ))}
+                </select>
 
-                <div className="relative">
-                    <Filter size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+                <div style={{ position: "relative" }}>
+                    <Filter size={16} style={{ position: "absolute", left: 12, top: 12, color: "var(--text-secondary)" }} />
                     <select
                         value={filter.category}
                         onChange={(event) => {
                             setPage(1);
                             setFilter((prev) => ({ ...prev, category: event.target.value }));
                         }}
-                        className="w-full bg-black/30 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white appearance-none focus:outline-none focus:border-blue-500/50 transition-colors font-medium backdrop-blur-md"
+                        style={{ ...inputStyle, paddingLeft: 38 }}
                     >
                         {CATEGORY_OPTIONS.map((option) => (
-                            <option key={option.value || "all"} value={option.value} className="bg-slate-800">{option.label}</option>
+                            <option key={option.value || "all"} value={option.value}>{option.label}</option>
                         ))}
                     </select>
                 </div>
             </div>
 
             {loading ? (
-                <div className="flex justify-center items-center py-24">
-                    <Loader2 size={32} className="text-white/40 animate-spin" />
+                <div style={{ textAlign: "center", padding: 56 }}>
+                    <Loader2 size={28} style={{ animation: "spin 1s linear infinite" }} />
                 </div>
             ) : entries.length === 0 ? (
-                <div className="bg-black/20 border border-white/5 rounded-3xl p-16 text-center">
-                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <History size={32} className="text-white/20" />
-                    </div>
-                    <div className="text-white/60 font-medium">Bu filtrelere uygun işlem bulunamadı.</div>
+                <div style={emptyStateStyle}>
+                    Bu filtrelere uygun islem bulunamadi.
                 </div>
             ) : (
-                <div className="bg-black/30 backdrop-blur-lg border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
-                    <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4 bg-white/5 border-b border-white/10 text-xs font-black text-white/50 uppercase tracking-widest">
-                        <div className="col-span-6 lg:col-span-5">İşlem Detayı</div>
-                        <div className="col-span-3 lg:col-span-3">Tarih</div>
-                        <div className="col-span-3 lg:col-span-4 text-right">Tutar & İşlem</div>
-                    </div>
-
-                    <div className="divide-y divide-white/5">
-                        {entries.map((entry, index) => {
-                            const isCredit = entry.type === "CREDIT";
-                            return (
-                                <motion.div
-                                    key={entry.id || entry.entry_id || index}
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ duration: 0.2, delay: index * 0.05 }}
-                                    className="p-4 md:px-6 md:py-5 flex flex-col md:grid md:grid-cols-12 gap-4 items-center hover:bg-white/[0.03] transition-colors relative group overflow-hidden"
-                                >
-                                    {/* Abstract Highlight on Hover */}
-                                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 via-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-
-                                    <div className="col-span-12 md:col-span-6 lg:col-span-5 flex items-center gap-4 w-full">
-                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110 shadow-lg
-                                            ${isCredit ? "bg-emerald-500/10 shadow-emerald-500/10" : "bg-rose-500/10 shadow-rose-500/10"}
-                                        `}>
-                                            {CATEGORY_ICONS[entry.category] || (isCredit ? <ArrowDownLeft size={20} className="text-emerald-400" /> : <ArrowUpRight size={20} className="text-rose-400" />)}
+                <div style={listStyle}>
+                    {entries.map((entry, index) => {
+                        const isCredit = entry.type === "CREDIT";
+                        return (
+                            <div key={entry.id || entry.entry_id || index} style={{ ...rowStyle, borderBottom: index < entries.length - 1 ? "1px solid var(--border-color)" : "none" }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                                    <div style={{
+                                        width: 42,
+                                        height: 42,
+                                        borderRadius: 14,
+                                        background: isCredit ? "rgba(16,185,129,0.14)" : "rgba(239,68,68,0.14)",
+                                        color: isCredit ? "#10b981" : "#ef4444",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                    }}>
+                                        {isCredit ? <ArrowDownLeft size={18} /> : <ArrowUpRight size={18} />}
+                                    </div>
+                                    <div>
+                                        <div style={{ fontWeight: 700, fontSize: 14 }}>
+                                            {entry.description || CATEGORY_LABELS[entry.category] || "Finansal islem"}
                                         </div>
-                                        <div className="min-w-0 flex-1">
-                                            <div className="text-sm font-bold text-white truncate">
-                                                {entry.description || CATEGORY_LABELS[entry.category] || "Finansal İşlem"}
-                                            </div>
-                                            <div className="text-xs font-semibold text-white/50 mt-1 flex items-center gap-2">
-                                                <span className={`px-2 py-0.5 rounded-md border ${isCredit ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-300" : "bg-rose-500/10 border-rose-500/20 text-rose-300"}`}>
-                                                    {CATEGORY_LABELS[entry.category] || entry.category || "Diğer"}
-                                                </span>
-                                            </div>
+                                        <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                            <span>{CATEGORY_LABELS[entry.category] || entry.category || "Diger"}</span>
+                                            <span>•</span>
+                                            <span>{new Date(entry.created_at).toLocaleString("tr-TR")}</span>
                                         </div>
                                     </div>
-
-                                    <div className="col-span-12 md:col-span-3 lg:col-span-3 w-full text-left md:text-left text-xs font-semibold text-white/60">
-                                        {new Date(entry.created_at).toLocaleString("tr-TR", {
-                                            day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit"
-                                        })}
+                                </div>
+                                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+                                    <div style={{ fontSize: 16, fontWeight: 800, color: isCredit ? "#10b981" : "#ef4444" }}>
+                                        {isCredit ? "+" : "-"}{formatMoney(entry.amount)}
                                     </div>
-
-                                    <div className="col-span-12 md:col-span-3 lg:col-span-4 w-full flex flex-row md:flex-col items-center md:items-end justify-between md:justify-center gap-3">
-                                        <div className={`text-lg font-black whitespace-nowrap drop-shadow-md ${isCredit ? "text-emerald-400" : "text-rose-400"}`}>
-                                            {isCredit ? "+" : "-"}{formatMoney(entry.amount)}
-                                        </div>
-                                        {!isCredit && (
-                                            <button
-                                                onClick={() => openSplitModal(entry)}
-                                                className="bg-orange-500/10 hover:bg-orange-500/20 border border-orange-500/20 text-orange-400 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-colors"
-                                            >
-                                                <SplitSquareHorizontal size={14} /> Bölüş
-                                            </button>
-                                        )}
-                                    </div>
-                                </motion.div>
-                            );
-                        })}
-                    </div>
+                                    {!isCredit ? (
+                                        <button
+                                            onClick={() => openSplitModal(entry)}
+                                            style={{
+                                                background: "var(--bg-secondary)", border: "1px solid var(--border-color)",
+                                                borderRadius: 8, padding: "4px 8px", fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 4, cursor: "pointer", color: "var(--text-primary)"
+                                            }}
+                                        >
+                                            <SplitSquareHorizontal size={14} /> Bolus
+                                        </button>
+                                    ) : null}
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             )}
 
-            <div className="flex justify-center items-center gap-4 mt-8">
-                <button
-                    disabled={page <= 1}
-                    onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-                    className="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-2.5 px-6 rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                    Önceki
+            <div style={{ display: "flex", justifyContent: "center", gap: 10, marginTop: 18 }}>
+                <button disabled={page <= 1} onClick={() => setPage((prev) => Math.max(1, prev - 1))} style={paginationButtonStyle}>
+                    Onceki
                 </button>
-                <div className="text-sm font-bold text-white/50 bg-black/30 border border-white/10 px-5 py-2.5 rounded-full backdrop-blur-md">
+                <span style={{ padding: "10px 14px", fontWeight: 600, color: "var(--text-secondary)" }}>
                     Sayfa {page}
-                </div>
-                <button
-                    disabled={!hasNextPage}
-                    onClick={() => setPage((prev) => prev + 1)}
-                    className="bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold py-2.5 px-6 rounded-full transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                >
+                </span>
+                <button disabled={!hasNextPage} onClick={() => setPage((prev) => prev + 1)} style={paginationButtonStyle}>
                     Sonraki
                 </button>
             </div>
 
             {/* Split Modal */}
-            <AnimatePresence>
-                {splitModal.show && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        <motion.div
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                            onClick={() => setSplitModal({ show: false, entry: null })}
-                        ></motion.div>
-                        <motion.div
-                            initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                            className="relative w-full max-w-md bg-deepblue-900/90 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl"
-                        >
-                            <div className="flex justify-between items-center mb-6">
-                                <h2 className="text-2xl font-black text-white flex items-center gap-3">
-                                    <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
-                                        <SplitSquareHorizontal size={20} className="text-orange-400" />
-                                    </div>
-                                    Harcamayı Bölüş
-                                </h2>
-                                <button
-                                    onClick={() => setSplitModal({ show: false, entry: null })}
-                                    className="text-white/50 hover:text-white bg-white/5 hover:bg-white/10 rounded-full p-2 transition-colors"
-                                >
-                                    <XCircle size={20} />
-                                </button>
+            {splitModal.show && (
+                <div style={modalOverlayStyle}>
+                    <div style={modalContentStyle}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                            <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Harcamayi Bolus</h2>
+                            <button onClick={() => setSplitModal({ show: false, entry: null })} style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}>
+                                <XCircle size={24} />
+                            </button>
+                        </div>
+                        <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 16 }}>
+                            Bu islem icin baska birinden odeme isteyebilirsiniz. Tutar otomatik olarak ikiye bolunmustur, isterseniz degistirebilirsiniz.
+                        </p>
+                        <form onSubmit={handleSplitSubmit} style={{ display: "grid", gap: 16 }}>
+                            <div>
+                                <label style={labelStyle}>Kimden Isteniyor? (Telefon, E-Posta, TCKN)</label>
+                                <input
+                                    className="form-input"
+                                    value={splitForm.target_alias}
+                                    onChange={e => setSplitForm(prev => ({ ...prev, target_alias: e.target.value }))}
+                                    placeholder="Orn: 5XX1234567"
+                                    required
+                                    style={inputStyle}
+                                />
                             </div>
-
-                            <p className="text-white/60 text-sm mb-6 bg-white/5 p-4 rounded-xl border border-white/10">
-                                Bu işlem için başka birinden ödeme isteyebilirsiniz. Tutar otomatik olarak ikiye bölünmüştür, isterseniz değiştirebilirsiniz.
-                            </p>
-
-                            <form onSubmit={handleSplitSubmit} className="space-y-5">
-                                <div>
-                                    <label className="block text-xs font-bold text-white/50 uppercase tracking-widest mb-2">Kimden İsteniyor?</label>
-                                    <input
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 font-semibold transition-colors"
-                                        value={splitForm.target_alias}
-                                        onChange={e => setSplitForm(prev => ({ ...prev, target_alias: e.target.value }))}
-                                        placeholder="Telefon, E-Posta veya TCKN"
-                                        required
-                                    />
-                                </div>
-                                <div className="relative">
-                                    <label className="block text-xs font-bold text-white/50 uppercase tracking-widest mb-2">Tutar (Karşıdan İstenecek)</label>
-                                    <div className="relative">
-                                        <input
-                                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 font-mono transition-colors"
-                                            type="number"
-                                            step="0.01" min="0.01"
-                                            value={splitForm.amount}
-                                            onChange={e => setSplitForm(prev => ({ ...prev, amount: e.target.value }))}
-                                            required
-                                        />
-                                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 font-bold">₺</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-white/50 uppercase tracking-widest mb-2">Açıklama</label>
-                                    <input
-                                        className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3.5 text-white placeholder-white/30 focus:outline-none focus:border-blue-500/50 font-semibold transition-colors"
-                                        value={splitForm.description}
-                                        onChange={e => setSplitForm(prev => ({ ...prev, description: e.target.value }))}
-                                        required
-                                    />
-                                </div>
-                                <button
-                                    type="submit"
-                                    disabled={splitLoading}
-                                    className="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-4 rounded-xl flex justify-center items-center gap-2 transition-all shadow-lg shadow-orange-500/20 disabled:opacity-50 mt-4"
-                                >
-                                    {splitLoading ? <RefreshCw size={20} className="animate-spin" /> : "İsteği Gönder"}
-                                </button>
-                            </form>
-                        </motion.div>
+                            <div>
+                                <label style={labelStyle}>Tutar (Karsidan istenecek)</label>
+                                <input
+                                    className="form-input"
+                                    type="number"
+                                    step="0.01" min="0.01"
+                                    value={splitForm.amount}
+                                    onChange={e => setSplitForm(prev => ({ ...prev, amount: e.target.value }))}
+                                    required
+                                    style={inputStyle}
+                                />
+                            </div>
+                            <div>
+                                <label style={labelStyle}>Aciklama</label>
+                                <input
+                                    className="form-input"
+                                    value={splitForm.description}
+                                    onChange={e => setSplitForm(prev => ({ ...prev, description: e.target.value }))}
+                                    required
+                                    style={inputStyle}
+                                />
+                            </div>
+                            <button type="submit" disabled={splitLoading} style={primaryButtonStyle}>
+                                {splitLoading ? <RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} /> : "Istegi Gonder"}
+                            </button>
+                        </form>
                     </div>
-                )}
-            </AnimatePresence>
+                </div>
+            )}
+
+            <style>{"@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }"}</style>
         </div>
     );
 }
 
 function SummaryCard({ label, value, accent }) {
-    const accents = {
-        emerald: "from-emerald-600/20 to-emerald-900/40 border-emerald-500/30 text-emerald-400",
-        rose: "from-rose-600/20 to-rose-900/40 border-rose-500/30 text-rose-400",
-        blue: "from-blue-600/20 to-blue-900/40 border-blue-500/30 text-blue-400"
-    };
-
     return (
-        <div className={`bg-gradient-to-br ${accents[accent]} backdrop-blur-md rounded-3xl p-6 border`}>
-            <div className="text-white/60 text-xs font-bold uppercase tracking-widest mb-2">{label}</div>
-            <div className={`text-2xl lg:text-3xl font-black drop-shadow-md`}>{value}</div>
+        <div style={{ background: "var(--bg-card)", borderRadius: 16, padding: "16px 18px", border: "1px solid var(--border-color)", borderLeft: `4px solid ${accent}` }}>
+            <div style={{ color: "var(--text-secondary)", fontSize: 12, marginBottom: 6 }}>{label}</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: accent }}>{value}</div>
         </div>
     );
 }
+
+const inputStyle = {
+    width: "100%",
+    padding: "10px 14px",
+    borderRadius: 12,
+    border: "1px solid var(--border-color)",
+    background: "var(--bg-secondary)",
+    color: "var(--text-primary)",
+    fontSize: 14,
+    outline: "none",
+    boxSizing: "border-box",
+};
+
+const labelStyle = {
+    display: "block",
+    fontSize: 13,
+    fontWeight: 600,
+    color: "var(--text-secondary)",
+    marginBottom: 8,
+};
+
+const modalOverlayStyle = {
+    position: "fixed",
+    top: 0, left: 0, right: 0, bottom: 0,
+    background: "rgba(0,0,0,0.5)",
+    backdropFilter: "blur(4px)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+    zIndex: 999
+};
+
+const modalContentStyle = {
+    background: "var(--bg-card)",
+    borderRadius: 24,
+    padding: 24,
+    width: "100%",
+    maxWidth: 480,
+    boxShadow: "0 20px 40px rgba(0,0,0,0.2)"
+};
+
+const primaryButtonStyle = {
+    background: "#f59e0b",
+    color: "#fff",
+    border: "none",
+    padding: "12px 20px",
+    borderRadius: 14,
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    transition: "opacity 0.2s",
+    marginTop: 8
+};
+
+const secondaryButtonStyle = {
+    padding: "10px 16px",
+    borderRadius: 12,
+    border: "1px solid var(--border-color)",
+    background: "var(--bg-card)",
+    color: "var(--text-primary)",
+    fontWeight: 600,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+};
+
+const emptyStateStyle = {
+    background: "var(--bg-card)",
+    borderRadius: 18,
+    border: "1px solid var(--border-color)",
+    color: "var(--text-secondary)",
+    textAlign: "center",
+    padding: 48,
+};
+
+const listStyle = {
+    background: "var(--bg-card)",
+    borderRadius: 18,
+    border: "1px solid var(--border-color)",
+    overflow: "hidden",
+};
+
+const rowStyle = {
+    padding: "16px 18px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 12,
+};
+
+const paginationButtonStyle = {
+    padding: "10px 16px",
+    borderRadius: 10,
+    border: "1px solid var(--border-color)",
+    background: "var(--bg-card)",
+    color: "var(--text-primary)",
+    fontWeight: 600,
+    cursor: "pointer",
+};

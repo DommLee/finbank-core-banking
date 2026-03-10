@@ -10,10 +10,8 @@ import {
     Clock,
     Plus,
     Ban,
-    RefreshCw,
-    Wallet
+    RefreshCw
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 
 export default function PaymentRequestsPage() {
     const { user } = useAuth();
@@ -144,348 +142,299 @@ export default function PaymentRequestsPage() {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center min-h-[60vh]">
-                <div className="w-12 h-12 border-4 border-white/10 border-t-amber-500 rounded-full animate-spin" />
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+                <div style={{ width: 48, height: 48, border: "4px solid var(--border-color)", borderTop: "4px solid #f59e0b", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                <style>{"@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }"}</style>
             </div>
         );
     }
 
     return (
-        <div className="max-w-5xl mx-auto p-4 md:p-6 lg:p-8 relative">
-            <motion.div
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8 md:mb-10"
-            >
+        <div style={{ maxWidth: 800, margin: "0 auto", padding: "24px 16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32, flexWrap: "wrap", gap: 16 }}>
                 <div>
-                    <h1 className="text-3xl md:text-4xl font-black mb-3 text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70 tracking-tight">
-                        Ödeme İsteği
-                    </h1>
-                    <p className="text-gray-400 text-sm md:text-base max-w-xl">
-                        Arkadaşlarınızdan veya müşterilerinizden kolayca ödeme isteyin, hesaplaşmaları hızlandırın.
+                    <h1 style={{ fontSize: 32, fontWeight: 900, letterSpacing: "-1px", marginBottom: 8 }}>Ödeme İsteği</h1>
+                    <p style={{ color: "var(--text-secondary)", fontSize: 15, margin: 0 }}>
+                        Arkadaşlarınızdan veya müşterilerinizden kolayca ödeme isteyin.
                     </p>
                 </div>
-                <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                <button
                     onClick={() => setShowCreateModal(true)}
-                    className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-none py-3 px-6 rounded-2xl text-sm md:text-base font-bold shadow-lg shadow-amber-500/30 flex items-center justify-center gap-2"
+                    style={primaryButtonStyle}
                 >
                     <Plus size={18} /> Yeni İstek
-                </motion.button>
-            </motion.div>
+                </button>
+            </div>
 
             {/* Tabs */}
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className="flex p-1.5 bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl mb-8 relative max-w-md"
-            >
-                <div
-                    className="absolute inset-y-1.5 w-[calc(50%-6px)] bg-white/10 rounded-xl transition-all duration-300 ease-spring"
-                    style={{ left: activeTab === "incoming" ? "6px" : "calc(50%)" }}
-                />
+            <div style={{ display: "flex", gap: 8, background: "var(--bg-secondary)", padding: 6, borderRadius: 16, marginBottom: 24 }}>
                 <button
                     onClick={() => setActiveTab("incoming")}
-                    className={`relative flex-1 py-3 text-sm md:text-base font-bold rounded-xl transition-colors flex items-center justify-center gap-2 z-10 ${activeTab === "incoming" ? "text-white" : "text-gray-400 hover:text-gray-300"
-                        }`}
+                    style={tabStyle(activeTab === "incoming")}
                 >
-                    <ArrowDownLeft size={18} className={activeTab === "incoming" ? "text-emerald-400" : ""} />
-                    Gelen
+                    <ArrowDownLeft size={18} />
+                    Gelen İstekler
                     {incomingRequests.filter(r => r.status === "pending").length > 0 && (
-                        <span className="bg-rose-500 text-white px-2 py-0.5 rounded-full text-xs font-bold border border-rose-400 shadow-sm shadow-rose-500/50 ml-1">
+                        <span style={{ background: "#ef4444", color: "white", padding: "2px 8px", borderRadius: 99, fontSize: 12, fontWeight: 700, marginLeft: 8 }}>
                             {incomingRequests.filter(r => r.status === "pending").length}
                         </span>
                     )}
                 </button>
                 <button
                     onClick={() => setActiveTab("outgoing")}
-                    className={`relative flex-1 py-3 text-sm md:text-base font-bold rounded-xl transition-colors flex items-center justify-center gap-2 z-10 ${activeTab === "outgoing" ? "text-white" : "text-gray-400 hover:text-gray-300"
-                        }`}
+                    style={tabStyle(activeTab === "outgoing")}
                 >
-                    <ArrowUpRight size={18} className={activeTab === "outgoing" ? "text-amber-400" : ""} />
-                    Giden
+                    <ArrowUpRight size={18} />
+                    Giden İstekler
                 </button>
-            </motion.div>
+            </div>
 
             {/* List */}
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="grid gap-4 md:gap-6"
-            >
+            <div style={{ display: "grid", gap: 16 }}>
                 {displayedRequests.length === 0 ? (
-                    <div className="text-center py-16 px-6 bg-white/5 backdrop-blur-xl rounded-3xl border border-white/10 flex flex-col items-center shadow-lg">
-                        <div className="w-20 h-20 bg-white/5 rounded-2xl flex items-center justify-center mb-6 shadow-inner border border-white/10">
-                            {activeTab === "incoming"
-                                ? <ArrowDownLeft size={36} className="text-gray-500" />
-                                : <ArrowUpRight size={36} className="text-gray-500" />
-                            }
+                    <div style={{ textAlign: "center", padding: "48px 24px", background: "var(--bg-secondary)", borderRadius: 20 }}>
+                        <div style={{ width: 64, height: 64, background: "var(--bg-card)", borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+                            {activeTab === "incoming" ? <ArrowDownLeft size={28} color="var(--text-secondary)" /> : <ArrowUpRight size={28} color="var(--text-secondary)" />}
                         </div>
-                        <h3 className="text-xl font-bold text-white mb-2">
+                        <h3 style={{ fontSize: 18, fontWeight: 700, margin: "0 0 8px 0" }}>
                             {activeTab === "incoming" ? "Gelen İstek Yok" : "Giden İstek Yok"}
                         </h3>
-                        <p className="text-gray-400 text-sm md:text-base max-w-sm">
-                            Şu anda bu kategoride herhangi bir ödeme isteğiniz bulunmuyor.
+                        <p style={{ color: "var(--text-secondary)", fontSize: 14 }}>
+                            Bu kategoride herhangi bir ödeme isteğiniz bulunmuyor.
                         </p>
                     </div>
                 ) : (
-                    <AnimatePresence>
-                        {displayedRequests.map((req, index) => {
-                            const isPending = req.status === "pending";
-                            const isPaid = req.status === "paid";
-                            const isCancelled = req.status === "cancelled";
-
-                            let statusColor = "text-rose-400 bg-rose-500/10 border-rose-500/20";
-                            let iconColor = "text-rose-400";
-                            let iconBg = "bg-rose-500/20";
-                            let StatusIcon = XCircle;
-                            let statusText = "Reddedildi";
-
-                            if (isPending) {
-                                statusColor = "text-amber-400 bg-amber-500/10 border-amber-500/20";
-                                iconColor = "text-amber-400";
-                                iconBg = "bg-amber-500/20";
-                                StatusIcon = Clock;
-                                statusText = "Bekliyor";
-                            } else if (isPaid) {
-                                statusColor = "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
-                                iconColor = "text-emerald-400";
-                                iconBg = "bg-emerald-500/20";
-                                StatusIcon = CheckCircle;
-                                statusText = "Ödendi";
-                            } else if (isCancelled) {
-                                statusColor = "text-gray-400 bg-gray-500/10 border-gray-500/20";
-                                iconColor = "text-gray-400";
-                                iconBg = "bg-gray-500/20";
-                                StatusIcon = Ban;
-                                statusText = "İptal Edildi";
-                            }
-
-                            return (
-                                <motion.div
-                                    key={req.request_id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, scale: 0.95 }}
-                                    transition={{ delay: index * 0.05 }}
-                                    className="bg-white/5 backdrop-blur-xl rounded-3xl p-5 md:p-6 border border-white/10 flex flex-col md:flex-row gap-6 justify-between items-start md:items-center shadow-lg hover:bg-white/10 transition-colors group"
-                                >
-                                    <div className="flex gap-4 md:gap-5 items-center w-full md:w-auto">
-                                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border border-white/10 shadow-inner group-hover:scale-110 transition-transform ${iconBg} ${iconColor}`}>
-                                            <StatusIcon size={28} />
-                                        </div>
-                                        <div className="flex-1">
-                                            <div className="font-bold text-white text-base md:text-lg mb-1 tracking-wide">
-                                                {activeTab === "incoming" ? req.requester_name : req.target_name}
-                                            </div>
-                                            <div className="text-xs md:text-sm text-gray-400 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-2">
-                                                <span>{formatDate(req.created_at)}</span>
-                                                <span className="hidden sm:inline opacity-30">•</span>
-                                                <span className="text-gray-300 italic">"{req.description}"</span>
-                                            </div>
-                                            <span className={`text-xs font-bold px-3 py-1 rounded-lg border inline-block ${statusColor}`}>
-                                                {statusText}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 w-full md:w-auto pt-4 md:pt-0 border-t border-white/10 md:border-t-0">
-                                        <div className="text-2xl md:text-3xl font-black text-white shrink-0 tracking-tight">
-                                            {formatMoney(req.amount)}
-                                        </div>
-
-                                        {isPending && (
-                                            <div className="flex gap-2 w-full md:w-auto">
-                                                {activeTab === "incoming" ? (
-                                                    <>
-                                                        <button
-                                                            onClick={() => setApproveModal({ show: true, request: req, account_id: "" })}
-                                                            disabled={actionLoading}
-                                                            className="flex-1 md:flex-none px-5 py-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 font-bold text-sm border border-emerald-500/30 hover:bg-emerald-500 hover:text-white transition-colors flex items-center justify-center disabled:opacity-50 shadow-lg shadow-emerald-500/10"
-                                                        >
-                                                            Onayla & Öde
-                                                        </button>
-                                                        <button
-                                                            onClick={() => handleReject(req.request_id)}
-                                                            disabled={actionLoading}
-                                                            className="px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-400 font-bold border border-rose-500/20 hover:bg-rose-500 hover:text-white transition-colors flex items-center justify-center disabled:opacity-50"
-                                                            title="Reddet"
-                                                        >
-                                                            <Ban size={20} />
-                                                        </button>
-                                                    </>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => handleCancel(req.request_id)}
-                                                        disabled={actionLoading}
-                                                        className="w-full md:w-auto px-6 py-2.5 rounded-xl bg-white/5 text-gray-300 font-bold text-sm border border-white/10 hover:bg-white/10 hover:text-white transition-colors disabled:opacity-50"
-                                                    >
-                                                        İptal Et
-                                                    </button>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                </motion.div>
-                            );
-                        })}
-                    </AnimatePresence>
-                )}
-            </motion.div>
-
-            {/* Modals */}
-            <AnimatePresence>
-                {showCreateModal && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
-                    >
-                        <motion.div
-                            initial={{ scale: 0.9, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 20 }}
-                            className="bg-[#121827]/90 backdrop-blur-2xl border border-white/20 rounded-[2rem] p-6 md:p-8 w-full max-w-lg shadow-2xl relative overflow-hidden"
-                        >
-                            <div className="absolute top-0 right-0 p-6 z-10">
-                                <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-white transition-colors focus:outline-none">
-                                    <XCircle size={28} />
-                                </button>
-                            </div>
-
-                            <h2 className="text-2xl font-bold text-white mb-6 pr-10">Yeni Ödeme İsteği</h2>
-
-                            <form onSubmit={handleCreateRequest} className="space-y-5">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-300 ml-1">Kimden İsteniyor?</label>
-                                    <input
-                                        className="w-full px-5 py-4 rounded-2xl border border-white/10 bg-white/5 text-white placeholder-gray-500 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all shadow-inner"
-                                        value={createForm.target_alias}
-                                        onChange={e => setCreateForm(prev => ({ ...prev, target_alias: e.target.value }))}
-                                        placeholder="Telefon, E-Posta veya TCKN"
-                                        required
-                                    />
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-300 ml-1">Tutar (TL)</label>
-                                    <div className="relative">
-                                        <input
-                                            className="w-full pl-12 pr-5 py-4 rounded-2xl border border-white/10 bg-white/5 text-white placeholder-gray-500 text-xl font-bold focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all shadow-inner"
-                                            type="number"
-                                            min="0.01" step="0.01"
-                                            value={createForm.amount}
-                                            onChange={e => setCreateForm(prev => ({ ...prev, amount: e.target.value }))}
-                                            placeholder="0.00"
-                                            required
-                                        />
-                                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xl">₺</div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-gray-300 ml-1">Açıklama</label>
-                                    <input
-                                        className="w-full px-5 py-4 rounded-2xl border border-white/10 bg-white/5 text-white placeholder-gray-500 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-amber-500/50 transition-all shadow-inner"
-                                        value={createForm.description}
-                                        onChange={e => setCreateForm(prev => ({ ...prev, description: e.target.value }))}
-                                        placeholder="Örn: Akşam Yemeği, Borç vs."
-                                        maxLength={100}
-                                    />
-                                </div>
-
-                                <button
-                                    type="submit"
-                                    disabled={actionLoading}
-                                    className={`w-full py-4 rounded-2xl font-bold text-white shadow-lg flex items-center justify-center gap-2 transition-all duration-300 mt-4 ${actionLoading
-                                            ? 'bg-amber-500/50 cursor-wait'
-                                            : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:shadow-amber-500/25 hover:scale-[1.02] active:scale-95'
-                                        }`}
-                                >
-                                    {actionLoading ? <RefreshCw size={20} className="animate-spin" /> : <Plus size={20} />}
-                                    İsteği Gönder
-                                </button>
-                            </form>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            <AnimatePresence>
-                {approveModal.show && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center p-4"
-                    >
-                        <motion.div
-                            initial={{ scale: 0.9, y: 20 }}
-                            animate={{ scale: 1, y: 0 }}
-                            exit={{ scale: 0.9, y: 20 }}
-                            className="bg-[#121827]/90 backdrop-blur-2xl border border-white/20 rounded-[2rem] p-6 md:p-8 w-full max-w-lg shadow-2xl relative overflow-hidden"
-                        >
-                            <div className="absolute top-0 right-0 p-6 z-10">
-                                <button onClick={() => setApproveModal({ show: false, request: null, account_id: "" })} className="text-gray-400 hover:text-white transition-colors focus:outline-none">
-                                    <XCircle size={28} />
-                                </button>
-                            </div>
-
-                            <h2 className="text-2xl font-bold text-white mb-6 pr-10">Ödemeyi Onayla</h2>
-
-                            <div className="bg-emerald-500/10 border border-emerald-500/20 p-5 rounded-2xl mb-6 flex items-start gap-4">
-                                <div className="mt-1 bg-emerald-500/20 p-2 rounded-xl text-emerald-400 shrink-0">
-                                    <Wallet size={24} />
+                    displayedRequests.map(req => (
+                        <div key={req.request_id} style={{ background: "var(--bg-card)", borderRadius: 20, padding: 20, border: "1px solid var(--border-color)", display: "flex", flexWrap: "wrap", gap: 20, justifyContent: "space-between", alignItems: "center" }}>
+                            <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
+                                <div style={{
+                                    width: 48, height: 48, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center",
+                                    background: req.status === "pending" ? "rgba(245,158,11,0.1)" : req.status === "paid" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
+                                    color: req.status === "pending" ? "#f59e0b" : req.status === "paid" ? "#22c55e" : "#ef4444"
+                                }}>
+                                    {req.status === "pending" ? <Clock size={24} /> : req.status === "paid" ? <CheckCircle size={24} /> : <XCircle size={24} />}
                                 </div>
                                 <div>
-                                    <div className="text-sm md:text-base text-gray-300 leading-relaxed">
-                                        <strong className="text-white">{approveModal.request?.requester_name}</strong> adlı kişiye <strong className="text-white">{formatMoney(approveModal.request?.amount)}</strong> ödeme yapacaksınız.
+                                    <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>
+                                        {activeTab === "incoming" ? req.requester_name : req.target_name}
                                     </div>
-                                    <div className="text-xs md:text-sm text-emerald-400 mt-2 font-medium italic">
-                                        Not: {approveModal.request?.description}
+                                    <div style={{ color: "var(--text-secondary)", fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+                                        {formatDate(req.created_at)}
+                                        <span style={{ opacity: 0.5 }}>•</span>
+                                        <span>{req.description}</span>
+                                    </div>
+                                    <div style={{
+                                        marginTop: 8, fontSize: 12, fontWeight: 600, padding: "2px 8px", borderRadius: 6, display: "inline-block",
+                                        background: req.status === "pending" ? "rgba(245,158,11,0.1)" : req.status === "paid" ? "rgba(34,197,94,0.1)" : "rgba(239,68,68,0.1)",
+                                        color: req.status === "pending" ? "#f59e0b" : req.status === "paid" ? "#22c55e" : "#ef4444"
+                                    }}>
+                                        {req.status === "pending" ? "Bekliyor" : req.status === "paid" ? "Ödendi" : req.status === "cancelled" ? "İptal Edildi" : "Reddedildi"}
                                     </div>
                                 </div>
                             </div>
 
-                            <form onSubmit={handleApprove} className="space-y-6">
-                                <div className="space-y-3">
-                                    <label className="text-sm font-medium text-gray-300 ml-1">Ödeme Yapılacak Hesap</label>
-                                    <select
-                                        className="w-full px-5 py-4 rounded-2xl border border-white/10 bg-white/5 text-white text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all shadow-inner appearance-none cursor-pointer"
-                                        style={{ backgroundImage: "url(\"data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%239ca3af' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e\")", backgroundPosition: "right 1rem center", backgroundRepeat: "no-repeat", backgroundSize: "1.5em 1.5em", paddingRight: "3rem" }}
-                                        value={approveModal.account_id}
-                                        onChange={e => setApproveModal(prev => ({ ...prev, account_id: e.target.value }))}
-                                        required
-                                    >
-                                        <option value="" disabled className="bg-gray-800 text-gray-400">Hesap Seçin</option>
-                                        {accounts.map(acc => (
-                                            <option key={acc.id || acc.account_id} value={acc.id || acc.account_id} className="bg-gray-800 text-white">
-                                                {acc.account_number} • {formatMoney(acc.balance, acc.currency)}
-                                            </option>
-                                        ))}
-                                    </select>
+                            <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+                                <div style={{ fontSize: 22, fontWeight: 800 }}>
+                                    {formatMoney(req.amount)}
                                 </div>
 
-                                <button
-                                    type="submit"
-                                    disabled={actionLoading}
-                                    className={`w-full py-4 rounded-2xl font-bold text-white shadow-lg flex items-center justify-center gap-2 transition-all duration-300 ${actionLoading
-                                            ? 'bg-emerald-500/50 cursor-wait'
-                                            : 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:shadow-emerald-500/25 hover:scale-[1.02] active:scale-95'
-                                        }`}
-                                >
-                                    {actionLoading ? <RefreshCw size={20} className="animate-spin" /> : <CheckCircle size={20} />}
-                                    Onayla ve Öde
-                                </button>
-                            </form>
-                        </motion.div>
-                    </motion.div>
+                                {req.status === "pending" && (
+                                    <div style={{ display: "flex", gap: 8 }}>
+                                        {activeTab === "incoming" ? (
+                                            <>
+                                                <button onClick={() => setApproveModal({ show: true, request: req, account_id: "" })} style={approveButtonStyle} disabled={actionLoading}>Onayla & Öde</button>
+                                                <button onClick={() => handleReject(req.request_id)} style={rejectButtonStyle} disabled={actionLoading}><Ban size={16} /></button>
+                                            </>
+                                        ) : (
+                                            <button onClick={() => handleCancel(req.request_id)} style={rejectButtonStyle} disabled={actionLoading}>İptal Et</button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    ))
                 )}
-            </AnimatePresence>
+            </div>
+
+            {/* Modals */}
+            {showCreateModal && (
+                <div style={modalOverlayStyle}>
+                    <div style={modalContentStyle}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                            <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Yeni Ödeme İsteği</h2>
+                            <button onClick={() => setShowCreateModal(false)} style={closeButtonStyle}><XCircle size={24} /></button>
+                        </div>
+                        <form onSubmit={handleCreateRequest} style={{ display: "grid", gap: 16 }}>
+                            <div>
+                                <label style={labelStyle}>Kimden İsteniyor? (Telefon, E-Posta veya TCKN)</label>
+                                <input
+                                    className="form-input"
+                                    value={createForm.target_alias}
+                                    onChange={e => setCreateForm(prev => ({ ...prev, target_alias: e.target.value }))}
+                                    placeholder="Örn: 5XX1234567"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label style={labelStyle}>Tutar</label>
+                                <input
+                                    className="form-input"
+                                    type="number"
+                                    min="0.01" step="0.01"
+                                    value={createForm.amount}
+                                    onChange={e => setCreateForm(prev => ({ ...prev, amount: e.target.value }))}
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label style={labelStyle}>Açıklama</label>
+                                <input
+                                    className="form-input"
+                                    value={createForm.description}
+                                    onChange={e => setCreateForm(prev => ({ ...prev, description: e.target.value }))}
+                                    placeholder="Örn: Akşam Yemeği, Borç vs."
+                                />
+                            </div>
+                            <button type="submit" style={{ ...primaryButtonStyle, width: "100%", marginTop: 8 }} disabled={actionLoading}>
+                                {actionLoading ? <RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} /> : "İsteği Gönder"}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {approveModal.show && (
+                <div style={modalOverlayStyle}>
+                    <div style={modalContentStyle}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+                            <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Ödemeyi Onayla</h2>
+                            <button onClick={() => setApproveModal({ show: false, request: null, account_id: "" })} style={closeButtonStyle}><XCircle size={24} /></button>
+                        </div>
+                        <div style={{ background: "var(--bg-secondary)", padding: 16, borderRadius: 12, marginBottom: 20, fontSize: 14 }}>
+                            <strong>{approveModal.request.requester_name}</strong> adlı kişiye <strong>{formatMoney(approveModal.request.amount)}</strong> ödeme yapacaksınız.
+                            <br />
+                            Açıklama: {approveModal.request.description}
+                        </div>
+                        <form onSubmit={handleApprove} style={{ display: "grid", gap: 16 }}>
+                            <div>
+                                <label style={labelStyle}>Ödeme Yapılacak Hesap</label>
+                                <select
+                                    className="form-select"
+                                    value={approveModal.account_id}
+                                    onChange={e => setApproveModal(prev => ({ ...prev, account_id: e.target.value }))}
+                                    required
+                                >
+                                    <option value="" disabled>Hesap Seçin</option>
+                                    {accounts.map(acc => (
+                                        <option key={acc.id || acc.account_id} value={acc.id || acc.account_id}>
+                                            {acc.account_number} (Bakiye: {formatMoney(acc.balance)})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <button type="submit" style={{ ...approveButtonStyle, width: "100%", padding: 14, fontSize: 15 }} disabled={actionLoading}>
+                                {actionLoading ? <RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} /> : "Onayla ve Öde"}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }
+
+const primaryButtonStyle = {
+    background: "#f59e0b",
+    color: "#fff",
+    border: "none",
+    padding: "12px 20px",
+    borderRadius: 14,
+    fontSize: 14,
+    fontWeight: 700,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    transition: "opacity 0.2s"
+};
+
+const tabStyle = (active) => ({
+    flex: 1,
+    padding: "12px 16px",
+    border: "none",
+    background: active ? "var(--bg-card)" : "transparent",
+    color: active ? "var(--text-primary)" : "var(--text-secondary)",
+    fontWeight: active ? 800 : 600,
+    fontSize: 14,
+    borderRadius: 12,
+    cursor: "pointer",
+    transition: "all 0.2s",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    boxShadow: active ? "0 2px 8px rgba(0,0,0,0.05)" : "none"
+});
+
+const approveButtonStyle = {
+    background: "#22c55e",
+    color: "#fff",
+    border: "none",
+    padding: "10px 16px",
+    borderRadius: 10,
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: "pointer",
+    transition: "background 0.2s",
+};
+
+const rejectButtonStyle = {
+    background: "var(--bg-secondary)",
+    color: "#ef4444",
+    border: "1px solid var(--border-color)",
+    padding: "10px 16px",
+    borderRadius: 10,
+    fontSize: 13,
+    fontWeight: 700,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transaction: "all 0.2s",
+};
+
+const modalOverlayStyle = {
+    position: "fixed",
+    top: 0, left: 0, right: 0, bottom: 0,
+    background: "rgba(0,0,0,0.5)",
+    backdropFilter: "blur(4px)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 20,
+    zIndex: 999
+};
+
+const modalContentStyle = {
+    background: "var(--bg-card)",
+    borderRadius: 24,
+    padding: 24,
+    width: "100%",
+    maxWidth: 480,
+    boxShadow: "0 20px 40px rgba(0,0,0,0.2)"
+};
+
+const labelStyle = {
+    display: "block",
+    fontSize: 13,
+    fontWeight: 600,
+    color: "var(--text-secondary)",
+    marginBottom: 8,
+};
+
+const closeButtonStyle = {
+    background: "transparent", border: "none", color: "var(--text-secondary)", cursor: "pointer", padding: 0
+};

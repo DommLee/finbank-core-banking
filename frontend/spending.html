@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Spending Analytics &amp; Insights</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Outfit:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2559f4",
+                        "background-light": "#f5f6f8",
+                        "background-dark": "#0a0c14",
+                        "glass-border": "rgba(255, 255, 255, 0.12)",
+                    },
+                    fontFamily: {
+                        "display": ["Outfit", "Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0a0c14;
+        }
+        .mesh-gradient {
+            background-color: #0a0c14;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(37, 89, 244, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(147, 51, 234, 0.15) 0px, transparent 50%);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .donut-glow {
+            filter: drop-shadow(0 0 12px rgba(37, 89, 244, 0.4));
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col mesh-gradient">
+<div class="relative flex h-screen w-full flex-col overflow-hidden max-w-[430px] mx-auto border-x border-slate-800/20 shadow-2xl">
+<header class="flex items-center justify-between px-6 pt-12 pb-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-full glass-card">
+<span class="material-symbols-outlined text-slate-100">arrow_back_ios_new</span>
+</button>
+<h1 class="text-xl font-semibold tracking-tight">Spending</h1>
+<button class="w-10 h-10 flex items-center justify-center rounded-full glass-card">
+<span class="material-symbols-outlined text-slate-100">calendar_month</span>
+</button>
+</header>
+<main class="flex-1 overflow-y-auto px-6 pb-24">
+<div class="mt-4 mb-8 glass-card rounded-xl p-6 flex flex-col items-center justify-center relative overflow-hidden group">
+<div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/20 blur-3xl rounded-full"></div>
+<p class="text-slate-400 text-sm font-medium uppercase tracking-widest mb-1">Total Spent</p>
+<h2 class="text-4xl font-bold text-white tracking-tight drop-shadow-[0_0_8px_rgba(37,89,244,0.6)]">
+                    $4,250.00
+                </h2>
+<div class="mt-2 flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
+<span class="material-symbols-outlined text-emerald-400 text-sm">trending_up</span>
+<span class="text-emerald-400 text-xs font-bold">+12.5% vs last month</span>
+</div>
+</div>
+<div class="relative flex items-center justify-center py-10">
+<div class="relative w-64 h-64 flex items-center justify-center">
+<svg class="w-full h-full transform -rotate-90 donut-glow" viewbox="0 0 100 100">
+<circle cx="50" cy="50" fill="transparent" r="40" stroke="rgba(255,255,255,0.05)" stroke-width="12"></circle>
+<circle cx="50" cy="50" fill="transparent" r="40" stroke="#2559f4" stroke-dasharray="251.2" stroke-dashoffset="150" stroke-linecap="round" stroke-width="12"></circle>
+<circle cx="50" cy="50" fill="transparent" r="40" stroke="#9333ea" stroke-dasharray="251.2" stroke-dashoffset="220" stroke-linecap="round" stroke-width="12"></circle>
+<circle cx="50" cy="50" fill="transparent" r="40" stroke="#f43f5e" stroke-dasharray="251.2" stroke-dashoffset="240" stroke-linecap="round" stroke-width="12"></circle>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<div class="w-32 h-32 rounded-full glass-card flex items-center justify-center shadow-inner">
+<div class="text-center">
+<span class="text-xs text-slate-400 block">Avg. Daily</span>
+<span class="text-lg font-bold text-white">$141.6</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex items-center justify-between mb-2">
+<h3 class="text-lg font-semibold">Breakdown</h3>
+<button class="text-primary text-sm font-medium">View All</button>
+</div>
+<div class="glass-card rounded-xl p-4 flex items-center gap-4 border-l-4 border-l-primary transition-all hover:bg-white/5">
+<div class="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/30">
+<span class="material-symbols-outlined text-primary">restaurant</span>
+</div>
+<div class="flex-1">
+<p class="font-semibold text-slate-100">Dining &amp; Drinks</p>
+<p class="text-xs text-slate-400">18 transactions</p>
+</div>
+<div class="text-right">
+<p class="font-bold text-slate-100">$1,840</p>
+<p class="text-[10px] text-emerald-400 font-medium">43% share</p>
+</div>
+</div>
+<div class="glass-card rounded-xl p-4 flex items-center gap-4 border-l-4 border-l-purple-500 transition-all hover:bg-white/5">
+<div class="w-12 h-12 rounded-lg bg-purple-500/20 flex items-center justify-center border border-purple-500/30">
+<span class="material-symbols-outlined text-purple-400">shopping_bag</span>
+</div>
+<div class="flex-1">
+<p class="font-semibold text-slate-100">Shopping</p>
+<p class="text-xs text-slate-400">12 transactions</p>
+</div>
+<div class="text-right">
+<p class="font-bold text-slate-100">$1,260</p>
+<p class="text-[10px] text-purple-400 font-medium">30% share</p>
+</div>
+</div>
+<div class="glass-card rounded-xl p-4 flex items-center gap-4 border-l-4 border-l-rose-500 transition-all hover:bg-white/5">
+<div class="w-12 h-12 rounded-lg bg-rose-500/20 flex items-center justify-center border border-rose-500/30">
+<span class="material-symbols-outlined text-rose-400">flight_takeoff</span>
+</div>
+<div class="flex-1">
+<p class="font-semibold text-slate-100">Travel &amp; Trips</p>
+<p class="text-xs text-slate-400">4 transactions</p>
+</div>
+<div class="text-right">
+<p class="font-bold text-slate-100">$850</p>
+<p class="text-[10px] text-rose-400 font-medium">20% share</p>
+</div>
+</div>
+<div class="glass-card rounded-xl p-4 flex items-center gap-4 border-l-4 border-l-slate-500 transition-all hover:bg-white/5">
+<div class="w-12 h-12 rounded-lg bg-slate-500/20 flex items-center justify-center border border-slate-500/30">
+<span class="material-symbols-outlined text-slate-400">more_horiz</span>
+</div>
+<div class="flex-1">
+<p class="font-semibold text-slate-100">Others</p>
+<p class="text-xs text-slate-400">8 transactions</p>
+</div>
+<div class="text-right">
+<p class="font-bold text-slate-100">$300</p>
+<p class="text-[10px] text-slate-400 font-medium">7% share</p>
+</div>
+</div>
+</div>
+</main>
+<nav class="absolute bottom-0 left-0 right-0 glass-card border-t border-slate-800/50 px-6 pb-8 pt-4 flex justify-between items-center rounded-t-xl">
+<a class="flex flex-col items-center gap-1 group" href="#">
+<span class="material-symbols-outlined text-slate-500 group-hover:text-primary transition-colors">wallet</span>
+<span class="text-[10px] text-slate-500 group-hover:text-primary font-medium">Wallet</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<span class="material-symbols-outlined text-primary fill-current transition-colors">donut_large</span>
+<span class="text-[10px] text-primary font-bold">Insights</span>
+</a>
+<div class="relative -top-8">
+<button class="w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-lg shadow-primary/40 border-4 border-background-dark">
+<span class="material-symbols-outlined text-white text-3xl">add</span>
+</button>
+</div>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<span class="material-symbols-outlined text-slate-500 group-hover:text-primary transition-colors">credit_card</span>
+<span class="text-[10px] text-slate-500 group-hover:text-primary font-medium">Cards</span>
+</a>
+<a class="flex flex-col items-center gap-1 group" href="#">
+<span class="material-symbols-outlined text-slate-500 group-hover:text-primary transition-colors">person</span>
+<span class="text-[10px] text-slate-500 group-hover:text-primary font-medium">Profile</span>
+</a>
+</nav>
+</div>
+</body></html>

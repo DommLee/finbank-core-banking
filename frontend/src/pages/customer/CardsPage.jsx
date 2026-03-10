@@ -18,10 +18,8 @@ import {
     ShieldCheck,
     Smartphone,
     Landmark,
-    Send,
 } from "lucide-react";
 import { accountApi, cardsApi, approvalsApi } from "../../services/api";
-import { motion, AnimatePresence } from "framer-motion";
 
 export default function CardsPage() {
     const [cards, setCards] = useState([]);
@@ -78,7 +76,7 @@ export default function CardsPage() {
                 setSelectedAccount(nextAccounts[0].id || nextAccounts[0].account_id);
             }
         } catch (error) {
-            toast.error("Kart verileri yüklenemedi.");
+            toast.error("Kart verileri yuklenemedi.");
             setCards([]);
             setAccounts([]);
             setTransactions([]);
@@ -97,14 +95,14 @@ export default function CardsPage() {
     };
 
     const handleApply = async () => {
-        if (!window.confirm("Fiziksel kredi kartı başvurusu oluşturulsun mu?")) return;
+        if (!window.confirm("Fiziksel kredi karti basvurusu olusturulsun mu?")) return;
         setActionLoading(true);
         try {
             await cardsApi.applyForCard({});
-            toast.success("Kredi kartı başvurusu alındı.");
+            toast.success("Kredi karti olusturuldu.");
             await loadData();
         } catch (error) {
-            toast.error(error.response?.data?.detail || "Kart başvurusu başarısız.");
+            toast.error(error.response?.data?.detail || "Kart basvurusu basarisiz.");
         } finally {
             setActionLoading(false);
         }
@@ -118,11 +116,11 @@ export default function CardsPage() {
                 alias: virtualCardForm.alias || undefined,
                 online_limit: virtualCardForm.online_limit ? Number(virtualCardForm.online_limit) : undefined,
             });
-            toast.success("Sanal kart oluşturuldu.");
+            toast.success("Sanal kart olusturuldu.");
             setVirtualCardForm({ alias: "", online_limit: "" });
             await loadData();
         } catch (error) {
-            toast.error(error.response?.data?.detail || "Sanal kart oluşturulamadı.");
+            toast.error(error.response?.data?.detail || "Sanal kart olusturulamadi.");
         } finally {
             setActionLoading(false);
         }
@@ -160,17 +158,17 @@ export default function CardsPage() {
     const handlePayDebt = async (event) => {
         event.preventDefault();
         if (!selectedCard || !selectedAccount || !payAmount) {
-            toast.error("Ödeme için kart, hesap ve tutar seçin.");
+            toast.error("Odeme icin kart, hesap ve tutar secin.");
             return;
         }
         setActionLoading(true);
         try {
             await cardsApi.payCardDebt(selectedCard.id || selectedCard.card_id, selectedAccount, Number(payAmount));
-            toast.success("Kart borcu ödendi.");
+            toast.success("Kart borcu odendi.");
             setPayAmount("");
             await loadData();
         } catch (error) {
-            toast.error(error.response?.data?.detail || "Kart borcu ödenemedi.");
+            toast.error(error.response?.data?.detail || "Kart borcu odenemedi.");
         } finally {
             setActionLoading(false);
         }
@@ -179,18 +177,18 @@ export default function CardsPage() {
     const handlePurchase = async (event) => {
         event.preventDefault();
         if (!selectedCard || !purchaseAmount || !purchaseDescription.trim()) {
-            toast.error("Harcama için tutar ve açıklama girin.");
+            toast.error("Harcama icin tutar ve aciklama girin.");
             return;
         }
         setActionLoading(true);
         try {
             await cardsApi.purchase(selectedCard.id || selectedCard.card_id, Number(purchaseAmount), purchaseDescription.trim());
-            toast.success("Kart harcaması kaydedildi.");
+            toast.success("Kart harcamasi kaydedildi.");
             setPurchaseAmount("");
             setPurchaseDescription("");
             await loadData();
         } catch (error) {
-            toast.error(error.response?.data?.detail || "Harcama başarısız oldu.");
+            toast.error(error.response?.data?.detail || "Kart harcamasi basarisiz.");
         } finally {
             setActionLoading(false);
         }
@@ -203,10 +201,10 @@ export default function CardsPage() {
             await cardsApi.updateSettings(selectedCard.id || selectedCard.card_id, {
                 [settingName]: !currentValue
             });
-            toast.success("Kart ayarları güncellendi.");
+            toast.success("Kart ayarlari guncellendi.");
             await loadData();
         } catch (error) {
-            toast.error(error.response?.data?.detail || "Ayar güncellenemedi.");
+            toast.error(error.response?.data?.detail || "Ayar guncellenemedi.");
         } finally {
             setActionLoading(false);
         }
@@ -217,10 +215,10 @@ export default function CardsPage() {
         setActionLoading(true);
         try {
             await cardsApi.toggleFreeze(selectedCard.id || selectedCard.card_id);
-            toast.success(selectedCard.status === "active" ? "Kart donduruldu." : "Kart aktif edildi.");
+            toast.success(selectedCard.status === "active" ? "Kart gecici olarak donduruldu." : "Kart tekrar aktif edildi.");
             await loadData();
         } catch (error) {
-            toast.error(error.response?.data?.detail || "Durum değiştirilemedi.");
+            toast.error(error.response?.data?.detail || "Kart durumu degistirilemedi.");
         } finally {
             setActionLoading(false);
         }
@@ -228,7 +226,7 @@ export default function CardsPage() {
 
     const handleDeleteVirtualCard = async () => {
         if (!selectedCard || !selectedCard.is_virtual) return;
-        if (!window.confirm("Bu sanal kartı kalıcı olarak silmek istediğinize emin misiniz?")) return;
+        if (!window.confirm("Bu sanal karti kalici olarak silmek istediginize emin misiniz? Iptal edilemez.")) return;
         setActionLoading(true);
         try {
             await cardsApi.deleteCard(selectedCard.id || selectedCard.card_id);
@@ -256,511 +254,401 @@ export default function CardsPage() {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center min-h-[60vh]">
-                <RefreshCw size={48} className="animate-spin text-blue-500" />
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "60vh" }}>
+                <div style={{ width: 48, height: 48, border: "4px solid var(--border-color)", borderTop: "4px solid #2563eb", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                <style>{"@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }"}</style>
             </div>
         );
     }
 
     if (!hasPhysicalCard) {
         return (
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="max-w-4xl mx-auto p-6"
-            >
-                <div className="glass-panel rounded-3xl p-12 text-center border border-white/10 relative overflow-hidden group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-600/10 opacity-50 group-hover:opacity-100 transition-opacity duration-500"></div>
-
-                    <div className="w-24 h-24 rounded-full bg-blue-500/20 flex items-center justify-center mx-auto mb-6 relative z-10 shadow-[0_0_30px_rgba(59,130,246,0.3)]">
-                        <CreditCard size={48} className="text-blue-400" />
+            <div style={{ maxWidth: 920, margin: "0 auto", padding: 24 }}>
+                <div style={{ background: "var(--bg-card)", borderRadius: 24, padding: 56, textAlign: "center", border: "1px solid var(--border-color)" }}>
+                    <div style={{ width: 88, height: 88, borderRadius: "50%", background: "rgba(37,99,235,0.12)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px" }}>
+                        <CreditCard size={44} color="#2563eb" />
                     </div>
-
-                    <h1 className="text-3xl font-black mb-4 relative z-10 text-white tracking-tight">Kredi kartınızı açın</h1>
-                    <p className="text-white/60 leading-relaxed max-w-lg mx-auto mb-8 relative z-10">
-                        Fiziksel kredi kartınızı oluşturduktan sonra sanal kart ekleyebilir, internet limiti belirleyebilir ve kart hareketlerini tek panelden modern 3D arayüzle takip edebilirsiniz.
+                    <h1 style={{ fontSize: 30, fontWeight: 800, marginBottom: 10 }}>Kredi kartinizi acin</h1>
+                    <p style={{ color: "var(--text-secondary)", lineHeight: 1.6, maxWidth: 520, margin: "0 auto 28px" }}>
+                        Fiziksel kredi kartinizi olusturduktan sonra sanal kart ekleyebilir, internet limiti belirleyebilir ve kart hareketlerini tek panelden takip edebilirsiniz.
                     </p>
-
-                    <button
-                        onClick={handleApply}
-                        disabled={actionLoading}
-                        className="relative z-10 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold py-4 px-8 rounded-2xl shadow-lg shadow-blue-500/25 transition-all flex items-center justify-center gap-3 mx-auto disabled:opacity-50"
-                    >
-                        {actionLoading ? <RefreshCw size={20} className="animate-spin" /> : <PlusCircle size={20} />}
-                        Fiziksel kart oluştur
+                    <button onClick={handleApply} disabled={actionLoading} style={primaryActionStyle}>
+                        {actionLoading ? <RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} /> : <PlusCircle size={18} />}
+                        Fiziksel kart olustur
                     </button>
                 </div>
-            </motion.div>
+                <style>{"@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }"}</style>
+            </div>
         );
     }
 
     return (
-        <div className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
-            {/* Header */}
-            <div className="mb-8">
-                <h1 className="text-3xl font-black text-white tracking-tight">Kartlarım</h1>
-                <p className="text-white/60 mt-1 text-sm sm:text-base">
-                    Kartlarınızı yönetin, limitleri düzenleyin ve 3D görünümle detayları inceleyin.
-                </p>
+        <div style={{ maxWidth: 1180, margin: "0 auto", padding: 24 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, marginBottom: 24, flexWrap: "wrap" }}>
+                <div>
+                    <h1 style={{ fontSize: 30, fontWeight: 800, margin: 0 }}>Kartlarim</h1>
+                    <p style={{ color: "var(--text-secondary)", margin: "8px 0 0" }}>
+                        Fiziksel kartinizi ve sanal kartlarinizi secip limiti, borcu ve hareketleri yonetin.
+                    </p>
+                </div>
             </div>
 
-            {/* Type Tabs */}
-            <div className="flex gap-2 sm:gap-4 mb-8 bg-black/20 p-1.5 rounded-2xl w-fit border border-white/5">
-                <button
-                    onClick={() => { setCardTypeTab("credit"); setSelectedCardId(""); }}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${cardTypeTab === "credit" ? "bg-white/10 text-white shadow-sm border border-white/10" : "text-white/50 hover:text-white hover:bg-white/5"}`}
-                >
-                    <CreditCard size={18} /> Kredi Kartları
-                </button>
-                <button
-                    onClick={() => { setCardTypeTab("debit"); setSelectedCardId(""); }}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 ${cardTypeTab === "debit" ? "bg-white/10 text-white shadow-sm border border-white/10" : "text-white/50 hover:text-white hover:bg-white/5"}`}
-                >
-                    <Landmark size={18} /> Banka Kartları
-                </button>
+            <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
+                <TabButton active={cardTypeTab === "credit"} onClick={() => { setCardTypeTab("credit"); setSelectedCardId(""); }}>
+                    <CreditCard size={16} /> Kredi Kartları
+                </TabButton>
+                <TabButton active={cardTypeTab === "debit"} onClick={() => { setCardTypeTab("debit"); setSelectedCardId(""); }}>
+                    <Landmark size={16} /> Banka Kartları
+                </TabButton>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* Left Column: Card Selection & Creation */}
-                <div className="lg:col-span-4 space-y-6">
-                    {/* Select Card */}
-                    <div className="bg-deepblue-900/40 backdrop-blur-md rounded-3xl p-6 border border-white/10 shadow-xl">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-lg font-bold text-white">Kart Seçimi</h3>
-                            <span className="text-xs font-semibold px-3 py-1 bg-black/30 rounded-full text-white/70 border border-white/5">{displayCards.length} kart</span>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24 }}>
+                <div style={{ display: "grid", gap: 16 }}>
+                    <div className="card">
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+                            <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Kart secimi</h3>
+                            <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{displayCards.length} kart</span>
                         </div>
-
-                        <div className="space-y-3">
-                            {displayCards.length === 0 && (
-                                <p className="text-sm text-white/50 text-center py-4 bg-black/20 rounded-xl">Bu kategoride kartınız bulunmuyor.</p>
-                            )}
+                        <div style={{ display: "grid", gap: 10 }}>
+                            {displayCards.length === 0 && <p style={{ fontSize: 13, color: "var(--text-secondary)" }}>Bu kategoride kartınız bulunmuyor.</p>}
                             {displayCards.map((card) => {
                                 const cardKey = card.id || card.card_id;
                                 const active = cardKey === (selectedCard?.id || selectedCard?.card_id);
                                 return (
-                                    <button
-                                        key={cardKey}
-                                        onClick={() => {
-                                            setSelectedCardId(cardKey);
-                                            setIsFlipped(false);
-                                        }}
-                                        className={`w-full text-left p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between group
-                                            ${active ? "bg-gradient-to-br from-blue-600/20 to-indigo-600/20 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.15)]" : "bg-white/5 border-white/5 hover:bg-white/10"}`}
-                                    >
+                                    <button key={cardKey} type="button" onClick={() => setSelectedCardId(cardKey)} style={cardSelectorStyle(active)}>
                                         <div>
-                                            <div className={`font-bold text-sm mb-1 transition-colors ${active ? "text-blue-100" : "text-white/80 group-hover:text-white"}`}>
-                                                {card.card_name || (card.is_virtual ? "Sanal Kart" : "Fiziksel Kart")}
-                                            </div>
-                                            <div className={`text-xs font-mono tracking-wider ${active ? "text-blue-300/80" : "text-white/50"}`}>
+                                            <div style={{ fontWeight: 700 }}>{card.card_name || (card.is_virtual ? "Sanal Kart" : "Fiziksel Kart")}</div>
+                                            <div style={{ fontSize: 12, color: active ? "rgba(255,255,255,0.82)" : "var(--text-secondary)", marginTop: 4 }}>
                                                 {maskCardNumber(card.card_number)}
                                             </div>
                                         </div>
-                                        <div className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border
-                                            ${card.is_virtual ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-blue-500/10 text-blue-400 border-blue-500/20"}
-                                            ${active ? "opacity-100" : "opacity-70 group-hover:opacity-100"}`}>
-                                            {card.is_virtual ? "Sanal" : "Fiziksel"}
-                                        </div>
+                                        <span style={selectorBadgeStyle(active, card.is_virtual)}>{card.is_virtual ? "Sanal" : "Fiziksel"}</span>
                                     </button>
                                 );
                             })}
                         </div>
                     </div>
 
-                    {/* Create Virtual Card */}
                     {cardTypeTab === "credit" && (
-                        <div className="bg-deepblue-900/40 backdrop-blur-md rounded-3xl p-6 border border-white/10 shadow-xl relative overflow-hidden group">
-                            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-600/5 opacity-50 group-hover:opacity-100 transition-opacity"></div>
-
-                            <div className="flex items-center gap-3 mb-6 relative z-10">
-                                <div className="p-2.5 bg-emerald-500/20 rounded-xl text-emerald-400">
-                                    <Smartphone size={20} />
-                                </div>
-                                <h3 className="text-lg font-bold text-white">Sanal Kart Oluştur</h3>
+                        <div className="card">
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14 }}>
+                                <Smartphone size={18} color="#2563eb" />
+                                <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Sanal kart olustur</h3>
                             </div>
-
-                            <form onSubmit={handleCreateVirtualCard} className="space-y-4 relative z-10">
+                            <form onSubmit={handleCreateVirtualCard} style={{ display: "grid", gap: 14 }}>
                                 <div>
-                                    <label className="block text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">Kart Etiketi</label>
-                                    <input
-                                        className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all placeholder:text-white/30"
-                                        value={virtualCardForm.alias}
-                                        onChange={(e) => setVirtualCardForm((prev) => ({ ...prev, alias: e.target.value }))}
-                                        placeholder="Örn: Netflix, Amazon"
-                                    />
+                                    <label style={labelStyle}>Kart etiketi</label>
+                                    <input className="form-input" value={virtualCardForm.alias} onChange={(event) => setVirtualCardForm((prev) => ({ ...prev, alias: event.target.value }))} placeholder="Ornek: Steam, Netflix, reklam" />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">Aylık Limit (₺)</label>
-                                    <input
-                                        type="number"
-                                        min="1"
-                                        step="0.01"
-                                        className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all placeholder:text-white/30"
-                                        value={virtualCardForm.online_limit}
-                                        onChange={(e) => setVirtualCardForm((prev) => ({ ...prev, online_limit: e.target.value }))}
-                                        placeholder="0.00"
-                                    />
+                                    <label style={labelStyle}>Online limit</label>
+                                    <input className="form-input" type="number" min="1" step="0.01" value={virtualCardForm.online_limit} onChange={(event) => setVirtualCardForm((prev) => ({ ...prev, online_limit: event.target.value }))} placeholder="Ornek: 2500" />
                                 </div>
-                                <button
-                                    type="submit"
-                                    disabled={actionLoading}
-                                    className="w-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 hover:border-emerald-400 font-bold py-3 px-4 rounded-xl transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
-                                >
-                                    {actionLoading ? <RefreshCw size={18} className="animate-spin" /> : <Layers3 size={18} />}
-                                    Sanal Kart Ekle
+                                <button type="submit" disabled={actionLoading} style={{ ...primaryActionStyle, width: "100%" }}>
+                                    {actionLoading ? <RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} /> : <Layers3 size={18} />}
+                                    Sanal kart ekle
                                 </button>
                             </form>
                         </div>
                     )}
                 </div>
 
-                {/* Right Column: Card Details & Actions */}
-                <div className="lg:col-span-8 space-y-6">
-                    {selectedCard ? (
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={selectedCard.id || selectedCard.card_id}
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                className="space-y-6"
-                            >
-                                {/* 3D Flip Card Container */}
-                                <div className="group [perspective:2000px] w-full max-w-md mx-auto h-[260px]">
-                                    <div
-                                        className={`relative w-full h-full transition-transform duration-1000 [transform-style:preserve-3d] ${isFlipped ? '[transform:rotateY(180deg)]' : ''}`}
-                                        onClick={() => setIsFlipped(!isFlipped)}
-                                    >
-                                        {/* Front Face */}
-                                        <div
-                                            className="absolute w-full h-full [backface-visibility:hidden] rounded-[24px] shadow-2xl p-6 overflow-hidden border border-white/20 cursor-pointer flex flex-col justify-between"
-                                            style={{
-                                                background: cardTypeTab === "debit"
-                                                    ? "linear-gradient(135deg, #0f172a 0%, #7f1d1d 50%, #ea580c 100%)"
-                                                    : selectedCard.is_virtual
-                                                        ? "linear-gradient(135deg, #064e3b 0%, #059669 100%)"
-                                                        : "linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #3b82f6 100%)"
-                                            }}
-                                        >
-                                            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
-                                            <div className="absolute bottom-0 left-0 w-48 h-48 bg-black/10 rounded-full blur-2xl translate-y-1/3 -translate-x-1/4"></div>
+                {selectedCard ? (
+                    <>
+                        <div style={{ display: "grid", gap: 16 }}>
+                            {/* 3D Flip Card Container */}
+                            <div className={`flip-card ${isFlipped ? "flipped" : ""}`}>
+                                <div className="flip-card-inner">
+                                    {/* Front Face */}
+                                    <div className="flip-card-front" style={{ ...cardVisualStyle, background: cardTypeTab === "debit" ? "linear-gradient(135deg, #1e293b 0%, #ef4444 55%, #0f172a 100%)" : selectedCard.is_virtual ? "linear-gradient(135deg, #064e3b 0%, #10b981 100%)" : "linear-gradient(135deg, #111827 0%, #2563eb 55%, #0f172a 100%)" }}>
+                                        <div style={{ position: "absolute", top: -26, right: -16, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.14)" }} />
+                                        <div style={{ position: "absolute", bottom: -36, left: -16, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.05)" }} />
 
-                                            {/* Card Top */}
-                                            <div className="flex justify-between items-start relative z-10">
-                                                <div>
-                                                    <h2 className="text-2xl font-black text-white italic tracking-tighter drop-shadow-md">FinBank</h2>
-                                                    <p className="text-[10px] text-white/70 uppercase tracking-[0.2em] mt-1 font-semibold">
-                                                        {selectedCard.card_name || (cardTypeTab === "debit" ? "Debit Card" : "Credit Card")}
-                                                    </p>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <WifiIcon />
-                                                    <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full border bg-white/10 text-white/90 border-white/20 shadow-sm backdrop-blur-sm`}>
-                                                        {cardTypeTab === "debit" ? "Banka" : selectedCard.is_virtual ? "Sanal" : "Fiziksel"}
-                                                    </span>
-                                                </div>
+                                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 36, position: "relative", zIndex: 1 }}>
+                                            <div>
+                                                <div style={{ fontWeight: 800, fontSize: 24, letterSpacing: -0.5 }}>FinBank</div>
+                                                <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>{selectedCard.card_name || (cardTypeTab === "debit" ? "Banka Kartı" : "Kart")}</div>
                                             </div>
-
-                                            {/* Chip & Number */}
-                                            <div className="relative z-10 my-auto pt-4">
-                                                <div className="w-12 h-9 rounded-md bg-gradient-to-br from-yellow-200 to-yellow-500 overflow-hidden relative shadow-sm border border-yellow-600/30 mb-4 opacity-90">
-                                                    <div className="absolute top-1/2 left-0 w-full h-px bg-black/20"></div>
-                                                    <div className="absolute left-1/3 top-0 w-px h-full bg-black/20"></div>
-                                                    <div className="absolute left-2/3 top-0 w-px h-full bg-black/20"></div>
-                                                </div>
-
-                                                <div className="font-mono text-[22px] font-medium text-white tracking-[0.15em] drop-shadow-sm flex items-center justify-between group-hover:text-white/90 transition-colors">
-                                                    <span>{showSensitive ? formatCardNumber(selectedCard.card_number) : maskCardNumber(selectedCard.card_number)}</span>
-                                                </div>
-                                            </div>
-
-                                            {/* Card Bottom */}
-                                            <div className="flex justify-between items-end relative z-10">
-                                                <div>
-                                                    <div className="text-[9px] text-white/60 uppercase tracking-widest mb-1">Card Holder</div>
-                                                    <div className="text-sm font-bold text-white uppercase tracking-wider drop-shadow-sm">
-                                                        {selectedCard.cardholder_name || selectedCard.holder_name || "Müşteri"}
-                                                    </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard" className="h-8 opacity-90" />
-                                                </div>
+                                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                                <span style={typeChipStyle(selectedCard.is_virtual)}>{cardTypeTab === "debit" ? "Banka Kartı" : selectedCard.is_virtual ? "Sanal Kart" : "Fiziksel Kart"}</span>
                                             </div>
                                         </div>
 
-                                        {/* Back Face */}
-                                        <div
-                                            className="absolute w-full h-full [backface-visibility:hidden] rounded-[24px] shadow-2xl overflow-hidden border border-white/20 cursor-pointer flex flex-col pt-6 bg-slate-800 [transform:rotateY(180deg)]"
-                                        >
-                                            <div className="w-full h-12 bg-black/80 mt-2 shadow-[inset_0_-1px_0_rgba(255,255,255,0.1)]"></div>
+                                        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+                                            <div style={{ width: 44, height: 32, background: "linear-gradient(135deg, #ffd700, #ffb300)", borderRadius: 6, opacity: 0.9, position: "relative", overflow: "hidden" }}>
+                                                <div style={{ position: "absolute", top: "50%", left: 0, width: "100%", height: 1, background: "rgba(0,0,0,0.2)" }} />
+                                                <div style={{ position: "absolute", left: "50%", top: 0, width: 1, height: "100%", background: "rgba(0,0,0,0.2)" }} />
+                                            </div>
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.7 }}><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z" /><path d="M16 8h.01" /><path d="M16 16h.01" /><path d="M8 8h.01" /><path d="M8 16h.01" /><path d="M12 12h.01" /></svg>
+                                        </div>
 
-                                            <div className="px-6 mt-6">
-                                                <div className="flex gap-2 mb-4">
-                                                    <div className="bg-white/90 h-10 w-3/4 rounded-sm flex items-center justify-end pr-4 text-black font-mono font-medium italic shadow-inner">
-                                                        {showSensitive ? selectedCard.cvv : "***"}
-                                                    </div>
-                                                    <div className="w-1/4 h-10 bg-white/20 rounded-sm"></div>
-                                                </div>
+                                        <div style={{ marginBottom: 28 }}>
+                                            <div style={{ fontSize: 11, opacity: 0.7, textTransform: "uppercase", letterSpacing: 1.5 }}>Kart numarasi</div>
+                                            <div style={{ fontFamily: "monospace", fontSize: 24, fontWeight: 700, letterSpacing: 3, marginTop: 8 }}>
+                                                {showSensitive ? formatCardNumber(selectedCard.card_number) : maskCardNumber(selectedCard.card_number)}
+                                            </div>
+                                        </div>
 
-                                                <div className="flex justify-between items-center text-xs text-white/70 mb-6">
-                                                    <div>EXP: <span className="font-mono text-white ml-2">{showSensitive ? selectedCard.expiry_date : "**/**"}</span></div>
+                                        <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "flex-end", position: "relative", zIndex: 1 }}>
+                                            <div>
+                                                <div style={{ fontSize: 11, opacity: 0.7, textTransform: "uppercase", letterSpacing: 1.5 }}>Kart sahibi</div>
+                                                <div style={{ fontWeight: 700, marginTop: 6, fontSize: 15 }}>{selectedCard.cardholder_name || selectedCard.holder_name || "Musteri"}</div>
+                                            </div>
+                                            <div style={{ textAlign: "right", paddingRight: 8 }}>
+                                                <button type="button" onClick={() => setIsFlipped(true)} style={{ ...miniButtonStyle, padding: "8px 16px" }}>
+                                                    Arkasına Çevir
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
 
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); setShowSensitive(!showSensitive); }}
-                                                        className="flex items-center gap-2 px-3 py-1.5 bg-white/10 rounded-full hover:bg-white/20 transition-colors text-white"
-                                                    >
-                                                        {showSensitive ? <EyeOff size={14} /> : <Eye size={14} />}
-                                                        {showSensitive ? "Gizle" : "Göster"}
+                                    {/* Back Face */}
+                                    <div className="flip-card-back">
+                                        <div className="magnetic-stripe" />
+                                        <div className="signature-strip">
+                                            <span style={{ fontFamily: "monospace", fontWeight: 800, color: "#1e293b", fontSize: 16, fontStyle: "italic" }}>
+                                                {showSensitive ? selectedCard.cvv : "***"}
+                                            </span>
+                                        </div>
+
+                                        <div style={{ padding: "16px 24px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                                            <div>
+                                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+                                                    <div style={{ fontSize: 12, opacity: 0.7 }}>Son kullanma: <strong style={{ fontFamily: "monospace", fontSize: 14 }}>{selectedCard.expiry_date}</strong></div>
+                                                    <button type="button" onClick={() => setShowSensitive((prev) => !prev)} style={{ ...miniButtonStyle, padding: "6px 12px", background: showSensitive ? "rgba(99, 102, 241, 0.2)" : "rgba(255,255,255,0.08)" }}>
+                                                        {showSensitive ? <EyeOff size={14} /> : <Eye size={14} />} {showSensitive ? "Gizle" : "Göster"}
                                                     </button>
                                                 </div>
 
-                                                <div className="flex gap-2 flex-wrap">
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(selectedCard.card_number); toast.success("Kopyalandı."); }}
-                                                        className="text-[11px] font-semibold bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-lg flex items-center gap-1.5 text-white transition-colors"
-                                                    >
-                                                        <Copy size={12} /> No Kopyala
+                                                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                                                    <button type="button" onClick={() => { navigator.clipboard.writeText(selectedCard.card_number); toast.success("Kart numarasi kopyalandi."); }} style={miniButtonStyle}>
+                                                        <Copy size={14} /> Kart no kopyala
                                                     </button>
-                                                    <button
-                                                        onClick={(e) => { e.stopPropagation(); handleToggleFreeze(); }}
-                                                        className={`text-[11px] font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors border ${selectedCard.status === "active" ? "bg-amber-500/10 border-amber-500/30 text-amber-400 hover:bg-amber-500/20" : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20"}`}
-                                                    >
-                                                        <ShieldCheck size={12} />
-                                                        {selectedCard.status === "active" ? "Dondur" : "Aç"}
+                                                    <button type="button" onClick={handleToggleFreeze} disabled={actionLoading} style={{ ...statusButtonStyle(selectedCard.status), cursor: actionLoading ? "not-allowed" : "pointer", opacity: actionLoading ? 0.7 : 1 }}>
+                                                        {selectedCard.status === "active" ? "Aktif (Dondur)" : "Donduruldu (Aç)"}
                                                     </button>
                                                     {selectedCard.is_virtual && (
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); handleDeleteVirtualCard(); }}
-                                                            className="text-[11px] font-semibold bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 px-3 py-1.5 rounded-lg transition-colors ml-auto"
-                                                        >
-                                                            Kartı Sil
+                                                        <button type="button" onClick={handleDeleteVirtualCard} disabled={actionLoading} style={{ ...miniButtonStyle, border: "1px solid rgba(239, 68, 68, 0.4)", color: "#fca5a5" }}>
+                                                            Sil
                                                         </button>
                                                     )}
                                                 </div>
                                             </div>
+
+                                            <div style={{ textAlign: "right" }}>
+                                                <button type="button" onClick={() => setIsFlipped(false)} style={{ ...miniButtonStyle, padding: "8px 16px" }}>
+                                                    Ön Yüze Çevir
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="text-center mt-4">
-                                        <p className="text-xs text-white/40 uppercase tracking-widest font-semibold flex items-center justify-center gap-2">
-                                            <RefreshCw size={12} /> Detaylar için karta tıklayın
-                                        </p>
                                     </div>
                                 </div>
+                            </div>
 
-                                {/* Metrics */}
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
-                                    {cardTypeTab === "credit" ? (
-                                        <>
-                                            <MetricBox label="Kullanılabilir Limit" value={formatMoney(selectedCard.available_limit)} icon={<ShieldCheck size={16} />} colorClass="text-emerald-400" bgClass="bg-emerald-500/10" borderClass="border-emerald-500/20" />
-                                            <MetricBox label="Güncel Borç" value={formatMoney(selectedCard.current_debt)} icon={<DollarSign size={16} />} colorClass="text-rose-400" bgClass="bg-rose-500/10" borderClass="border-rose-500/20" />
-                                            <MetricBox label="Asgari Ödeme" value={formatMoney(selectedCard.min_payment_due)} icon={<CalendarDays size={16} />} colorClass="text-amber-400" bgClass="bg-amber-500/10" borderClass="border-amber-500/20" />
-                                            <MetricBox label="Online Limit" value={formatMoney(selectedCard.online_limit)} icon={<Percent size={16} />} colorClass="text-blue-400" bgClass="bg-blue-500/10" borderClass="border-blue-500/20" />
-                                        </>
-                                    ) : (
-                                        <>
-                                            <MetricBox label="Bağlı Hesap Bakiyesi" value={formatMoney(linkedBalance)} icon={<ShieldCheck size={16} />} colorClass="text-emerald-400" bgClass="bg-emerald-500/10" borderClass="border-emerald-500/20" />
-                                            <MetricBox label="Hesap Türü" value={selectedCard.account_type === "checking" ? "Vadesiz" : "Tasarruf"} icon={<Landmark size={16} />} colorClass="text-blue-400" bgClass="bg-blue-500/10" borderClass="border-blue-500/20" />
-                                        </>
-                                    )}
+                            {cardTypeTab === "credit" ? (
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                                    <MetricCard label="Kullanilabilir limit" value={formatMoney(selectedCard.available_limit)} tone="#10b981" icon={<ShieldCheck size={18} />} />
+                                    <MetricCard label="Guncel borc" value={formatMoney(selectedCard.current_debt)} tone="#ef4444" icon={<DollarSign size={18} />} />
+                                    <MetricCard label="Asgari odeme" value={formatMoney(selectedCard.min_payment_due)} tone="#f59e0b" icon={<CalendarDays size={18} />} />
+                                    <MetricCard label="Online limit" value={formatMoney(selectedCard.online_limit)} tone="#2563eb" icon={<Percent size={18} />} />
+                                </div>
+                            ) : (
+                                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                                    <MetricCard label="Bağlı Hesap Bakiyesi" value={formatMoney(linkedBalance)} tone="#10b981" icon={<ShieldCheck size={18} />} />
+                                    <MetricCard label="Hesap Türü" value={selectedCard.account_type === "checking" ? "Vadesiz" : "Tasarruf"} tone="#2563eb" icon={<Landmark size={18} />} />
+                                </div>
+                            )}
+
+                            <div className="card">
+                                <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>Kart ayarlari</h3>
+                                <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                                    <InteractiveChip
+                                        active={selectedCard.internet_shopping}
+                                        onClick={() => handleToggleSetting("internet_shopping", selectedCard.internet_shopping)}
+                                        disabled={actionLoading}
+                                    >
+                                        Internet alisverisi
+                                    </InteractiveChip>
+                                    <InteractiveChip
+                                        active={selectedCard.contactless}
+                                        onClick={() => handleToggleSetting("contactless", selectedCard.contactless)}
+                                        disabled={actionLoading || selectedCard.is_virtual}
+                                    >
+                                        Temassiz
+                                    </InteractiveChip>
+                                </div>
+                            </div>
+
+                            {cardTypeTab === "credit" && !selectedCard.is_virtual && (
+                                <div className="card" style={{ marginTop: 16 }}>
+                                    <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 12 }}>Limit İşlemleri</h3>
+                                    <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 16 }}>
+                                        Daha yüksek bir limite ihtiyacınız varsa limit artış talebinde bulunabilirsiniz. Talebiniz incelemeye alınacaktır.
+                                    </p>
+                                    <button
+                                        onClick={handleApplyLimit}
+                                        disabled={actionLoading}
+                                        style={{ ...primaryActionStyle, background: "var(--accent)" }}
+                                    >
+                                        <ArrowUpRight size={18} /> Limit Artırım Talebi
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {cardTypeTab === "credit" && (
+                            <div>
+                                <div style={{ display: "flex", gap: 6, background: "var(--bg-secondary)", borderRadius: 14, padding: 4, marginBottom: 16 }}>
+                                    <TabButton active={activeTab === "transactions"} onClick={() => setActiveTab("transactions")}><Activity size={14} /> Hareketler</TabButton>
+                                    <TabButton active={activeTab === "pay"} onClick={() => setActiveTab("pay")}><DollarSign size={14} /> Borc ode</TabButton>
+                                    <TabButton active={activeTab === "simulate"} onClick={() => setActiveTab("simulate")}><ShoppingCart size={14} /> Harcama</TabButton>
                                 </div>
 
-                                {/* Actions & Settings Tabs */}
-                                {cardTypeTab === "credit" && (
-                                    <div className="bg-deepblue-900/40 backdrop-blur-md rounded-3xl border border-white/10 overflow-hidden shadow-xl mt-6">
-                                        <div className="flex border-b border-white/5 overflow-x-auto hide-scrollbar">
-                                            <ActionButton active={activeTab === "transactions"} onClick={() => setActiveTab("transactions")} icon={<Activity size={16} />} label="Hareketler" />
-                                            <ActionButton active={activeTab === "pay"} onClick={() => setActiveTab("pay")} icon={<DollarSign size={16} />} label="Borç Öde" />
-                                            <ActionButton active={activeTab === "simulate"} onClick={() => setActiveTab("simulate")} icon={<ShoppingCart size={16} />} label="Harcama Test" />
-                                            <ActionButton active={activeTab === "settings"} onClick={() => setActiveTab("settings")} icon={<ShieldCheck size={16} />} label="Ayarlar" />
+                                <div style={{ background: "var(--bg-card)", borderRadius: 20, border: "1px solid var(--border-color)", minHeight: 420, overflow: "hidden" }}>
+                                    {activeTab === "transactions" ? (
+                                        <div>
+                                            <div style={{ padding: "18px 20px", borderBottom: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                                <div>
+                                                    <div style={{ fontSize: 16, fontWeight: 800 }}>Kart hareketleri</div>
+                                                    <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>{selectedCard.card_name || "Kart"} icin son islemler</div>
+                                                </div>
+                                                <button type="button" onClick={() => loadTransactions(selectedCard.id || selectedCard.card_id)} style={secondaryActionStyle}>
+                                                    <RefreshCw size={16} /> Yenile
+                                                </button>
+                                            </div>
+                                            {transactions.length === 0 ? (
+                                                <div style={{ padding: 56, textAlign: "center", color: "var(--text-secondary)" }}>Bu kart icin henuz hareket yok.</div>
+                                            ) : transactions.map((transaction) => {
+                                                const isPayment = transaction.type === "payment";
+                                                return (
+                                                    <div key={transaction.id || transaction.transaction_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "16px 20px", borderBottom: "1px solid var(--border-color)" }}>
+                                                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                                            <div style={{ width: 40, height: 40, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", background: isPayment ? "rgba(16,185,129,0.12)" : "rgba(239,68,68,0.12)", color: isPayment ? "#10b981" : "#ef4444" }}>
+                                                                {isPayment ? <ArrowDownRight size={18} /> : <ArrowUpRight size={18} />}
+                                                            </div>
+                                                            <div>
+                                                                <div style={{ fontWeight: 700 }}>{transaction.description || (isPayment ? "Kart odemesi" : "Kart harcamasi")}</div>
+                                                                <div style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>{new Date(transaction.created_at).toLocaleString("tr-TR")}</div>
+                                                            </div>
+                                                        </div>
+                                                        <div style={{ fontWeight: 800, color: isPayment ? "#10b981" : "#ef4444" }}>
+                                                            {isPayment ? "+" : "-"}{formatMoney(transaction.amount)}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
+                                    ) : null}
 
-                                        <div className="p-6">
-                                            <AnimatePresence mode="wait">
-                                                {activeTab === "transactions" && (
-                                                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                                                        <div className="flex justify-between items-center mb-6">
-                                                            <h3 className="text-lg font-bold text-white">Son İşlemler</h3>
-                                                            <button onClick={() => loadTransactions(selectedCard.id || selectedCard.card_id)} className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-white/70 hover:text-white transition-colors">
-                                                                <RefreshCw size={16} />
-                                                            </button>
-                                                        </div>
-                                                        <div className="space-y-3">
-                                                            {transactions.length === 0 ? (
-                                                                <p className="text-center text-white/40 py-8 bg-black/20 rounded-2xl border border-white/5">Henüz hareket bulunmuyor.</p>
-                                                            ) : transactions.map((t) => {
-                                                                const isPayment = t.type === "payment";
-                                                                return (
-                                                                    <div key={t.id || t.transaction_id} className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5 hover:bg-white/10 transition-colors">
-                                                                        <div className="flex items-center gap-4">
-                                                                            <div className={`p-3 rounded-xl ${isPayment ? "bg-emerald-500/10 text-emerald-400" : "bg-rose-500/10 text-rose-400"}`}>
-                                                                                {isPayment ? <ArrowDownRight size={18} /> : <ArrowUpRight size={18} />}
-                                                                            </div>
-                                                                            <div>
-                                                                                <p className="font-bold text-white text-sm">{t.description || (isPayment ? "Kart ödemesi" : "Kart harcaması")}</p>
-                                                                                <p className="text-xs text-white/50 mt-0.5">{new Date(t.created_at).toLocaleString("tr-TR")}</p>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className={`font-black tracking-tight ${isPayment ? "text-emerald-400" : "text-rose-400"}`}>
-                                                                            {isPayment ? "+" : "-"}{formatMoney(t.amount)}
-                                                                        </div>
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </motion.div>
-                                                )}
-
-                                                {activeTab === "pay" && (
-                                                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                                                        <h3 className="text-lg font-bold text-white mb-2">Borç Öde</h3>
-                                                        <p className="text-sm text-white/60 mb-6">Bağlı hesaplarınızdan biri ile kredi kartı borcunuzu ödeyin.</p>
-                                                        <form onSubmit={handlePayDebt} className="space-y-5 max-w-md">
-                                                            <div>
-                                                                <label className="block text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">Ödeme Hesabı</label>
-                                                                <div className="relative">
-                                                                    <select
-                                                                        className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 appearance-none"
-                                                                        value={selectedAccount}
-                                                                        onChange={(e) => setSelectedAccount(e.target.value)}
-                                                                        required
-                                                                    >
-                                                                        <option value="" className="bg-slate-800">Hesap seçin</option>
-                                                                        {paymentAccounts.map((account) => (
-                                                                            <option key={account.id} value={account.id} className="bg-slate-800">
-                                                                                {account.account_number} - {formatMoney(account.balance)}
-                                                                            </option>
-                                                                        ))}
-                                                                    </select>
-                                                                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-white/50">
-                                                                        <ArrowDownRight size={16} />
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                            <div>
-                                                                <label className="block text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">Tutar (₺)</label>
-                                                                <input
-                                                                    className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50"
-                                                                    type="number" min="1" max={selectedCard.current_debt} step="0.01" value={payAmount} onChange={(e) => setPayAmount(e.target.value)} required placeholder="0.00"
-                                                                />
-                                                                <div className="mt-2 text-xs text-white/40 flex justify-between">
-                                                                    <span>Maks: {formatMoney(selectedCard.current_debt)}</span>
-                                                                    <button type="button" onClick={() => setPayAmount(selectedCard.current_debt)} className="text-blue-400 hover:text-blue-300 font-semibold transition-colors">Tamamını Öde</button>
-                                                                </div>
-                                                            </div>
-                                                            <button type="submit" disabled={actionLoading || Number(selectedCard.current_debt) <= 0} className="w-full bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold py-3.5 px-4 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.2)] transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                                                                {actionLoading ? <RefreshCw size={18} className="animate-spin" /> : <DollarSign size={18} />}
-                                                                Borcu Öde
-                                                            </button>
-                                                        </form>
-                                                    </motion.div>
-                                                )}
-
-                                                {activeTab === "simulate" && (
-                                                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                                                        <h3 className="text-lg font-bold text-white mb-2">Harcama Simülatörü</h3>
-                                                        <p className="text-sm text-white/60 mb-6">Sistem testi için seçili karttan sanal harcama yapın.</p>
-                                                        <form onSubmit={handlePurchase} className="space-y-5 max-w-md">
-                                                            <div>
-                                                                <label className="block text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">Harcama Tutarı (₺)</label>
-                                                                <input
-                                                                    className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/50"
-                                                                    type="number" min="1" max={selectedCard.available_limit} step="0.01" value={purchaseAmount} onChange={(e) => setPurchaseAmount(e.target.value)} required placeholder="0.00"
-                                                                />
-                                                                <div className="mt-2 text-xs text-emerald-400/80">Kullanılabilir Limit: {formatMoney(selectedCard.available_limit)}</div>
-                                                            </div>
-                                                            <div>
-                                                                <label className="block text-xs font-semibold text-white/50 mb-2 uppercase tracking-wider">Açıklama / İşyeri</label>
-                                                                <input
-                                                                    className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-rose-500/50 focus:ring-1 focus:ring-rose-500/50"
-                                                                    value={purchaseDescription} onChange={(e) => setPurchaseDescription(e.target.value)} required placeholder="Örn: Steam, Amazon, Market"
-                                                                />
-                                                            </div>
-                                                            <button type="submit" disabled={actionLoading || Number(selectedCard.available_limit) <= 0} className="w-full bg-gradient-to-r from-rose-600 to-orange-500 hover:from-rose-500 hover:to-orange-400 text-white font-bold py-3.5 px-4 rounded-xl shadow-[0_0_15px_rgba(239,68,68,0.2)] transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                                                                {actionLoading ? <RefreshCw size={18} className="animate-spin" /> : <ShoppingCart size={18} />}
-                                                                Harcama Yap
-                                                            </button>
-                                                        </form>
-                                                    </motion.div>
-                                                )}
-
-                                                {activeTab === "settings" && (
-                                                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                                                        <h3 className="text-lg font-bold text-white mb-6">Kart Kontrolleri</h3>
-                                                        <div className="space-y-4">
-                                                            <div className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl">
-                                                                <div>
-                                                                    <div className="font-bold text-white text-sm mb-1">İnternet Alışverişi</div>
-                                                                    <div className="text-xs text-white/50">Yurtiçi ve yurtdışı e-ticaret siteleri</div>
-                                                                </div>
-                                                                <Switch active={selectedCard.internet_shopping} onClick={() => handleToggleSetting("internet_shopping", selectedCard.internet_shopping)} disabled={actionLoading} />
-                                                            </div>
-                                                            <div className="flex items-center justify-between p-4 bg-white/5 border border-white/5 rounded-2xl">
-                                                                <div>
-                                                                    <div className="font-bold text-white text-sm mb-1">Temassız İşlem</div>
-                                                                    <div className="text-xs text-white/50">Fiziksel POS cihazları</div>
-                                                                </div>
-                                                                <Switch active={selectedCard.contactless} onClick={() => handleToggleSetting("contactless", selectedCard.contactless)} disabled={actionLoading || selectedCard.is_virtual} />
-                                                            </div>
-
-                                                            {!selectedCard.is_virtual && (
-                                                                <div className="mt-8 p-5 bg-blue-500/10 border border-blue-500/20 rounded-2xl relative overflow-hidden group">
-                                                                    <div className="absolute inset-0 bg-blue-500/5 w-0 group-hover:w-full transition-all duration-700 ease-out"></div>
-                                                                    <h4 className="font-bold text-blue-400 mb-2 relative z-10">Limit Artırım Talebi</h4>
-                                                                    <p className="text-xs text-white/70 mb-4 leading-relaxed relative z-10">Kredi kartı limitinizin yetersiz kaldığı durumlarda, gelir belgesi sunmadan anında değerlendirilecek limit artış talebinde bulunabilirsiniz.</p>
-                                                                    <button onClick={handleApplyLimit} disabled={actionLoading} className="relative z-10 bg-blue-500 hover:bg-blue-400 text-white text-sm font-bold py-2.5 px-5 rounded-xl transition-colors shadow-lg shadow-blue-500/20 flex items-center gap-2">
-                                                                        <ArrowUpRight size={16} /> Talep Oluştur
-                                                                    </button>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    </motion.div>
-                                                )}
-                                            </AnimatePresence>
+                                    {activeTab === "pay" ? (
+                                        <div style={{ padding: 24 }}>
+                                            <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>Kart borcu odeme</h3>
+                                            <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 18 }}>Secili kartin borcunu aktif hesaplarinizdan biriyle odeyin.</p>
+                                            <form onSubmit={handlePayDebt} style={{ display: "grid", gap: 16, maxWidth: 420 }}>
+                                                <div>
+                                                    <label style={labelStyle}>Odeme hesabi</label>
+                                                    <select className="form-select" value={selectedAccount} onChange={(event) => setSelectedAccount(event.target.value)} required>
+                                                        <option value="">Hesap secin</option>
+                                                        {paymentAccounts.map((account) => (
+                                                            <option key={account.id} value={account.id}>{account.account_number} - {formatMoney(account.balance)}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label style={labelStyle}>Odeme tutari</label>
+                                                    <input className="form-input" type="number" min="1" max={selectedCard.current_debt} step="0.01" value={payAmount} onChange={(event) => setPayAmount(event.target.value)} required />
+                                                </div>
+                                                <button type="submit" disabled={actionLoading || Number(selectedCard.current_debt) <= 0} style={primaryActionStyle}>
+                                                    {actionLoading ? <RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} /> : <DollarSign size={18} />}
+                                                    Borcu ode
+                                                </button>
+                                            </form>
                                         </div>
-                                    </div>
-                                )}
-                            </motion.div>
-                        </AnimatePresence>
-                    ) : null}
-                </div>
+                                    ) : null}
+
+                                    {activeTab === "simulate" ? (
+                                        <div style={{ padding: 24 }}>
+                                            <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8 }}>Kart harcamasi</h3>
+                                            <p style={{ color: "var(--text-secondary)", fontSize: 13, marginBottom: 18 }}>Internet acik olan kartlar icin test harcamasi olusturabilirsiniz.</p>
+                                            <form onSubmit={handlePurchase} style={{ display: "grid", gap: 16, maxWidth: 420 }}>
+                                                <div>
+                                                    <label style={labelStyle}>Harcama tutari</label>
+                                                    <input className="form-input" type="number" min="1" max={selectedCard.available_limit} step="0.01" value={purchaseAmount} onChange={(event) => setPurchaseAmount(event.target.value)} required />
+                                                </div>
+                                                <div>
+                                                    <label style={labelStyle}>Aciklama</label>
+                                                    <input className="form-input" value={purchaseDescription} onChange={(event) => setPurchaseDescription(event.target.value)} placeholder="Ornek: reklam, oyun, market" required />
+                                                </div>
+                                                <button type="submit" disabled={actionLoading || Number(selectedCard.available_limit) <= 0} style={{ ...primaryActionStyle, background: "linear-gradient(135deg, #2563eb, #60a5fa)" }}>
+                                                    {actionLoading ? <RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} /> : <ShoppingCart size={18} />}
+                                                    Harcama yap
+                                                </button>
+                                            </form>
+                                        </div>
+                                    ) : null}
+                                </div>
+                            </div>
+                        )}
+                    </>
+                ) : null}
             </div>
-        </div>
+            <style>{"@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }"}</style>
+        </div >
     );
 }
 
-// Subcomponents
-
-function MetricBox({ label, value, icon, colorClass, bgClass, borderClass }) {
+function MetricCard({ icon, label, value, tone }) {
     return (
-        <div className={`p-4 rounded-2xl border bg-deepblue-900/60 backdrop-blur-sm shadow-lg ${borderClass}`}>
-            <div className={`flex items-center gap-2 mb-2 ${colorClass}`}>
-                <div className={`p-1.5 rounded-lg ${bgClass}`}>{icon}</div>
-                <span className="text-xs font-semibold text-white/60 uppercase tracking-wider">{label}</span>
+        <div style={{ background: "var(--bg-card)", borderRadius: 16, padding: 18, border: "1px solid var(--border-color)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: tone, marginBottom: 8 }}>
+                {icon}
+                <span style={{ fontSize: 12, color: "var(--text-secondary)" }}>{label}</span>
             </div>
-            <div className={`text-lg sm:text-xl font-black ${colorClass} tracking-tight`}>{value}</div>
+            <div style={{ fontWeight: 800, fontSize: 20, color: tone }}>{value}</div>
         </div>
     );
 }
 
-function ActionButton({ active, onClick, icon, label }) {
+function Chip({ active, children }) {
+    return (
+        <span style={{ padding: "8px 12px", borderRadius: 999, background: active ? "rgba(16,185,129,0.14)" : "rgba(148,163,184,0.14)", color: active ? "#10b981" : "var(--text-secondary)", fontWeight: 700, fontSize: 12, transition: "all 0.2s" }}>
+            {children}
+        </span>
+    );
+}
+
+function InteractiveChip({ active, onClick, disabled, children }) {
     return (
         <button
+            type="button"
             onClick={onClick}
-            className={`flex-1 flex items-center justify-center gap-2 py-4 px-2 text-sm font-bold transition-all border-b-2 whitespace-nowrap
-            ${active ? "border-blue-500 text-white bg-blue-500/5" : "border-transparent text-white/50 hover:text-white hover:bg-white/5"}`}
+            disabled={disabled}
+            style={{
+                padding: "8px 16px",
+                borderRadius: 999,
+                border: "none",
+                background: active ? "rgba(16,185,129,0.14)" : "rgba(148,163,184,0.14)",
+                color: active ? "#10b981" : "var(--text-secondary)",
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: disabled ? "not-allowed" : "pointer",
+                transition: "all 0.2s",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                opacity: disabled ? 0.6 : 1
+            }}
         >
-            {icon} {label}
+            <div style={{ width: 8, height: 8, borderRadius: "50%", background: active ? "#10b981" : "currentColor" }} />
+            {children}
         </button>
     );
 }
 
-function Switch({ active, onClick, disabled }) {
+function TabButton({ active, onClick, children }) {
     return (
-        <button
-            onClick={onClick}
-            disabled={disabled}
-            className={`relative w-12 h-6 rounded-full transition-colors duration-300 focus:outline-none ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'} ${active ? 'bg-emerald-500' : 'bg-white/20'}`}
-        >
-            <div className={`absolute left-1 top-1 w-4 h-4 rounded-full bg-white transition-transform duration-300 shadow-sm ${active ? 'translate-x-6' : 'translate-x-0'}`}></div>
+        <button type="button" onClick={onClick} style={{ flex: 1, border: "none", borderRadius: 12, padding: "11px 14px", background: active ? "var(--bg-card)" : "transparent", color: active ? "var(--text-primary)" : "var(--text-secondary)", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            {children}
         </button>
     );
 }
@@ -779,13 +667,116 @@ function maskCardNumber(value) {
     return `${value.slice(0, 4)} **** **** ${value.slice(-4)}`;
 }
 
-function WifiIcon() {
-    return (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/80 opacity-80">
-            <path d="M5 12.55a11 11 0 0 1 14.08 0" />
-            <path d="M1.42 9a16 16 0 0 1 21.16 0" />
-            <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
-            <line x1="12" y1="20" x2="12.01" y2="20" />
-        </svg>
-    )
+function statusButtonStyle(status) {
+    return {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "8px 16px",
+        borderRadius: 999,
+        border: "none",
+        background: status === "active" ? "rgba(16,185,129,0.16)" : "rgba(239,68,68,0.16)",
+        color: status === "active" ? "#10b981" : "#ef4444",
+        fontWeight: 700,
+        fontSize: 12,
+        transition: "all 0.2s"
+    };
 }
+
+function typeChipStyle(isVirtual) {
+    return {
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 6,
+        padding: "8px 12px",
+        borderRadius: 999,
+        background: isVirtual ? "rgba(34,197,94,0.16)" : "rgba(255,255,255,0.14)",
+        color: "#fff",
+        fontWeight: 700,
+        fontSize: 12,
+    };
+}
+
+function selectorBadgeStyle(active, isVirtual) {
+    return {
+        padding: "6px 10px",
+        borderRadius: 999,
+        background: active ? "rgba(255,255,255,0.16)" : isVirtual ? "rgba(34,197,94,0.12)" : "rgba(37,99,235,0.12)",
+        color: active ? "#fff" : isVirtual ? "#10b981" : "#2563eb",
+        fontWeight: 700,
+        fontSize: 11,
+    };
+}
+
+function cardSelectorStyle(active) {
+    return {
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 12,
+        width: "100%",
+        padding: 14,
+        borderRadius: 16,
+        border: active ? "none" : "1px solid var(--border-color)",
+        background: active ? "linear-gradient(135deg, #111827, #2563eb)" : "var(--bg-secondary)",
+        color: active ? "#fff" : "var(--text-primary)",
+        cursor: "pointer",
+        textAlign: "left",
+    };
+}
+
+const labelStyle = {
+    display: "block",
+    fontSize: 13,
+    fontWeight: 600,
+    color: "var(--text-secondary)",
+    marginBottom: 6,
+};
+
+const primaryActionStyle = {
+    background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
+    color: "#fff",
+    border: "none",
+    padding: "14px 24px",
+    borderRadius: 14,
+    fontSize: 15,
+    fontWeight: 700,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+};
+
+const secondaryActionStyle = {
+    padding: "10px 16px",
+    borderRadius: 12,
+    border: "1px solid var(--border-color)",
+    background: "var(--bg-card)",
+    color: "var(--text-primary)",
+    fontWeight: 600,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 8,
+};
+
+const miniButtonStyle = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "8px 12px",
+    borderRadius: 12,
+    border: "1px solid rgba(255,255,255,0.16)",
+    background: "rgba(255,255,255,0.08)",
+    color: "#f8fafc",
+    cursor: "pointer",
+    fontWeight: 600,
+};
+
+const cardVisualStyle = {
+    color: "#f8fafc",
+    padding: 28,
+};
+
+

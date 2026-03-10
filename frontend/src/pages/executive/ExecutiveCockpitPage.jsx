@@ -90,11 +90,17 @@ export default function ExecutiveCockpitPage() {
     const formatCurrency = (val) =>
         new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY" }).format(val);
 
+    const cardStyle = (gradient) => ({
+        background: gradient,
+        borderRadius: 16, padding: "24px 20px", color: "#fff",
+        position: "relative", overflow: "hidden",
+    });
+
     if (loading) {
         return (
-            <div className="max-w-6xl mx-auto space-y-6">
-                <div className="mb-6">
-                    <h1 className="text-3xl font-extrabold text-white tracking-tight mb-2">Yükleniyor...</h1>
+            <div className="page-container" style={{ maxWidth: 1200 }}>
+                <div style={{ marginBottom: 20 }}>
+                    <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 4 }}>Yükleniyor...</h1>
                 </div>
                 <ListSkeleton count={4} />
             </div>
@@ -102,283 +108,269 @@ export default function ExecutiveCockpitPage() {
     }
 
     return (
-        <div className="max-w-6xl mx-auto space-y-6 pb-20">
-            {/* ── Header ── */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="page-container" style={{ maxWidth: 1200 }}>
+            {/* Header */}
+            <div style={{ marginBottom: 20, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 16 }}>
                 <div>
-                    <h1 className="text-3xl font-extrabold text-white tracking-tight flex items-center gap-3">
-                        <Crown className="text-amber-400" size={32} /> CEO Kontrol Paneli
+                    <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 4 }}>
+                        👑 CEO Kontrol Paneli
                     </h1>
-                    <p className="text-white/60 text-sm mt-1">
-                        Banka genelindeki finansal durumun canlı görünümü ve sistem yönetimi
+                    <p style={{ color: "var(--text-muted)", fontSize: 14, margin: 0 }}>
+                        Banka genelindeki finansal durumun canli gorunumu ve sistem yonetimi
                     </p>
                 </div>
-
-                <div className="flex gap-2 p-1.5 bg-black/20 backdrop-blur-md rounded-2xl border border-white/10 overflow-x-auto max-w-full">
-                    <button
-                        onClick={() => setTab("dashboard")}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap
-                        ${tab === "dashboard" ? "bg-gradient-to-r from-amber-500 to-yellow-600 text-white shadow-lg" : "text-white/60 hover:text-white hover:bg-white/5"}`}
-                    >
+                <div style={{ display: "flex", gap: 8, background: "var(--bg-secondary)", padding: 6, borderRadius: 16 }}>
+                    <button onClick={() => setTab("dashboard")} style={tabStyle(tab === "dashboard")}>
                         <Activity size={16} /> Finansal Özet
                     </button>
-                    <button
-                        onClick={() => setTab("users")}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap
-                        ${tab === "users" ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg" : "text-white/60 hover:text-white hover:bg-white/5"}`}
-                    >
-                        <Shield size={16} /> Kullanıcı Yönetimi
+                    <button onClick={() => setTab("users")} style={tabStyle(tab === "users")}>
+                        <Shield size={16} /> Kullanici Yönetimi
                     </button>
-                    <button
-                        onClick={() => setTab("approvals")}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all whitespace-nowrap
-                        ${tab === "approvals" ? "bg-gradient-to-r from-rose-500 to-red-600 text-white shadow-lg" : "text-white/60 hover:text-white hover:bg-white/5"}`}
-                    >
+                    <button onClick={() => setTab("approvals")} style={tabStyle(tab === "approvals")}>
                         <ShieldAlert size={16} /> Son Onaylar
                         {approvals.length > 0 && (
-                            <span className="bg-white text-rose-600 px-2 py-0.5 rounded-full text-[10px] ml-1">{approvals.length}</span>
+                            <span style={{ background: "var(--danger)", color: "#fff", padding: "2px 6px", borderRadius: 10, fontSize: 10, marginLeft: 6 }}>{approvals.length}</span>
                         )}
                     </button>
                 </div>
             </div>
 
-            {/* ── Users Tab ── */}
             {tab === "users" && (
-                <div className="bg-deepblue-900/40 backdrop-blur-xl rounded-3xl border border-white/10 p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-white/10 pb-6 mb-6">
-                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                            <Users size={20} className="text-blue-400" /> Sistem Kullanıcıları
+                <div className="card fade-in">
+                    <div className="card-header" style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 16, borderBottom: "1px solid var(--border-color)", paddingBottom: 16, marginBottom: 16 }}>
+                        <h2 className="card-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <Users size={18} /> Sistem Kullanicilari
                         </h2>
-                        <div className="flex items-center bg-black/30 border border-white/10 rounded-xl px-4 py-2 w-full sm:w-auto">
-                            <Search size={16} className="text-white/40" />
+                        <div style={{ display: "flex", alignItems: "center", background: "var(--bg-secondary)", border: "1px solid var(--border-color)", borderRadius: 12, padding: "0 12px" }}>
+                            <Search size={16} color="var(--text-muted)" />
                             <input
                                 type="text"
                                 placeholder="E-posta ile ara..."
                                 value={searchQ}
                                 onChange={(e) => setSearchQ(e.target.value)}
-                                className="bg-transparent border-none text-white placeholder-white/40 outline-none ml-2 w-full sm:w-48 text-sm"
+                                style={{ background: "transparent", border: "none", color: "var(--text-primary)", padding: "10px", outline: "none", width: 220 }}
                             />
                         </div>
                     </div>
 
-                    <div className="space-y-3">
-                        {users.length === 0 ? (
-                            <div className="p-8 text-center text-white/50 bg-black/10 rounded-2xl border border-dashed border-white/10">Sonuç bulunamadı.</div>
-                        ) : users.map(u => (
-                            <div key={u.user_id} className="group bg-black/20 hover:bg-white/5 border border-white/5 rounded-2xl p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4 transition-all hover:scale-[1.01] hover:shadow-lg">
-                                <div>
-                                    <div className="font-bold text-white flex flex-wrap items-center gap-2 mb-1">
-                                        {u.email}
-                                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] uppercase font-black tracking-wider
-                                            ${u.role === "ceo" ? "bg-amber-500/20 text-amber-400 border border-amber-500/20" :
-                                                u.role === "admin" ? "bg-rose-500/20 text-rose-400 border border-rose-500/20" :
-                                                    u.role === "employee" ? "bg-blue-500/20 text-blue-400 border border-blue-500/20" :
-                                                        "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20"}
-                                        `}>
-                                            {u.role}
-                                        </span>
+                    <div style={{ display: "grid", gap: 12 }}>
+                        {users.length === 0 ? <div style={{ padding: 20, textAlign: "center", color: "var(--text-muted)" }}>Sonuç bulunamadi.</div> :
+                            users.map(u => (
+                                <div key={u.user_id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 16, background: "var(--bg-secondary)", borderRadius: 12, border: "1px solid var(--border-color)", transition: "all 0.2s ease" }} className="hover-scale">
+                                    <div>
+                                        <div style={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 8 }}>
+                                            {u.email}
+                                            <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 12, background: u.role === "ceo" ? "#d4af37" : u.role === "admin" ? "#ef4444" : u.role === "employee" ? "#3b82f6" : "#22c55e", color: "#fff", fontWeight: 800, textTransform: "uppercase" }}>
+                                                {u.role}
+                                            </span>
+                                        </div>
+                                        <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>ID: {u.user_id?.substring(0, 8)}...</div>
                                     </div>
-                                    <div className="text-xs text-white/40 font-mono">ID: {u.user_id?.substring(0, 8)}...</div>
-                                </div>
-                                <div className="flex gap-2">
-                                    {u.role !== "ceo" && (
-                                        <button
-                                            onClick={async () => {
-                                                if (window.confirm("Bu yetkiyi değiştirmek istediğinize emin misiniz?")) {
+                                    <div style={{ display: "flex", gap: 8 }}>
+                                        {u.role !== "ceo" && (
+                                            <button onClick={async () => {
+                                                if (window.confirm("Bu yetkiyi degistirmek istediginize emin misiniz?")) {
                                                     try {
                                                         await adminApi.changeRole(u.user_id, { role: "admin" });
                                                         toast.success("Admin yetkisi verildi!");
                                                         loadUsers();
-                                                    } catch (e) { toast.error("Hata oluştu"); }
+                                                    } catch (e) { toast.error("Hata olustu"); }
                                                 }
-                                            }}
-                                            className="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl text-sm font-bold transition-colors"
-                                        >
-                                            Admin Yap
-                                        </button>
-                                    )}
+                                            }} style={{ padding: "8px 12px", borderRadius: 8, background: "rgba(239,68,68,0.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,0.2)", cursor: "pointer", fontSize: 13, fontWeight: 600, transition: "all 0.2s ease" }}>Admin Yap</button>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
                     </div>
                 </div>
             )}
 
-            {/* ── Approvals Tab ── */}
             {tab === "approvals" && (
-                <div className="bg-deepblue-900/40 backdrop-blur-xl rounded-3xl border border-white/10 p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
-                    <div className="border-b border-white/10 pb-6 mb-6">
-                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                            <ShieldAlert size={20} className="text-rose-400" /> CEO Son Onay Bekleyen İşlemler
+                <div className="card fade-in">
+                    <div className="card-header" style={{ borderBottom: "1px solid var(--border-color)", paddingBottom: 16, marginBottom: 16 }}>
+                        <h2 className="card-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <ShieldAlert size={18} /> CEO Son Onay Bekleyen İşlemler
                         </h2>
                     </div>
                     {approvals.length === 0 ? (
-                        <div className="p-12 text-center text-white/50 bg-black/10 rounded-2xl border border-dashed border-white/10 font-medium">
+                        <div style={{ padding: 32, textAlign: "center", color: "var(--text-muted)" }}>
                             Şu an onay bekleyen kritik bir işlem bulunmuyor.
                         </div>
-                    ) : (
-                        <div className="grid gap-4">
-                            {approvals.map((req, i) => (
-                                <ApprovalCard
-                                    key={req.id || i}
-                                    request={req}
-                                    onApprove={(id) => handleApprovalAction(id, "APPROVE")}
-                                    onReject={(id) => handleApprovalAction(id, "REJECT")}
-                                    isCeo={true}
-                                />
-                            ))}
-                        </div>
-                    )}
+                    ) : approvals.map((req, i) => (
+                        <ApprovalCard
+                            key={req.id || i}
+                            request={req}
+                            onApprove={(id) => handleApprovalAction(id, "APPROVE")}
+                            onReject={(id) => handleApprovalAction(id, "REJECT")}
+                            isCeo={true}
+                        />
+                    ))}
                 </div>
             )}
 
-            {/* ── Dashboard Tab ── */}
             {tab === "dashboard" && (
-                <div className="animate-in fade-in zoom-in-95 duration-300">
+                <div className="fade-in">
                     {/* Stats Cards */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                    <div style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                        gap: 16, marginBottom: 28,
+                    }}>
                         {/* Toplam Mevduat */}
-                        <div className="relative overflow-hidden bg-gradient-to-br from-amber-500/90 to-amber-700/90 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-xl group hover:-translate-y-1 transition-transform duration-300">
-                            <div className="absolute -right-8 -top-8 text-white/10 group-hover:scale-110 transition-transform duration-500">
-                                <DollarSign size={120} />
+                        <div style={cardStyle("linear-gradient(135deg, #d4af37, #b8860b)")}>
+                            <div style={{ opacity: 0.2, position: "absolute", right: -10, top: -10 }}>
+                                <DollarSign size={80} />
                             </div>
-                            <div className="relative z-10 text-white">
-                                <DollarSign size={24} className="mb-4 opacity-80" />
-                                <div className="text-sm font-semibold tracking-wider uppercase opacity-90 mb-1">Toplam Mevduat</div>
-                                <div className="text-3xl font-black tracking-tight">{formatCurrency(stats.totalDeposit)}</div>
-                                <div className="text-xs font-medium opacity-75 mt-4 flex items-center gap-1.5">
-                                    <ArrowUpRight size={14} /> Tüm hesaplar toplamı
-                                </div>
+                            <DollarSign size={22} style={{ marginBottom: 8 }} />
+                            <div style={{ fontSize: 13, opacity: 0.85, marginBottom: 4 }}>Toplam Mevduat</div>
+                            <div style={{ fontSize: 26, fontWeight: 800 }}>{formatCurrency(stats.totalDeposit)}</div>
+                            <div style={{ fontSize: 11, opacity: 0.7, marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
+                                <ArrowUpRight size={14} /> Tüm hesaplar toplamı
                             </div>
                         </div>
 
                         {/* Aktif Müşteri */}
-                        <div className="relative overflow-hidden bg-gradient-to-br from-indigo-500/90 to-purple-700/90 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-xl group hover:-translate-y-1 transition-transform duration-300">
-                            <div className="absolute -right-8 -top-8 text-white/10 group-hover:scale-110 transition-transform duration-500">
-                                <Users size={120} />
+                        <div style={cardStyle("linear-gradient(135deg, #7c3aed, #a855f7)")}>
+                            <div style={{ opacity: 0.2, position: "absolute", right: -10, top: -10 }}>
+                                <Users size={80} />
                             </div>
-                            <div className="relative z-10 text-white">
-                                <Users size={24} className="mb-4 opacity-80" />
-                                <div className="text-sm font-semibold tracking-wider uppercase opacity-90 mb-1">Aktif Müşteri</div>
-                                <div className="text-3xl font-black tracking-tight">{stats.activeCustomers}</div>
-                                <div className="text-xs font-medium opacity-75 mt-4 flex items-center gap-1.5">
-                                    <TrendingUp size={14} /> Kayıtlı kullanıcılar
-                                </div>
+                            <Users size={22} style={{ marginBottom: 8 }} />
+                            <div style={{ fontSize: 13, opacity: 0.85, marginBottom: 4 }}>Aktif Müşteri</div>
+                            <div style={{ fontSize: 26, fontWeight: 800 }}>{stats.activeCustomers}</div>
+                            <div style={{ fontSize: 11, opacity: 0.7, marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
+                                <TrendingUp size={14} /> Kayıtlı kullanıcılar
                             </div>
                         </div>
 
                         {/* İşlem Sayısı */}
-                        <div className="relative overflow-hidden bg-gradient-to-br from-emerald-500/90 to-teal-700/90 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-xl group hover:-translate-y-1 transition-transform duration-300">
-                            <div className="absolute -right-8 -top-8 text-white/10 group-hover:scale-110 transition-transform duration-500">
-                                <Activity size={120} />
+                        <div style={cardStyle("linear-gradient(135deg, #059669, #10b981)")}>
+                            <div style={{ opacity: 0.2, position: "absolute", right: -10, top: -10 }}>
+                                <Activity size={80} />
                             </div>
-                            <div className="relative z-10 text-white">
-                                <Activity size={24} className="mb-4 opacity-80" />
-                                <div className="text-sm font-semibold tracking-wider uppercase opacity-90 mb-1">Bugünkü İşlemler</div>
-                                <div className="text-3xl font-black tracking-tight">{stats.todayTransactions}</div>
-                                <div className="text-xs font-medium opacity-75 mt-4 flex items-center gap-1.5">
-                                    <Clock size={14} /> Toplam kayıtlı işlem
-                                </div>
+                            <Activity size={22} style={{ marginBottom: 8 }} />
+                            <div style={{ fontSize: 13, opacity: 0.85, marginBottom: 4 }}>Son İşlem Sayısı</div>
+                            <div style={{ fontSize: 26, fontWeight: 800 }}>{stats.todayTransactions}</div>
+                            <div style={{ fontSize: 11, opacity: 0.7, marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
+                                <Clock size={14} /> Toplam kayıtlı işlem
                             </div>
                         </div>
 
                         {/* İşlem Hacmi */}
-                        <div className="relative overflow-hidden bg-gradient-to-br from-rose-500/90 to-red-700/90 backdrop-blur-xl rounded-3xl p-6 border border-white/20 shadow-xl group hover:-translate-y-1 transition-transform duration-300">
-                            <div className="absolute -right-8 -top-8 text-white/10 group-hover:scale-110 transition-transform duration-500">
-                                <TrendingUp size={120} />
+                        <div style={cardStyle("linear-gradient(135deg, #dc2626, #ef4444)")}>
+                            <div style={{ opacity: 0.2, position: "absolute", right: -10, top: -10 }}>
+                                <TrendingUp size={80} />
                             </div>
-                            <div className="relative z-10 text-white">
-                                <TrendingUp size={24} className="mb-4 opacity-80" />
-                                <div className="text-sm font-semibold tracking-wider uppercase opacity-90 mb-1">İşlem Hacmi</div>
-                                <div className="text-3xl font-black tracking-tight">{formatCurrency(stats.todayVolume)}</div>
-                                <div className="text-xs font-medium opacity-75 mt-4 flex items-center gap-1.5">
-                                    <ArrowUpRight size={14} /> Toplam hareket tutarı
-                                </div>
+                            <TrendingUp size={22} style={{ marginBottom: 8 }} />
+                            <div style={{ fontSize: 13, opacity: 0.85, marginBottom: 4 }}>İşlem Hacmi</div>
+                            <div style={{ fontSize: 26, fontWeight: 800 }}>{formatCurrency(stats.todayVolume)}</div>
+                            <div style={{ fontSize: 11, opacity: 0.7, marginTop: 8, display: "flex", alignItems: "center", gap: 4 }}>
+                                <ArrowUpRight size={14} /> Toplam hareket tutarı
                             </div>
                         </div>
                     </div>
 
                     {/* Two Column Layout */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div style={{
+                        display: "grid", gridTemplateColumns: "1fr 1fr",
+                        gap: 20,
+                    }}>
                         {/* Son İşlemler */}
-                        <div className="bg-deepblue-900/40 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col">
-                            <div className="p-6 border-b border-white/10 bg-black/20">
-                                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                                    <Eye size={20} className="text-blue-400" /> Son İşlemler
+                        <div className="card" style={{ gridColumn: window.innerWidth < 768 ? "1 / -1" : undefined }}>
+                            <div className="card-header" style={{ borderBottom: "1px solid var(--border-color)", paddingBottom: 12 }}>
+                                <h2 className="card-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                    <Eye size={18} /> Son İşlemler
                                 </h2>
                             </div>
-                            <div className="p-4 flex-1 overflow-y-auto max-h-[400px]">
+                            <div style={{ padding: "8px 0" }}>
                                 {recentTx.length === 0 ? (
-                                    <div className="p-8 text-center text-white/50 bg-black/10 rounded-2xl border border-dashed border-white/10 h-full flex items-center justify-center">
+                                    <div style={{ padding: 24, textAlign: "center", color: "var(--text-muted)" }}>
                                         Henüz işlem kaydı bulunmuyor.
                                     </div>
                                 ) : (
-                                    <div className="space-y-2">
-                                        {recentTx.map((tx, i) => (
-                                            <div key={i} className="bg-black/20 border border-white/5 rounded-2xl p-4 flex justify-between items-center hover:bg-white/5 transition-colors">
-                                                <div>
-                                                    <div className="font-bold text-white text-sm mb-1">
-                                                        {tx.type === "DEPOSIT" ? "💰 Yatırma" :
-                                                            tx.type === "WITHDRAW" ? "💸 Çekme" :
-                                                                tx.type === "TRANSFER" ? "🔄 Transfer" : tx.type}
-                                                    </div>
-                                                    <div className="text-xs font-mono text-white/40">
-                                                        {tx.account_id?.slice(0, 8)}...
-                                                    </div>
+                                    recentTx.map((tx, i) => (
+                                        <div key={i} style={{
+                                            display: "flex", justifyContent: "space-between", alignItems: "center",
+                                            padding: "10px 16px", borderBottom: i < recentTx.length - 1 ? "1px solid var(--border-color)" : "none",
+                                        }}>
+                                            <div>
+                                                <div style={{ fontWeight: 600, fontSize: 13 }}>
+                                                    {tx.type === "DEPOSIT" ? "💰 Yatırma" :
+                                                        tx.type === "WITHDRAW" ? "💸 Çekme" :
+                                                            tx.type === "TRANSFER" ? "🔄 Transfer" : tx.type}
                                                 </div>
-                                                <div className={`font-black text-base tracking-tight flex items-center gap-1
-                                                    ${tx.direction === "DEBIT" ? "text-rose-400" : "text-emerald-400"}`}>
-                                                    {tx.direction === "DEBIT" ? (
-                                                        <><ArrowDownRight size={16} /> -{formatCurrency(Math.abs(tx.amount))}</>
-                                                    ) : (
-                                                        <><ArrowUpRight size={16} /> +{formatCurrency(Math.abs(tx.amount))}</>
-                                                    )}
+                                                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                                                    {tx.account_id?.slice(0, 8)}...
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
+                                            <div style={{
+                                                fontWeight: 700, fontSize: 14,
+                                                color: tx.direction === "DEBIT" ? "var(--danger)" : "var(--success)",
+                                            }}>
+                                                {tx.direction === "DEBIT" ? (
+                                                    <><ArrowDownRight size={14} /> -{formatCurrency(Math.abs(tx.amount))}</>
+                                                ) : (
+                                                    <><ArrowUpRight size={14} /> +{formatCurrency(Math.abs(tx.amount))}</>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))
                                 )}
                             </div>
                         </div>
 
                         {/* Son Denetim Kayıtları */}
-                        <div className="bg-deepblue-900/40 backdrop-blur-xl rounded-3xl border border-white/10 shadow-2xl overflow-hidden flex flex-col">
-                            <div className="p-6 border-b border-white/10 bg-black/20">
-                                <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                                    <AlertTriangle size={20} className="text-amber-400" /> Son Denetim Kayıtları (Audit)
+                        <div className="card" style={{ gridColumn: window.innerWidth < 768 ? "1 / -1" : undefined }}>
+                            <div className="card-header" style={{ borderBottom: "1px solid var(--border-color)", paddingBottom: 12 }}>
+                                <h2 className="card-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                    <AlertTriangle size={18} /> Son Denetim Kayıtları
                                 </h2>
                             </div>
-                            <div className="p-4 flex-1 overflow-y-auto max-h-[400px]">
+                            <div style={{ padding: "8px 0" }}>
                                 {recentAudit.length === 0 ? (
-                                    <div className="p-8 text-center text-white/50 bg-black/10 rounded-2xl border border-dashed border-white/10 h-full flex items-center justify-center">
+                                    <div style={{ padding: 24, textAlign: "center", color: "var(--text-muted)" }}>
                                         Henüz denetim kaydı bulunmuyor.
                                     </div>
                                 ) : (
-                                    <div className="space-y-2">
-                                        {recentAudit.map((log, i) => (
-                                            <div key={i} className="bg-black/20 border border-white/5 rounded-2xl p-4 flex justify-between items-center hover:bg-white/5 transition-colors">
-                                                <div>
-                                                    <div className="font-bold text-white text-sm mb-1">
-                                                        {log.action}
-                                                    </div>
-                                                    <div className="text-xs text-white/40">
-                                                        {log.user_email || "Sistem"}
-                                                    </div>
+                                    recentAudit.map((log, i) => (
+                                        <div key={i} style={{
+                                            display: "flex", justifyContent: "space-between", alignItems: "center",
+                                            padding: "10px 16px", borderBottom: i < recentAudit.length - 1 ? "1px solid var(--border-color)" : "none",
+                                        }}>
+                                            <div>
+                                                <div style={{ fontWeight: 600, fontSize: 13 }}>
+                                                    {log.action}
                                                 </div>
-                                                <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-wider
-                                                    ${log.outcome === "SUCCESS" ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/20" : "bg-rose-500/20 text-rose-400 border border-rose-500/20"}
-                                                `}>
-                                                    {log.outcome}
-                                                </span>
+                                                <div style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                                                    {log.user_email || "Sistem"}
+                                                </div>
                                             </div>
-                                        ))}
-                                    </div>
+                                            <span style={{
+                                                padding: "2px 8px", borderRadius: 6, fontSize: 11, fontWeight: 600,
+                                                background: log.outcome === "SUCCESS" ? "rgba(16,185,129,0.15)" : "rgba(239,68,68,0.15)",
+                                                color: log.outcome === "SUCCESS" ? "#10b981" : "#ef4444",
+                                            }}>
+                                                {log.outcome}
+                                            </span>
+                                        </div>
+                                    ))
                                 )}
                             </div>
                         </div>
                     </div>
                 </div>
             )}
+
+            <style>{`
+            .hover-scale:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+            `}</style>
         </div>
     );
 }
+
+const tabStyle = (active) => ({
+    display: "flex", alignItems: "center", gap: 6,
+    padding: "8px 16px", borderRadius: 12, border: "none", cursor: "pointer",
+    background: active ? "var(--accent)" : "transparent",
+    color: active ? "#ffffff" : "var(--text-muted)",
+    fontWeight: 600, transition: "all 0.2s ease",
+});
