@@ -1,6 +1,6 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, Component } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Points, PointMaterial, Environment, Float, Sphere, MeshDistortMaterial } from '@react-three/drei';
+import { Points, PointMaterial, Float, Sphere, MeshDistortMaterial } from '@react-three/drei';
 import * as random from 'maath/random/dist/maath-random.esm';
 
 function StarField(props) {
@@ -51,15 +51,36 @@ function GlowingOrb() {
     );
 }
 
+// Error Boundary: if 3D crashes, show CSS gradient fallback
+class ThreeErrorBoundary extends Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false };
+    }
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+    componentDidCatch(error, errorInfo) {
+        console.warn("3D background failed, using CSS fallback:", error);
+    }
+    render() {
+        if (this.state.hasError) {
+            return null; // Parent div already has bg color
+        }
+        return this.props.children;
+    }
+}
+
 export default function LoginBackground3D() {
     return (
         <div className="absolute inset-0 w-full h-full bg-[#071325] overflow-hidden -z-10">
-            <Canvas camera={{ position: [0, 0, 1] }}>
-                <ambientLight intensity={0.5} />
-                <StarField />
-                <GlowingOrb />
-                <Environment preset="city" />
-            </Canvas>
+            <ThreeErrorBoundary>
+                <Canvas camera={{ position: [0, 0, 1] }}>
+                    <ambientLight intensity={0.5} />
+                    <StarField />
+                    <GlowingOrb />
+                </Canvas>
+            </ThreeErrorBoundary>
         </div>
     );
 }
