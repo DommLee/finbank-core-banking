@@ -336,23 +336,24 @@ export default function TransferHistoryPage() {
 
 function SummaryCard({ label, value, accent }) {
     return (
-        <div style={{ background: "var(--bg-card)", borderRadius: 16, padding: "16px 18px", border: "1px solid var(--border-color)", borderLeft: `4px solid ${accent}` }}>
-            <div style={{ color: "var(--text-secondary)", fontSize: 12, marginBottom: 6 }}>{label}</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: accent }}>{value}</div>
+        <div style={{ background: "var(--glass-bg)", backdropFilter: "var(--glass-blur)", WebkitBackdropFilter: "var(--glass-blur)", borderRadius: 20, padding: "18px 20px", border: "1px solid var(--glass-border)", borderLeft: `6px solid ${accent}`, boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)", transition: "all 0.3s ease" }}>
+            <div style={{ color: "var(--text-secondary)", fontSize: 13, textTransform: "uppercase", letterSpacing: 0.5, fontWeight: 700, marginBottom: 8 }}>{label}</div>
+            <div style={{ fontSize: 24, fontWeight: 900, color: accent }}>{value}</div>
         </div>
     );
 }
 
 const inputStyle = {
     width: "100%",
-    padding: "10px 14px",
-    borderRadius: 12,
-    border: "1px solid var(--border-color)",
-    background: "var(--bg-secondary)",
+    padding: "12px 16px",
+    borderRadius: 14,
+    border: "1px solid var(--glass-border)",
+    background: "rgba(0,0,0,0.2)",
     color: "var(--text-primary)",
     fontSize: 14,
     outline: "none",
     boxSizing: "border-box",
+    backdropFilter: "blur(10px)"
 };
 
 const labelStyle = {
@@ -376,12 +377,15 @@ const modalOverlayStyle = {
 };
 
 const modalContentStyle = {
-    background: "var(--bg-card)",
+    background: "var(--glass-bg)",
+    backdropFilter: "var(--glass-blur)",
+    WebkitBackdropFilter: "var(--glass-blur)",
+    border: "1px solid var(--glass-border)",
     borderRadius: 24,
-    padding: 24,
+    padding: 32,
     width: "100%",
     maxWidth: 480,
-    boxShadow: "0 20px 40px rgba(0,0,0,0.2)"
+    boxShadow: "0 24px 64px rgba(0,0,0,0.4)"
 };
 
 const primaryButtonStyle = {
@@ -402,48 +406,58 @@ const primaryButtonStyle = {
 };
 
 const secondaryButtonStyle = {
-    padding: "10px 16px",
-    borderRadius: 12,
-    border: "1px solid var(--border-color)",
-    background: "var(--bg-card)",
+    padding: "12px 20px",
+    borderRadius: 14,
+    border: "1px solid var(--glass-border)",
+    background: "rgba(255, 255, 255, 0.05)",
+    backdropFilter: "var(--glass-blur)",
     color: "var(--text-primary)",
-    fontWeight: 600,
+    fontWeight: 700,
     cursor: "pointer",
     display: "inline-flex",
     alignItems: "center",
     gap: 8,
+    transition: "all 0.2s ease"
 };
 
 const emptyStateStyle = {
-    background: "var(--bg-card)",
-    borderRadius: 18,
-    border: "1px solid var(--border-color)",
+    background: "rgba(255, 255, 255, 0.02)",
+    backdropFilter: "var(--glass-blur)",
+    borderRadius: 24,
+    border: "1px solid var(--glass-border)",
     color: "var(--text-secondary)",
     textAlign: "center",
-    padding: 48,
+    padding: 64,
+    fontSize: 15
 };
 
 const listStyle = {
-    background: "var(--bg-card)",
-    borderRadius: 18,
-    border: "1px solid var(--border-color)",
+    background: "rgba(255, 255, 255, 0.02)",
+    backdropFilter: "var(--glass-blur)",
+    WebkitBackdropFilter: "var(--glass-blur)",
+    borderRadius: 24,
+    border: "1px solid var(--glass-border)",
     overflow: "hidden",
+    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)"
 };
 
 const rowStyle = {
-    padding: "16px 18px",
+    padding: "20px 24px",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 12,
+    gap: 16,
+    transition: "background 0.2s ease"
 };
 
 const paginationButtonStyle = {
-    padding: "10px 16px",
-    borderRadius: 10,
-    border: "1px solid var(--border-color)",
-    background: "var(--bg-card)",
+    padding: "12px 20px",
+    borderRadius: 14,
+    border: "1px solid var(--glass-border)",
+    background: "rgba(255, 255, 255, 0.05)",
+    backdropFilter: "var(--glass-blur)",
     color: "var(--text-primary)",
-    fontWeight: 600,
+    fontWeight: 700,
     cursor: "pointer",
+    transition: "all 0.2s ease"
 };

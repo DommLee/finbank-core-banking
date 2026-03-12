@@ -133,11 +133,11 @@ export default function MessagesPage({ userRole = "customer" }) {
                         </div>
                     ) : (
                         messages.map((msg, i) => (
-                            <div key={msg.message_id || i} className="card" style={{
-                                padding: 20, marginBottom: 12,
-                                borderLeft: msg.reply ? "3px solid var(--success)" : msg.read ? "3px solid var(--border-color)" : "3px solid var(--accent)",
+                            <div key={msg.message_id || i} className="glass-card" style={{
+                                padding: 24, marginBottom: 16,
+                                borderLeft: msg.reply ? "4px solid var(--success)" : msg.read ? "1px solid var(--glass-border)" : "4px solid var(--accent)",
                             }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12 }}>
                                     <div>
                                         <div style={{ fontWeight: 700, fontSize: 15 }}>{msg.subject}</div>
                                         <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
@@ -161,10 +161,11 @@ export default function MessagesPage({ userRole = "customer" }) {
 
                                 {msg.reply && (
                                     <div style={{
-                                        background: "var(--bg-secondary)", borderRadius: 10, padding: 14, marginTop: 8,
+                                        background: "rgba(16, 185, 129, 0.05)", borderRadius: 12, padding: 16, marginTop: 12,
                                         borderLeft: "3px solid var(--success)",
+                                        border: "1px solid var(--glass-border)"
                                     }}>
-                                        <div style={{ fontSize: 12, color: "var(--success)", fontWeight: 600, marginBottom: 4 }}>
+                                        <div style={{ fontSize: 13, color: "var(--success)", fontWeight: 700, marginBottom: 6 }}>
                                             ↩ Yanıt ({msg.replied_by})
                                         </div>
                                         <p style={{ fontSize: 13, color: "var(--text-primary)" }}>{msg.reply}</p>
@@ -196,9 +197,9 @@ export default function MessagesPage({ userRole = "customer" }) {
                                                     <button
                                                         onClick={() => { setReplyingTo(null); setReplyText(""); }}
                                                         style={{
-                                                            background: "var(--bg-secondary)", border: "1px solid var(--border-color)",
-                                                            borderRadius: 8, padding: "6px 14px", fontSize: 13,
-                                                            color: "var(--text-secondary)", cursor: "pointer",
+                                                            background: "rgba(255, 255, 255, 0.05)", border: "1px solid var(--glass-border)",
+                                                            borderRadius: 14, padding: "8px 16px", fontSize: 13, fontWeight: 600,
+                                                            color: "var(--text-primary)", cursor: "pointer", backdropFilter: "var(--glass-blur)"
                                                         }}
                                                     >
                                                         İptal
@@ -209,13 +210,13 @@ export default function MessagesPage({ userRole = "customer" }) {
                                             <button
                                                 onClick={() => setReplyingTo(msg.message_id)}
                                                 style={{
-                                                    marginTop: 8, background: "none", border: "1px solid var(--accent)",
-                                                    borderRadius: 8, padding: "6px 14px", fontSize: 13,
+                                                    marginTop: 12, background: "rgba(59, 130, 246, 0.1)", border: "1px solid var(--accent)",
+                                                    borderRadius: 12, padding: "8px 16px", fontSize: 13, fontWeight: 600,
                                                     color: "var(--accent)", cursor: "pointer",
-                                                    display: "flex", alignItems: "center", gap: 6,
+                                                    display: "flex", alignItems: "center", gap: 6, transition: "all 0.2s"
                                                 }}
                                             >
-                                                <Reply size={14} /> Yanıtla
+                                                <Reply size={16} /> Yanıtla
                                             </button>
                                         )}
                                     </>
@@ -234,11 +235,12 @@ function TabBtn({ active, onClick, children }) {
         <button
             onClick={onClick}
             style={{
-                padding: "10px 18px", borderRadius: 12, border: "none",
-                fontWeight: 600, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap",
-                background: active ? "linear-gradient(135deg, #6366f1, #818cf8)" : "var(--bg-secondary)",
+                padding: "10px 20px", borderRadius: 14, border: "1px solid var(--glass-border)",
+                fontWeight: 700, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap",
+                background: active ? "linear-gradient(135deg, var(--accent), #818cf8)" : "rgba(255, 255, 255, 0.05)",
                 color: active ? "#fff" : "var(--text-secondary)",
-                transition: "all 0.2s",
+                backdropFilter: "var(--glass-blur)",
+                transition: "all 0.2s ease",
             }}
         >
             {children}

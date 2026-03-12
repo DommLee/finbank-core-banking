@@ -148,7 +148,7 @@ export default function BillPayPage() {
             </div>
 
             {/* Tabs */}
-            <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap", background: "var(--bg-secondary)", padding: 6, borderRadius: 16 }}>
+            <div style={{ display: "flex", gap: 8, marginBottom: 24, flexWrap: "wrap", background: "rgba(255, 255, 255, 0.03)", backdropFilter: "var(--glass-blur)", border: "1px solid var(--glass-border)", padding: 6, borderRadius: 16 }}>
                 <TabBtn active={activeTab === "pay"} onClick={() => setActiveTab("pay")}>
                     💳 Fatura Öde
                 </TabBtn>
@@ -178,13 +178,14 @@ export default function BillPayPage() {
                                         key={bt.id}
                                         onClick={() => setSelectedType(bt.id)}
                                         style={{
-                                            padding: "14px 10px", borderRadius: 14, border: "none",
+                                            padding: "14px 10px", borderRadius: 14, border: "1px solid var(--glass-border)",
                                             cursor: "pointer", textAlign: "center",
                                             background: selectedType === bt.id
                                                 ? `linear-gradient(135deg, ${bt.color}, ${bt.color}88)`
-                                                : "var(--bg-secondary)",
+                                                : "rgba(255, 255, 255, 0.05)",
+                                            backdropFilter: "var(--glass-blur)",
                                             color: selectedType === bt.id ? "#fff" : "var(--text-secondary)",
-                                            transition: "all 0.2s",
+                                            transition: "all 0.2s ease",
                                         }}
                                     >
                                         <Icon size={22} style={{ marginBottom: 6, display: "block", margin: "0 auto 6px" }} />
@@ -379,11 +380,11 @@ export default function BillPayPage() {
 
             {/* Auto Bill Create Modal */}
             {showAutoModal && (
-                <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: 20 }}>
-                    <div style={{ background: "var(--bg-card)", padding: 24, borderRadius: 24, width: "100%", maxWidth: 500, maxHeight: "90vh", overflowY: "auto" }}>
+                <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(5px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: 20 }}>
+                    <div className="glass-card" style={{ padding: 24, borderRadius: 24, width: "100%", maxWidth: 500, maxHeight: "90vh", overflowY: "auto" }}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
                             <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>Yeni Otomatik Talimat</h2>
-                            <button onClick={() => { setShowAutoModal(false); setSelectedType(null); }} style={{ background: "none", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}><XCircle size={24} /></button>
+                            <button onClick={() => { setShowAutoModal(false); setSelectedType(null); }} style={{ background: "rgba(255, 255, 255, 0.1)", borderRadius: "50%", padding: 6, border: "1px solid var(--glass-border)", color: "var(--text-secondary)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><XCircle size={20} /></button>
                         </div>
 
                         <div style={{ marginBottom: 20 }}>
@@ -480,12 +481,12 @@ export default function BillPayPage() {
 function TabBtn({ active, onClick, children }) {
     return (
         <button onClick={onClick} style={{
-            flex: 1, padding: "12px 16px", borderRadius: 12, border: "none",
+            flex: 1, padding: "12px 16px", borderRadius: 12, border: active ? "1px solid var(--glass-border)" : "1px solid transparent",
             fontWeight: active ? 800 : 600, fontSize: 14, cursor: "pointer", whiteSpace: "nowrap",
-            background: active ? "var(--bg-card)" : "transparent",
+            background: active ? "var(--glass-bg)" : "transparent",
             color: active ? "var(--text-primary)" : "var(--text-secondary)",
-            boxShadow: active ? "0 2px 8px rgba(0,0,0,0.05)" : "none",
-            transition: "all 0.2s", display: "flex", alignItems: "center", justifyContent: "center", gap: 8
+            boxShadow: active ? "var(--shadow-glow)" : "none",
+            transition: "all 0.2s ease", display: "flex", alignItems: "center", justifyContent: "center", gap: 8
         }}>
             {children}
         </button>

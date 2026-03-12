@@ -80,10 +80,13 @@ export default function SecuritySettingsPage() {
             <div style={{ display: "flex", gap: 8, marginBottom: 24, overflowX: "auto" }}>
                 {tabs.map((t) => (
                     <button key={t.id} onClick={() => setTab(t.id)} style={{
-                        padding: "10px 18px", borderRadius: 12, border: "none", cursor: "pointer",
-                        background: tab === t.id ? "linear-gradient(135deg, #6366f1, #818cf8)" : "var(--bg-card)",
+                        padding: "10px 18px", borderRadius: 12, border: tab === t.id ? "1px solid transparent" : "1px solid var(--glass-border)", cursor: "pointer",
+                        background: tab === t.id ? "linear-gradient(135deg, #6366f1, #818cf8)" : "var(--glass-bg)",
+                        backdropFilter: "var(--glass-blur)",
                         color: tab === t.id ? "#fff" : "var(--text-secondary)", fontWeight: 600, fontSize: 13,
                         display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
+                        boxShadow: tab === t.id ? "0 4px 12px rgba(99, 102, 241, 0.3)" : "none",
+                        transition: "all 0.2s ease",
                     }}>
                         {t.icon} {t.label}
                     </button>
@@ -105,9 +108,8 @@ export default function SecuritySettingsPage() {
                         sessions.length === 0 ? <p style={{ color: "var(--text-secondary)", textAlign: "center", padding: 40 }}>Aktif oturum yok.</p> :
                             <div style={{ display: "grid", gap: 12 }}>
                                 {sessions.map((s) => (
-                                    <div key={s.session_id} style={{
-                                        background: "var(--bg-card)", borderRadius: 14, padding: 18,
-                                        border: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center",
+                                    <div key={s.session_id} className="glass-card" style={{
+                                        padding: 18, display: "flex", justifyContent: "space-between", alignItems: "center",
                                     }}>
                                         <div>
                                             <div style={{ fontWeight: 600, fontSize: 14 }}>🖥️ {parseUA(s.user_agent)}</div>
@@ -130,9 +132,8 @@ export default function SecuritySettingsPage() {
                         history.length === 0 ? <p style={{ color: "var(--text-secondary)", textAlign: "center", padding: 40 }}>Giriş geçmişi yok.</p> :
                             <div style={{ display: "grid", gap: 8 }}>
                                 {history.map((h, i) => (
-                                    <div key={i} style={{
-                                        background: "var(--bg-card)", borderRadius: 12, padding: 14,
-                                        border: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center",
+                                    <div key={i} className="glass-card" style={{
+                                        padding: 14, display: "flex", justifyContent: "space-between", alignItems: "center",
                                     }}>
                                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                                             <span style={{
@@ -154,7 +155,7 @@ export default function SecuritySettingsPage() {
 
             {/* 2FA Tab */}
             {tab === "2fa" && (
-                <div style={{ background: "var(--bg-card)", borderRadius: 16, padding: 28, border: "1px solid var(--border-color)" }}>
+                <div className="glass-card" style={{ padding: 28 }}>
                     <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>🔐 İki Faktörlü Doğrulama (2FA)</h3>
                     <p style={{ fontSize: 13, color: "var(--text-secondary)", marginBottom: 20 }}>
                         Google Authenticator veya benzeri bir uygulama ile hesabınıza ek güvenlik katmanı ekleyin.
@@ -172,7 +173,8 @@ export default function SecuritySettingsPage() {
                     ) : (
                         <div>
                             <div style={{
-                                background: "var(--bg-secondary)", borderRadius: 12, padding: 20, marginBottom: 16, textAlign: "center",
+                                background: "rgba(255, 255, 255, 0.05)", borderRadius: 12, padding: 20, marginBottom: 16, textAlign: "center",
+                                border: "1px solid var(--glass-border)", backdropFilter: "var(--glass-blur)"
                             }}>
                                 <p style={{ fontSize: 13, marginBottom: 12 }}>Bu kodu Google Authenticator'a manuel girin:</p>
                                 <code style={{
@@ -194,6 +196,6 @@ export default function SecuritySettingsPage() {
     );
 }
 
-const inputStyle = { padding: "12px 16px", borderRadius: 12, border: "1px solid var(--border-color)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14, outline: "none" };
-const primaryBtn = { padding: "10px 20px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #6366f1, #818cf8)", color: "#fff", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 };
-const dangerBtn = { padding: "10px 16px", borderRadius: 12, border: "none", background: "#ef4444", color: "#fff", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13 };
+const inputStyle = { padding: "12px 16px", borderRadius: 12, border: "1px solid var(--glass-border)", background: "rgba(255, 255, 255, 0.05)", backdropFilter: "var(--glass-blur)", color: "var(--text-primary)", fontSize: 14, outline: "none", transition: "all 0.2s" };
+const primaryBtn = { padding: "10px 20px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #6366f1, #818cf8)", color: "#fff", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13, boxShadow: "0 4px 12px rgba(99, 102, 241, 0.3)" };
+const dangerBtn = { padding: "10px 16px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #ef4444, #f87171)", color: "#fff", fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 13, boxShadow: "0 4px 12px rgba(239, 68, 68, 0.3)" };

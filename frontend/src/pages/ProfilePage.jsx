@@ -87,7 +87,7 @@ export default function ProfilePage() {
     if (!customer && !loading) {
         return (
             <div style={{ padding: 24, textAlign: "center", maxWidth: 500, margin: "0 auto" }}>
-                <div style={{ background: "var(--bg-card)", borderRadius: 20, padding: 40, border: "1px solid var(--border-color)" }}>
+                <div style={{ background: "var(--glass-bg)", backdropFilter: "var(--glass-blur)", WebkitBackdropFilter: "var(--glass-blur)", borderRadius: 24, padding: 40, border: "1px solid var(--glass-border)", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)" }}>
                     <User size={48} color="#6366f1" style={{ marginBottom: 16 }} />
                     <h2 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>Profil Bulunamadı</h2>
                     <p style={{ color: "var(--text-secondary)", fontSize: 13, lineHeight: 1.5 }}>Lütfen önce anasayfadan müşteri profilinizi oluşturun veya KYC sürecini tamamlayın.</p>
@@ -108,7 +108,7 @@ export default function ProfilePage() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(350px, 1fr))", gap: 20 }}>
 
                 {/* Profile Card */}
-                <div style={{ background: "var(--bg-card)", borderRadius: 20, padding: 28, border: "1px solid var(--border-color)" }}>
+                <div style={{ background: "var(--glass-bg)", backdropFilter: "var(--glass-blur)", WebkitBackdropFilter: "var(--glass-blur)", borderRadius: 24, padding: 28, border: "1px solid var(--glass-border)", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 20, marginBottom: 24 }}>
                         <div style={{
                             width: 80, height: 80, borderRadius: "50%",
@@ -185,7 +185,7 @@ export default function ProfilePage() {
 
                 {/* Security & Password Card */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                    <div style={{ background: "var(--bg-card)", borderRadius: 20, padding: 28, border: "1px solid var(--border-color)" }}>
+                    <div style={{ background: "var(--glass-bg)", backdropFilter: "var(--glass-blur)", WebkitBackdropFilter: "var(--glass-blur)", borderRadius: 24, padding: 28, border: "1px solid var(--glass-border)", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)" }}>
                         <h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>
                             <Key size={20} color="#f59e0b" /> Şifre Değiştir
                         </h3>
@@ -209,29 +209,29 @@ export default function ProfilePage() {
                     </div>
 
                     {/* Account Info Card */}
-                    <div style={{ background: "var(--bg-card)", borderRadius: 20, padding: 20, border: "1px solid var(--border-color)" }}>
+                    <div style={{ background: "var(--glass-bg)", backdropFilter: "var(--glass-blur)", WebkitBackdropFilter: "var(--glass-blur)", borderRadius: 24, padding: 24, border: "1px solid var(--glass-border)", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)" }}>
                         <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 12, display: "flex", alignItems: "center", gap: 8, color: "#6366f1" }}>
                             <Clock size={18} /> Hesap Bilgileri
                         </h3>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "8px 12px", background: "var(--bg-secondary)", borderRadius: 10 }}>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "10px 14px", background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--glass-border)", borderRadius: 12 }}>
                                 <span style={{ color: "var(--text-secondary)" }}>Hesap Türü</span>
                                 <span style={{ fontWeight: 600 }}>{user?.role === "customer" ? "Bireysel" : "Kurumsal"}</span>
                             </div>
-                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "8px 12px", background: "var(--bg-secondary)", borderRadius: 10 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "10px 14px", background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--glass-border)", borderRadius: 12 }}>
                                 <span style={{ color: "var(--text-secondary)" }}>Hesap Durumu</span>
                                 <span style={{ fontWeight: 600, color: customer.status === "active" ? "#22c55e" : "#f59e0b" }}>
                                     {customer.status === "active" ? "Aktif" : "Beklemede"}
                                 </span>
                             </div>
-                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "8px 12px", background: "var(--bg-secondary)", borderRadius: 10 }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, padding: "10px 14px", background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--glass-border)", borderRadius: 12 }}>
                                 <span style={{ color: "var(--text-secondary)" }}>Müşteri ID</span>
                                 <span style={{ fontWeight: 600, fontFamily: "monospace", fontSize: 11 }}>{customer.id?.slice(0, 8)}...</span>
                             </div>
                         </div>
                     </div>
 
-                    <div style={{ background: "rgba(99,102,241,0.06)", borderRadius: 20, padding: 20, border: "1px solid rgba(99,102,241,0.15)" }}>
+                    <div style={{ background: "rgba(99,102,241,0.06)", borderRadius: 24, padding: 24, border: "1px solid rgba(99,102,241,0.15)", backdropFilter: "var(--glass-blur)", WebkitBackdropFilter: "var(--glass-blur)" }}>
                         <h3 style={{ fontSize: 14, fontWeight: 700, marginBottom: 8, display: "flex", alignItems: "center", gap: 8, color: "#6366f1" }}>
                             <Shield size={18} /> Güvenlik İpuçları
                         </h3>
@@ -250,10 +250,10 @@ export default function ProfilePage() {
 
 function InfoRow({ icon, label, value }) {
     return (
-        <div style={{ display: "flex", gap: 12, alignItems: "flex-start", background: "var(--bg-secondary)", padding: "12px 16px", borderRadius: 12 }}>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start", background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--glass-border)", padding: "14px 16px", borderRadius: 16 }}>
             <div style={{ color: "var(--text-secondary)", marginTop: 2 }}>{icon}</div>
             <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>{label}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>{label}</div>
                 <div style={{ fontSize: 14, fontWeight: 500, color: "var(--text-primary)" }}>{value}</div>
             </div>
         </div>
@@ -265,7 +265,7 @@ function maskTC(tc) {
     return tc.slice(0, 3) + "•••••" + tc.slice(-3);
 }
 
-const labelStyle = { fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", marginBottom: 4, display: "block" };
-const inputStyle = { width: "100%", padding: "12px 16px", borderRadius: 12, border: "1px solid var(--border-color)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box" };
-const primaryBtn = { padding: "12px 20px", borderRadius: 12, border: "none", background: "linear-gradient(135deg, #6366f1, #4f46e5)", color: "#fff", fontWeight: 600, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 6 };
-const secondaryBtn = { padding: "12px 20px", borderRadius: 12, border: "1px solid var(--border-color)", background: "var(--bg-secondary)", color: "var(--text-primary)", fontWeight: 600, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" };
+const labelStyle = { fontSize: 12, fontWeight: 700, color: "var(--text-secondary)", marginBottom: 6, display: "block" };
+const inputStyle = { width: "100%", padding: "14px 16px", borderRadius: 16, border: "1px solid var(--glass-border)", background: "rgba(0,0,0,0.2)", color: "var(--text-primary)", fontSize: 14, outline: "none", boxSizing: "border-box", backdropFilter: "blur(10px)", transition: "all 0.2s ease" };
+const primaryBtn = { padding: "14px 24px", borderRadius: 16, border: "none", background: "var(--gradient-primary)", color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, transition: "all 0.3s ease", boxShadow: "0 4px 12px rgba(99, 102, 241, 0.3)" };
+const secondaryBtn = { padding: "14px 24px", borderRadius: 16, border: "1px solid var(--glass-border)", background: "rgba(255,255,255,0.05)", color: "var(--text-primary)", fontWeight: 700, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "var(--glass-blur)", transition: "all 0.3s ease" };

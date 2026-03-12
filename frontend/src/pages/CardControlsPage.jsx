@@ -215,7 +215,7 @@ export default function CardControlsPage() {
 
 function ToggleButton({ label, icon, active, onClick, disabled }) {
     return (
-        <button type="button" onClick={onClick} disabled={disabled} style={{ padding: "8px 12px", borderRadius: 12, border: "1px solid var(--border-color)", background: active ? "rgba(16,185,129,0.14)" : "var(--bg-secondary)", color: active ? "#10b981" : "var(--text-secondary)", display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", fontWeight: 700, fontSize: 12 }}>
+        <button type="button" onClick={onClick} disabled={disabled} style={{ padding: "8px 12px", borderRadius: 12, border: "1px solid var(--glass-border)", background: active ? "rgba(16,185,129,0.14)" : "rgba(255, 255, 255, 0.05)", backdropFilter: "var(--glass-blur)", color: active ? "#10b981" : "var(--text-secondary)", display: "inline-flex", alignItems: "center", gap: 6, cursor: "pointer", fontWeight: 700, fontSize: 12, transition: "all 0.2s" }}>
             {icon} {label}
         </button>
     );
@@ -266,32 +266,36 @@ const panelRowStyle = {
     justifyContent: "space-between",
     alignItems: "flex-start",
     gap: 16,
-    padding: "14px 0",
-    borderBottom: "1px solid var(--border-color)",
+    padding: "16px 0",
+    borderBottom: "1px solid var(--glass-border)",
 };
 
 const secondaryButtonStyle = {
-    padding: "8px 12px",
+    padding: "10px 14px",
     borderRadius: 12,
-    border: "1px solid var(--border-color)",
-    background: "var(--bg-secondary)",
+    border: "1px solid var(--glass-border)",
+    background: "rgba(255, 255, 255, 0.05)",
+    backdropFilter: "var(--glass-blur)",
     color: "var(--text-primary)",
     display: "inline-flex",
     alignItems: "center",
-    gap: 6,
+    gap: 8,
     cursor: "pointer",
     fontWeight: 700,
+    transition: "all 0.2s ease"
 };
 
 const dangerButtonStyle = {
-    padding: "8px 12px",
+    padding: "10px 14px",
     borderRadius: 12,
-    border: "1px solid rgba(239,68,68,0.2)",
-    background: "rgba(239,68,68,0.08)",
+    border: "1px solid rgba(239,68,68,0.3)",
+    background: "rgba(239,68,68,0.1)",
+    backdropFilter: "var(--glass-blur)",
     color: "#ef4444",
     display: "inline-flex",
     alignItems: "center",
-    gap: 6,
+    gap: 8,
     cursor: "pointer",
     fontWeight: 700,
+    transition: "all 0.2s ease"
 };

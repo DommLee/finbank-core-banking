@@ -126,15 +126,18 @@ export default function LedgerPage() {
                             const isCredit = entry.type === "CREDIT";
                             return (
                                 <div key={entry.id || entry.entry_id} style={{
-                                    background: "var(--bg-card)",
+                                    background: "rgba(255, 255, 255, 0.02)",
+                                    backdropFilter: "var(--glass-blur)",
+                                    WebkitBackdropFilter: "var(--glass-blur)",
                                     borderRadius: 24,
                                     padding: 20,
                                     display: "flex",
                                     alignItems: "center",
                                     gap: 16,
-                                    border: "1px solid var(--border-color)",
-                                    boxShadow: "var(--shadow)",
-                                }}>
+                                    border: "1px solid var(--glass-border)",
+                                    boxShadow: "0 4px 24px rgba(0, 0, 0, 0.1)",
+                                    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                                }} className="card-3d">
                                     <div style={{
                                         width: 72,
                                         height: 72,
@@ -237,17 +240,17 @@ export default function LedgerPage() {
             )}
             {/* Split Bill Modal */}
             {splitModal.show && (
-                <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.5)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 999 }}>
-                    <div style={{ background: "var(--bg-card)", borderRadius: 24, padding: 24, width: "100%", maxWidth: 480, boxShadow: "0 20px 40px rgba(0,0,0,0.2)" }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-                            <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0, display: "flex", alignItems: "center", gap: 10 }}>
-                                <Users size={22} color="#2563eb" /> Hesabı Bölüştür
+                <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 999 }}>
+                    <div style={{ background: "var(--glass-bg)", backdropFilter: "var(--glass-blur)", WebkitBackdropFilter: "var(--glass-blur)", border: "1px solid var(--glass-border)", borderRadius: 24, padding: 32, width: "100%", maxWidth: 480, boxShadow: "0 24px 64px rgba(0,0,0,0.4)" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+                            <h2 style={{ fontSize: 24, fontWeight: 800, margin: 0, display: "flex", alignItems: "center", gap: 12, background: "var(--gradient-primary)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                                <Users size={26} color="#3b82f6" /> Hesabı Bölüştür
                             </h2>
-                            <button onClick={() => setSplitModal({ show: false, entry: null })} style={{ background: "transparent", border: "none", color: "var(--text-secondary)", cursor: "pointer" }}><X size={24} /></button>
+                            <button onClick={() => setSplitModal({ show: false, entry: null })} style={{ background: "transparent", border: "none", color: "var(--text-secondary)", cursor: "pointer", transition: "color 0.2s" }} onMouseOver={(e) => e.currentTarget.style.color="white"} onMouseOut={(e) => e.currentTarget.style.color="var(--text-secondary)"}><X size={24} /></button>
                         </div>
 
-                        <div style={{ background: "var(--bg-secondary)", padding: 16, borderRadius: 12, marginBottom: 20 }}>
-                            <div style={{ fontSize: 13, color: "var(--text-secondary)" }}>Toplam Tutar</div>
+                        <div style={{ background: "rgba(0,0,0,0.2)", padding: 20, borderRadius: 16, border: "1px solid var(--glass-border)", marginBottom: 24 }}>
+                            <div style={{ fontSize: 13, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "1px", fontWeight: 700 }}>Toplam Tutar</div>
                             <div style={{ fontSize: 24, fontWeight: 900, color: "var(--text-primary)" }}>
                                 {Number(splitModal.entry.amount).toLocaleString("tr-TR", { minimumFractionDigits: 2 })} TL
                             </div>
@@ -265,10 +268,11 @@ export default function LedgerPage() {
                             </div>
 
                             {splitTargets.map((target, index) => (
-                                <div key={index} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+                                <div key={index} style={{ display: "flex", gap: 12, alignItems: "center" }}>
                                     <div style={{ flex: 1 }}>
                                         <input
                                             className="form-input"
+                                            style={{ background: "rgba(0,0,0,0.2)", border: "1px solid var(--glass-border)", padding: "12px 16px", borderRadius: 12 }}
                                             placeholder="Telefon, E-Posta veya TC"
                                             value={target.alias}
                                             onChange={e => {
@@ -279,9 +283,10 @@ export default function LedgerPage() {
                                             required
                                         />
                                     </div>
-                                    <div style={{ width: 120 }}>
+                                    <div style={{ width: 130 }}>
                                         <input
                                             className="form-input"
+                                            style={{ background: "rgba(0,0,0,0.2)", border: "1px solid var(--glass-border)", padding: "12px 16px", borderRadius: 12 }}
                                             type="number" min="0.01" step="0.01"
                                             placeholder="Tutar"
                                             value={target.amount}
@@ -296,18 +301,18 @@ export default function LedgerPage() {
                                     <button
                                         type="button"
                                         onClick={() => removeSplitTarget(index)}
-                                        style={{ width: 44, height: 44, background: "var(--bg-secondary)", border: "1px solid var(--border-color)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444", cursor: "pointer", transition: "all 0.2s" }}
+                                        style={{ width: 44, height: 44, background: "rgba(239, 68, 68, 0.1)", border: "1px solid rgba(239, 68, 68, 0.2)", borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: "#ef4444", cursor: "pointer", transition: "all 0.2s" }}
                                     >
                                         <X size={18} />
                                     </button>
                                 </div>
                             ))}
 
-                            <button type="button" onClick={addSplitTarget} style={{ background: "transparent", border: "1px dashed var(--border-color)", color: "var(--text-secondary)", padding: 12, borderRadius: 12, fontSize: 14, fontWeight: 600, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", transition: "all 0.2s" }}>
+                            <button type="button" onClick={addSplitTarget} style={{ background: "rgba(255, 255, 255, 0.03)", border: "1px dashed var(--glass-border)", color: "var(--text-primary)", padding: 14, borderRadius: 12, fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)" }}>
                                 <Plus size={16} /> Kişi Ekle
                             </button>
 
-                            <button type="submit" style={{ background: "#2563eb", color: "#fff", border: "none", padding: "14px", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 10, transition: "opacity 0.2s" }} disabled={splitLoading}>
+                            <button type="submit" className="btn-primary" style={{ padding: "14px", borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 12, width: "100%" }} disabled={splitLoading}>
                                 {splitLoading ? <RefreshCw size={18} style={{ animation: "spin 1s linear infinite" }} /> : <Check size={18} />}
                                 İstekleri Gönder
                             </button>
