@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, Component } from "react";
 import {
     DollarSign, Users, TrendingUp, Activity, Clock,
     ArrowUpRight, ArrowDownRight, Eye, AlertTriangle, Shield, Search, CheckCircle, XCircle, ShieldAlert
@@ -9,7 +9,36 @@ import ApprovalCard from "../../components/ApprovalCard";
 import { ListSkeleton } from "../../components/SkeletonLoader";
 import TransactionReceipt from "../../components/TransactionReceipt";
 
+class LocalErrorBoundary extends Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null, info: null };
+    }
+    static getDerivedStateFromError(error) { return { hasError: true, error }; }
+    componentDidCatch(error, info) { this.setState({ error, info }); console.error("Caught error:", error, info); }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div style={{ padding: 40, color: "white" }}>
+                    <h1>UI Render Error:</h1>
+                    <pre style={{ color: "red", background: "#222", padding: 10 }}>{this.state.error?.toString()}</pre>
+                    <pre style={{ color: "yellow", background: "#222", padding: 10, marginTop: 10 }}>{this.state.info?.componentStack}</pre>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
 export default function ExecutiveCockpitPage() {
+    return (
+        <LocalErrorBoundary>
+            <ExecutiveCockpitPageContent />
+        </LocalErrorBoundary>
+    );
+}
+
+function ExecutiveCockpitPageContent() {
     const [stats, setStats] = useState({
         totalDeposit: 0,
         activeCustomers: 0,
@@ -57,9 +86,9 @@ export default function ExecutiveCockpitPage() {
             const ledgerData = ledgerRes.status === "fulfilled" ? ledgerRes.value.data : {};
             const auditData = auditRes.status === "fulfilled" ? auditRes.value.data : {};
             
-            const ledger = ledgerData.entries || [];
-            const audit = auditData.logs || [];
-            const appList = appRes.status === "fulfilled" ? appRes.value.data : [];
+            const ledger = Array.isArray(ledgerData.entries) ? ledgerData.entries : [];
+            const audit = Array.isArray(auditData.logs) ? auditData.logs : [];
+            const appList = appRes.status === "fulfilled" && Array.isArray(appRes.value.data) ? appRes.value.data : [];
 
             // Add an analytics call to grab the total commission revenue
             let bankStats = {};
@@ -438,6 +467,17 @@ export default function ExecutiveCockpitPage() {
         </div>
     );
 }
+
+const formatDateTime = (val) => {
+    if (!val) return "-";
+    return new Intl.DateTimeFormat("tr-TR", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+    }).format(new Date(val));
+};
 
 const tabStyle = (active) => ({
     display: "flex", alignItems: "center", gap: 6,

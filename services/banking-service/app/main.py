@@ -12,7 +12,7 @@ import uuid
 
 import asyncio
 import httpx
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -21,6 +21,21 @@ from shared.config import settings
 from shared.database import close_mongo_connection, connect_to_mongo, get_database
 from shared.jwt_utils import get_current_user, require_admin
 
+from app.utils.iso20022 import (
+    generate_pacs002_xml,
+    generate_pacs008_xml,
+    parse_pacs002_xml,
+    parse_pacs008_xml,
+)
+import websockets
+
+# Central GitHub Registry URL for banks. Change this to a real raw githubusercontent URL when ready!
+BANK_REGISTRY_URL = os.environ.get("BANK_REGISTRY_URL", "https://raw.githubusercontent.com/example/bank-registry/main/banks.json")
+
+# Starts empty, will be populated on startup
+EXTERNAL_BANKS = {}
+
+MY_BANK_CODE = "FINB"
 
 SUPPORTED_ACCOUNT_TYPES = {"checking", "savings"}
 SUPPORTED_CURRENCIES = {"TRY", "USD", "EUR"}
@@ -29,6 +44,46 @@ CARD_INTEREST_RATE = 3.29
 CARD_MIN_PAYMENT_RATIO = 0.20
 MOCK_RATES = {"USD": 32.50, "EUR": 35.20, "GBP": 41.10, "TRY": 1.0}
 NOTIFICATION_SERVICE_URL = os.environ.get("NOTIFICATION_SERVICE_URL", "http://notification-service:8003")
+
+async def fetch_external_banks():
+    """
+    Uygulama baslarken ortak GitHub (veya sunucu) repository'sindeki
+    bankalar listesi (JSON) cekilir ve EXTERNAL_BANKS sozlugune kaydedilir.
+    """
+    global EXTERNAL_BANKS
+    try:
+        if BANK_REGISTRY_URL.startswith("http"):
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.get(BANK_REGISTRY_URL)
+                if response.status_code == 200:
+                    data = response.json()
+                    EXTERNAL_BANKS = {k: v for k, v in data.items() if isinstance(v, str)}
+                    print(f"[Init] Dis banka kayitlari basariyla cekildi: {len(EXTERNAL_BANKS)} banka bulundu.")
+                else:
+                    print(f"[Init Warning] Banka kayitlarini cekerken hata olustu: HTTP {response.status_code}")
+        else:
+             print("[Init] Gecerli bir BANK_REGISTRY_URL bulunamadi, dis banka erisimi kapali (veya fallback mod).")
+    except Exception as e:
+        print(f"[Init Error] Dis banka listesi alinirken hata: {e}")
+
+    # Eger hic cekilemediyse, fallback olarak testleri aktif tutmak isterseniz:
+    if not EXTERNAL_BANKS:
+        EXTERNAL_BANKS = {
+             "DGBNK": "ws://127.0.0.1:8002/ws/inter-bank/FINB", 
+             "TEST": "ws://127.0.0.1:8002/ws/inter-bank/FINB"
+        }
+        print("[Init] Dis bankalar bos oldugu icin Test bankalari aktif edildi.")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup actions
+    connect_to_mongo()
+    await fetch_external_banks()
+    yield
+    # Shutdown actions
+    close_mongo_connection()
+
+app = FastAPI(title="FinBank Banking Service", lifespan=lifespan)
 
 
 class CustomerCreateRequest(BaseModel):
@@ -640,6 +695,7 @@ async def resolve_target_account(db, body: TransferRequest) -> dict:
             continue
         account = await db.accounts.find_one({"$or": [{"account_id": identifier}, {"account_number": identifier}]})
         if account:
+            account["is_external"] = False
             return account
         candidates = candidate_easy_address_values(identifier)
         if candidates:
@@ -649,12 +705,37 @@ async def resolve_target_account(db, body: TransferRequest) -> dict:
             if easy_address:
                 account = await db.accounts.find_one({"account_id": easy_address["account_id"]})
                 if account:
+                    account["is_external"] = False
                     return account
 
     if body.target_iban:
         account = await db.accounts.find_one({"iban": body.target_iban.strip()})
         if not account:
-            raise HTTPException(status_code=404, detail="IBAN ile hesap bulunamadi.")
+            # INTER-BANK LOGIC: If IBAN is not found in our DB, check if it belongs to another bank
+            iban = body.target_iban.strip().upper()
+            if iban.startswith("TR") and len(iban) > 10:
+                # Let's say we check if it is explicitly NOT FinBank (e.g., our IBANs might start with TR11...)
+                # For this assignment, we use a simple substring match for specific mock banks 
+                
+                mapped_bank_code = None
+                if "DGBNK" in iban:
+                    mapped_bank_code = "DGBNK"
+                elif "TEST" in iban:
+                    mapped_bank_code = "TEST"
+                else:
+                    mapped_bank_code = "DGBNK" # Default unknown to DGBNK for testing
+                
+                return {
+                    "account_id": "EXTERNAL",
+                    "iban": iban,
+                    "status": "active",
+                    "user_id": "EXTERNAL_USER",
+                    "bank_code": mapped_bank_code,
+                    "currency": "TRY", # Fallback default
+                    "is_external": True
+                }
+            raise HTTPException(status_code=404, detail="IBAN ile hesap bulunamadi ve dis banka formati gecersiz.")
+        account["is_external"] = False
         return account
     raise HTTPException(status_code=400, detail="Alici hesap, hesap numarasi, kolay adres veya IBAN zorunlu.")
 
@@ -1058,17 +1139,57 @@ async def transfer(
     if balance < body.amount:
         raise HTTPException(status_code=400, detail="Yetersiz bakiye.")
 
+    # INTER-BANK WEBSOCKET GÖNDERİMİ (ISO 20022 Pacs.008)
+    if target_account.get("is_external"):
+        external_bank_code = target_account.get("bank_code")
+        ws_url = EXTERNAL_BANKS.get(external_bank_code)
+        if not ws_url:
+            raise HTTPException(status_code=400, detail=f"{external_bank_code} bankasina baglanti destegi yok.")
+        
+        # Get Sender Name
+        sender_customer = await db.customers.find_one({"user_id": current_user["user_id"]})
+        sender_name = sender_customer.get("full_name", "FinBank Kullanicisi") if sender_customer else "FinBank Kullanicisi"
+        
+        # XML Oluştur
+        pacs008_xml = generate_pacs008_xml(
+            amount=body.amount,
+            currency=from_account.get("currency", "TRY"),
+            sender_name=sender_name,
+            sender_iban=from_account.get("iban", ""),
+            receiver_name="Unknown External User",
+            receiver_iban=target_account.get("iban", ""),
+            receiver_bank_bic=external_bank_code,
+            description=body.description or "Inter-Bank Transfer"
+        )
+        
+        # WS Bağlantısı kur ve Onay bekle
+        try:
+            async with websockets.connect(ws_url) as websocket:
+                await websocket.send(pacs008_xml)
+                
+                # Karşı taraftan pacs.002 ACK bekle (5 saniye timeout)
+                response_xml = await asyncio.wait_for(websocket.recv(), timeout=5.0)
+                
+                pacs002_result = parse_pacs002_xml(response_xml)
+                if not pacs002_result.get("success"):
+                    reason = pacs002_result.get("reason", "Unknown external rejection")
+                    raise HTTPException(status_code=400, detail=f"Karsi banka transferi reddetti: {reason}")
+                    
+        except asyncio.TimeoutError:
+            raise HTTPException(status_code=504, detail="Karsi bankadan zamaninda yanit alinamadi.")
+        except Exception as e:
+            if isinstance(e, HTTPException):
+                raise e
+            raise HTTPException(status_code=502, detail=f"Karsi bankaya baglanti hatasi: {str(e)}")
+
+
     txn_ref = f"TRF-{uuid.uuid4().hex[:8].upper()}"
     description = body.description or "Transfer"
     debit_metadata = {
         "counterparty_account_id": target_account["account_id"],
         "counterparty_iban": target_account["iban"],
         "counterparty_user_id": target_account["user_id"],
-    }
-    credit_metadata = {
-        "counterparty_account_id": from_account["account_id"],
-        "counterparty_iban": from_account["iban"],
-        "counterparty_user_id": from_account["user_id"],
+        "is_external": target_account.get("is_external", False)
     }
     await create_ledger_entry(
         db,
@@ -1081,17 +1202,25 @@ async def transfer(
         description,
         debit_metadata,
     )
-    await create_ledger_entry(
-        db,
-        target_account["account_id"],
-        "CREDIT",
-        "TRANSFER_IN",
-        body.amount,
-        txn_ref,
-        current_user["user_id"],
-        description,
-        credit_metadata,
-    )
+    
+    # Sadece banka içi (internal) transferlerde alıcının bakiyesi artırılır
+    if not target_account.get("is_external"):
+        credit_metadata = {
+            "counterparty_account_id": from_account["account_id"],
+            "counterparty_iban": from_account["iban"],
+            "counterparty_user_id": from_account["user_id"],
+        }
+        await create_ledger_entry(
+            db,
+            target_account["account_id"],
+            "CREDIT",
+            "TRANSFER_IN",
+            body.amount,
+            txn_ref,
+            current_user["user_id"],
+            description,
+            credit_metadata,
+        )
 
     # 🔔 WebSocket bildirimi: arka planda gönder (transfer'i bloke etmez)
     background_tasks.add_task(
@@ -1661,3 +1790,110 @@ async def get_exchange_rates():
 @app.get("/exchange/rates")
 async def get_exchange_rates_alias():
     return await get_exchange_rates()
+
+
+@app.websocket("/ws/inter-bank/{sender_bank_code}")
+async def inter_bank_websocket(websocket: WebSocket, sender_bank_code: str, db=Depends(get_database)):
+    """
+    Karsi bankalardan gelen ISO 20022 Pacs.008 para transferlerini kabul eden WebSocket.
+    """
+    await websocket.accept()
+    
+    try:
+        # Karşı bankadan XML mesajını bekle
+        xml_data = await websocket.receive_text()
+        
+        # pacs.008 ayrıştırma
+        transfer_details = parse_pacs008_xml(xml_data)
+        
+        receiver_iban = transfer_details.get("receiver_iban")
+        amount = transfer_details.get("amount")
+        currency = transfer_details.get("currency")
+        msg_id = transfer_details.get("msg_id")
+        
+        if not receiver_iban or not amount:
+            # Eksik bilgi -> REJECT
+            reject_xml = generate_pacs002_xml(msg_id, "RJCT", "Missing receiver_iban or amount in pacs.008")
+            await websocket.send_text(reject_xml)
+            await websocket.close()
+            return
+
+        # Bizim veritabanımızda alıcı IBAN'ı bul
+        target_account = await db.accounts.find_one({"iban": receiver_iban, "status": "active"})
+        
+        if not target_account:
+            # Hesap bulunamadı -> REJECT
+            reject_xml = generate_pacs002_xml(msg_id, "RJCT", "Account not found or inactive")
+            await websocket.send_text(reject_xml)
+            await websocket.close()
+            return
+
+        # Para ekleme işlemleri (Ledger)
+        txn_ref = f"TRF-EXT-{uuid.uuid4().hex[:8].upper()}"
+        description = transfer_details.get("description", "Dıș Banka Transferi")
+        
+        # Sadece bizim tarafımıza Credit yazarız (Giden banka kendi Debit'ini yazdı)
+        credit_metadata = {
+            "counterparty_iban": transfer_details.get("sender_iban"),
+            "counterparty_name": transfer_details.get("sender_name"),
+            "sender_bank_code": sender_bank_code,
+            "msg_id": msg_id,
+        }
+        
+        await create_ledger_entry(
+            db,
+            target_account["account_id"],
+            "CREDIT",
+            "TRANSFER_IN",
+            amount,
+            txn_ref,
+            target_account["user_id"], # Parayı alan kişi (system değil)
+            description,
+            credit_metadata,
+        )
+
+        # Başarı onayı yolla (pacs.002 ACCEPT)
+        accept_xml = generate_pacs002_xml(msg_id, "ACCP")
+        await websocket.send_text(accept_xml)
+        
+        # Bildirim fırlat (internal notification service websocket'i tetiklemesi için)
+        try:
+            # Kullanıcı adını al
+            target_customer = await db.customers.find_one({"user_id": target_account["user_id"]})
+            receiver_name = target_customer.get("full_name", "FinBank Kullanicisi") if target_customer else "FinBank Kullanicisi"
+            sender_name = transfer_details.get("sender_name", "Bilinmeyen Gönderici")
+            
+            async with httpx.AsyncClient(timeout=3.0) as client:
+                await client.post(
+                    f"{NOTIFICATION_SERVICE_URL}/internal/notify/transfer",
+                    json={
+                        "sender_user_id": "EXTERNAL", # Karsi bankadan oldugu icin
+                        "receiver_user_id": target_account["user_id"],
+                        "sender_name": sender_name,
+                        "receiver_name": receiver_name,
+                        "amount": amount,
+                        "currency": currency,
+                        "transfer_ref": txn_ref,
+                        "description": description,
+                        "sender_iban": transfer_details.get("sender_iban", ""),
+                        "receiver_iban": receiver_iban,
+                    },
+                )
+        except Exception as e:
+            print(f"[Inter-Bank WS] Bildirim tetiklenirken hata: {e}", file=sys.stderr)
+            
+    except WebSocketDisconnect:
+        print(f"[Inter-Bank WS] {sender_bank_code} client disconnected.")
+    except Exception as e:
+        print(f"[Inter-Bank WS] Hata: {e}", file=sys.stderr)
+        try:
+            # Bir şeyler patlarsa teknik hata (RJCT) dön
+            error_xml = generate_pacs002_xml("UNKNOWN", "RJCT", f"Internal Error: {str(e)}")
+            await websocket.send_text(error_xml)
+        except:
+            pass
+    finally:
+        try:
+            await websocket.close()
+        except RuntimeError:
+            pass # Zaten kapalıysa yoksay

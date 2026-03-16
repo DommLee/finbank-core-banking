@@ -181,6 +181,7 @@ export const adminApi = {
     systemStats: () => api.get("/admin/system/stats"),
     allMessages: (params) => api.get("/admin/all-messages", { params }),
     allBills: (params) => api.get("/admin/all-bills", { params }),
+    getStatsOverview: () => api.get("/stats/overview"),
 };
 
 export const employeeApi = {
