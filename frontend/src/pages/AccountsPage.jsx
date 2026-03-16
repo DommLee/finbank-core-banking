@@ -251,7 +251,8 @@ function DetailRow({ label, value, action }) {
 function maskIban(iban) {
     if (!iban) return "";
     if (iban.length <= 12) return iban;
-    return `${iban.slice(0, 8)} ${"*".repeat(4)} **** ${iban.slice(-4)}`;
+    // FINBXX000619... formatına uygun olarak banka kodunu gösterecek şekilde ayarlandı
+    return `${iban.slice(0, 10)} •••• •••• ${iban.slice(-4)}`;
 }
 
 function formatAccountNumber(value) {
