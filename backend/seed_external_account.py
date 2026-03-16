@@ -3,6 +3,9 @@ import os
 import uuid
 from datetime import datetime, timezone
 from motor.motor_asyncio import AsyncIOMotorClient
+from dotenv import load_dotenv
+
+load_dotenv()
 
 MONGO_URL = os.getenv("MONGODB_URL", "mongodb://mongo:27017")
 DB_NAME = os.getenv("MONGODB_DB_NAME", "finbank")

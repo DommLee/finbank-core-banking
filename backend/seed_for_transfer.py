@@ -4,6 +4,9 @@ import uuid
 from datetime import datetime, timezone
 from motor.motor_asyncio import AsyncIOMotorClient
 from supabase import create_client, Client
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ENV
 SUPABASE_URL = os.getenv("SUPABASE_URL")
@@ -78,9 +81,11 @@ async def seed():
             await db.customers.insert_one(customer_doc)
             
         # 4. Mongo Account
+        import random
         acc_id = str(uuid.uuid4())
-        acc_num = "".join([str(os.urandom(1)[0] % 10) for _ in range(10)])
-        iban = f"FINB99000619{acc_num.zfill(14)}"
+        acc_num = f"{random.randint(1000000000, 9999999999)}"
+        # Mock IBAN: FINB + 2-digit check + 6-digit bank code (000619) + 14-digit account part
+        iban = f"FINB{random.randint(10,99)}000619{acc_num.zfill(14)}"
         
         account_doc = {
             "account_id": acc_id,

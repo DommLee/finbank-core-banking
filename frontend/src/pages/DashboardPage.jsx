@@ -246,7 +246,7 @@ export default function DashboardPage() {
                                         <p className="bank-section-label mb-3 text-[11px]">{account.account_name || (account.account_type === "savings" ? "Tasarruf Hesabı" : "TRY Vadesiz")}</p>
                                         <h3 className="font-display text-3xl font-black tracking-[-0.06em] text-[var(--text-primary)]">{formatCurrency(balance, currency)}</h3>
                                         <div className="mt-5 flex items-center justify-between text-sm text-[var(--text-secondary)]">
-                                            <span>{account.iban ? `${account.iban.slice(0, 4)} •••• ${account.iban.slice(-4)}` : (account.account_number || "")}</span>
+                                            <span>{account.iban ? `${account.iban.slice(0, 8)} •••• ${account.iban.slice(-4)}` : (account.account_number || "")}</span>
                                             <Link to="/customer/accounts" className="text-primary no-underline">Detay</Link>
                                         </div>
                                     </BankGlassCard>

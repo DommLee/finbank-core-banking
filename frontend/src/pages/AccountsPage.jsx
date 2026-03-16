@@ -150,7 +150,15 @@ export default function AccountsPage() {
                                         />
                                         <DetailRow
                                             label="Kopyala"
-                                            value={copiedValue === account.iban ? "IBAN kopyalandi" : copiedValue === account.account_number ? "Hesap no kopyalandi" : "Hesap bilgilerini kopyalayin"}
+                                            value={
+                                                copiedValue === account.iban ? (
+                                                    "IBAN kopyalandi"
+                                                ) : copiedValue === account.account_number ? (
+                                                    "Hesap no kopyalandi"
+                                                ) : (
+                                                    account.iban ? `${account.iban.slice(0, 8)} •••• ${account.iban.slice(-4)}` : (account.account_number || "")
+                                                )
+                                            }
                                             action={
                                                 <div style={{ display: "flex", gap: 8 }}>
                                                     <button type="button" onClick={() => handleCopy(account.account_number, "Hesap numarasi")} style={ghostButtonStyle}>
@@ -242,8 +250,8 @@ function DetailRow({ label, value, action }) {
 
 function maskIban(iban) {
     if (!iban) return "";
-    if (iban.length <= 8) return iban;
-    return `${iban.slice(0, 4)} ${"*".repeat(Math.max(iban.length - 8, 0))} ${iban.slice(-4)}`;
+    if (iban.length <= 12) return iban;
+    return `${iban.slice(0, 8)} ${"*".repeat(4)} **** ${iban.slice(-4)}`;
 }
 
 function formatAccountNumber(value) {
