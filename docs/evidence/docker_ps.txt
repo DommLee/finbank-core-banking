@@ -1,0 +1,9 @@
+﻿NAMES                   STATUS                    PORTS
+finbank-frontend        Up 10 minutes             0.0.0.0:3000->80/tcp, [::]:3000->80/tcp
+finbank-backend         Up 10 minutes (healthy)   0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+finbank-webhook         Up 10 minutes             0.0.0.0:9000->9000/tcp, [::]:9000->9000/tcp
+finbank-mongo           Up 38 minutes (healthy)   0.0.0.0:27017->27017/tcp, [::]:27017->27017/tcp
+revenue_manager_redis   Up 47 minutes             0.0.0.0:6379->6379/tcp, [::]:6379->6379/tcp
+revenue_manager_db      Up 47 minutes (healthy)   0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+matrikshft-grafana      Up 47 minutes             0.0.0.0:3100->3000/tcp, [::]:3100->3000/tcp
+matrikshft-prometheus   Up 47 minutes             0.0.0.0:9191->9090/tcp, [::]:9191->9090/tcp

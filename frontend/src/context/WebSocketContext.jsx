@@ -66,17 +66,18 @@ export function WebSocketProvider({ children }) {
       window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
     const apiUrl = (isLocalRuntime ? "/api/v1" : (envApiUrl || "/api/v1")).replace(/\/$/, "");
     let wsUrl;
+    const encodedToken = encodeURIComponent(token);
 
     if (apiUrl.startsWith("http")) {
       // Tam URL verilmişse: https://... → wss://...
       wsUrl = apiUrl
         .replace(/^https/, "wss")
         .replace(/^http/, "ws")
-        .replace(/\/api\/v1$/, "") + `/api/v1/ws/${token}`;
+        .replace(/\/api\/v1$/, "") + `/api/v1/ws?token=${encodedToken}`;
     } else {
       // Relative path: window.location kullan
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      wsUrl = `${protocol}//${window.location.host}/api/v1/ws/${token}`;
+      wsUrl = `${protocol}//${window.location.host}/api/v1/ws?token=${encodedToken}`;
     }
 
     shouldReconnectRef.current = true;

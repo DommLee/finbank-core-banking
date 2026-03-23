@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.core.database import get_database
 from app.core.security import (
     supabase, get_current_user, get_redirect_url,
+    create_local_access_token, hash_local_password, verify_local_password,
 )
 from app.models.user import (
     UserRegisterRequest, UserLoginRequest, UserRole,
@@ -89,31 +90,30 @@ async def register(
         raise HTTPException(status_code=400, detail="Åifre en az bÃ¼yÃ¼k harf, kÃ¼Ã§Ã¼k harf, rakam veya Ã¶zel karakter iÃ§ermelidir.")
 
     # 1. Create user in Supabase Auth (Auto confirm)
+    auth_provider = "supabase"
+    local_password_hash = None
     try:
         supa_user = supabase.auth.admin.create_user({
             "email": body.email,
             "password": body.password,
             "email_confirm": True
         })
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Supabase Auth Error: {str(e)}"
-        )
-        
-    if not supa_user or not supa_user.user:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve user from Supabase after creation"
-        )
-        
-    user_id = supa_user.user.id
+        if not supa_user or not supa_user.user:
+            raise RuntimeError("Failed to retrieve user from Supabase after creation")
+        user_id = supa_user.user.id
+    except Exception:
+        # Local fallback keeps the assignment demo functional even when Supabase blocks admin creation.
+        auth_provider = "local"
+        user_id = str(uuid.uuid4())
+        local_password_hash = hash_local_password(body.password)
 
     # 2. Store user profile in MongoDB
     user_doc = {
         "user_id": user_id,
         "email": body.email,
         "role": UserRole.CUSTOMER.value,  # Force customer role
+        "auth_provider": auth_provider,
+        "local_password_hash": local_password_hash,
         "is_active": True,
         "kyc_status": "PENDING",
         "created_at": datetime.now(timezone.utc),
@@ -190,40 +190,10 @@ async def login(
 ):
     """Login and receive a Supabase JWT token with redirect URL based on role."""
     ip, ua = get_client_info(request)
-    
-    # 1. Authenticate via Supabase
-    try:
-        auth_response = supabase.auth.sign_in_with_password({
-            "email": body.email,
-            "password": body.password
-        })
-    except Exception as e:
-        await log_audit(
-            action="LOGIN_FAILED",
-            outcome="FAILURE",
-            user_email=body.email,
-            details=f"Supabase Auth failed: {str(e)}",
-            ip_address=ip,
-            user_agent=ua,
-        )
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
-        )
-        
-    session = auth_response.session
-    if not session:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Login failed, no session returned.",
-        )
-        
-    token = session.access_token
 
-    # 2. Get User Profile from Local MongoDB
+    # 1. Get user profile from local MongoDB first
     user = await db.users.find_one({"email": body.email})
-    
-    # If a user is registered in Supabase but not in our DB (e.g., deleted manually in Mongo but not Supabase)
+
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -235,6 +205,53 @@ async def login(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is deactivated",
         )
+
+    # 2. Authenticate based on provider
+    auth_provider = user.get("auth_provider", "supabase")
+    token = None
+
+    if auth_provider == "local":
+        if not verify_local_password(body.password, user.get("local_password_hash")):
+            await log_audit(
+                action="LOGIN_FAILED",
+                outcome="FAILURE",
+                user_email=body.email,
+                details="Local auth failed: invalid password",
+                ip_address=ip,
+                user_agent=ua,
+            )
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password",
+            )
+        token = create_local_access_token(user)
+    else:
+        try:
+            auth_response = supabase.auth.sign_in_with_password({
+                "email": body.email,
+                "password": body.password
+            })
+            session = auth_response.session
+            if not session:
+                raise ValueError("No session returned")
+            token = session.access_token
+        except Exception as e:
+            # If user has local hash as backup, allow local sign-in.
+            if verify_local_password(body.password, user.get("local_password_hash")):
+                token = create_local_access_token(user)
+            else:
+                await log_audit(
+                    action="LOGIN_FAILED",
+                    outcome="FAILURE",
+                    user_email=body.email,
+                    details=f"Supabase auth failed: {str(e)}",
+                    ip_address=ip,
+                    user_agent=ua,
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Invalid email or password",
+                )
 
     await log_audit(
         action="LOGIN_SUCCESS",

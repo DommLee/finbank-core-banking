@@ -7,6 +7,8 @@ Developer: DommLee
 Architecture: Modular Monolith
 =========================================================
 """
+import asyncio
+import json
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect, Depends
 from fastapi.middleware.cors import CORSMiddleware
@@ -162,17 +164,46 @@ async def root():
 
 
 # ── Customer WebSocket Endpoint (real-time notifications) ──
-@app.websocket("/api/v1/ws/{token}")
-async def customer_websocket(websocket: WebSocket, token: str, db=Depends(get_database)):
-    """Customer-facing WebSocket for real-time transfer/notification events."""
-    await websocket.accept()
+async def _resolve_ws_user(websocket: WebSocket, db, token: str | None = None) -> dict | None:
+    ws_token = token or websocket.query_params.get("token")
+
+    if not ws_token:
+        auth_header = websocket.headers.get("authorization", "")
+        if auth_header.lower().startswith("bearer "):
+            ws_token = auth_header[7:].strip()
+
+    # Browser clients can authenticate with the first frame:
+    # {"type":"auth","token":"..."} or plain token text.
+    if not ws_token:
+        try:
+            first_message = await asyncio.wait_for(websocket.receive_text(), timeout=8)
+            try:
+                parsed = json.loads(first_message)
+                if isinstance(parsed, dict) and parsed.get("type") == "auth":
+                    ws_token = str(parsed.get("token", "")).strip()
+            except json.JSONDecodeError:
+                ws_token = first_message.strip()
+        except Exception:
+            ws_token = None
+
+    if not ws_token:
+        await websocket.close(code=1008)
+        return None
+
     try:
-        current_user = await authenticate_token(token, db)
-        user_id = current_user["user_id"]
+        return await authenticate_token(ws_token, db)
     except Exception:
         await websocket.close(code=1008)
+        return None
+
+
+async def _handle_customer_websocket(websocket: WebSocket, db, token: str | None = None):
+    await websocket.accept()
+    current_user = await _resolve_ws_user(websocket, db, token)
+    if not current_user:
         return
 
+    user_id = current_user["user_id"]
     await ws_manager.connect(websocket, user_id)
     logger.info("customer_ws_connected", user_id=user_id, online_connections=ws_manager.online_count())
 
@@ -180,10 +211,12 @@ async def customer_websocket(websocket: WebSocket, token: str, db=Depends(get_da
         while True:
             data = await websocket.receive_text()
             try:
-                import json
                 msg = json.loads(data)
-                if msg.get("type") == "ping":
+                msg_type = msg.get("type")
+                if msg_type == "ping":
                     await websocket.send_text(json.dumps({"type": "pong"}))
+                elif msg_type == "auth":
+                    await websocket.send_text(json.dumps({"type": "auth_ok"}))
             except json.JSONDecodeError:
                 pass
     except WebSocketDisconnect:
@@ -192,6 +225,18 @@ async def customer_websocket(websocket: WebSocket, token: str, db=Depends(get_da
         logger.warning("customer_ws_error", user_id=user_id, error=str(e))
     finally:
         ws_manager.disconnect(websocket, user_id)
+
+
+@app.websocket("/api/v1/ws")
+async def customer_websocket_query_token(websocket: WebSocket, db=Depends(get_database)):
+    """Primary customer WebSocket endpoint: /api/v1/ws?token=..."""
+    await _handle_customer_websocket(websocket, db)
+
+
+@app.websocket("/api/v1/ws/{token}")
+async def customer_websocket_path_token(websocket: WebSocket, token: str, db=Depends(get_database)):
+    """Backward-compatible customer WebSocket endpoint with token in path."""
+    await _handle_customer_websocket(websocket, db, token=token)
 
 
 # ── Inter-Bank WebSocket Endpoint ──

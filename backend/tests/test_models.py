@@ -23,34 +23,48 @@ from app.models.transaction import (
 class TestUserRegisterRequest:
     """Validate user registration input constraints."""
 
+    @staticmethod
+    def _valid_payload(**overrides):
+        payload = {
+            "email": "user@example.com",
+            "password": "securepass123",
+            "full_name": "Test User",
+            "phone": "+905551112233",
+            "national_id": "10000000146",
+        }
+        payload.update(overrides)
+        return payload
+
     def test_valid_registration(self):
         """Accept valid email + password ≥ 8 chars."""
-        req = UserRegisterRequest(
-            email="user@example.com",
-            password="securepass123",
-        )
+        req = UserRegisterRequest(**self._valid_payload())
         assert req.email == "user@example.com"
         assert req.password == "securepass123"
+        assert req.full_name == "Test User"
 
     def test_invalid_email_format(self):
         """Reject invalid email format."""
         with pytest.raises(ValidationError):
-            UserRegisterRequest(email="not-an-email", password="securepass123")
+            UserRegisterRequest(**self._valid_payload(email="not-an-email"))
 
     def test_password_too_short(self):
         """Reject password shorter than 8 characters."""
         with pytest.raises(ValidationError):
-            UserRegisterRequest(email="user@example.com", password="short")
+            UserRegisterRequest(**self._valid_payload(password="short"))
 
     def test_missing_email(self):
         """Reject missing email field."""
         with pytest.raises(ValidationError):
-            UserRegisterRequest(password="securepass123")
+            payload = self._valid_payload()
+            payload.pop("email")
+            UserRegisterRequest(**payload)
 
     def test_missing_password(self):
         """Reject missing password field."""
         with pytest.raises(ValidationError):
-            UserRegisterRequest(email="user@example.com")
+            payload = self._valid_payload()
+            payload.pop("password")
+            UserRegisterRequest(**payload)
 
 
 # ═══════════════════════════════════════════

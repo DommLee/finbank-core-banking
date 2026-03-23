@@ -420,7 +420,7 @@ export default function CardsPage() {
 
                                             {/* Back Face */}
                                             <div className="flip-card-back">
-                                                <div style={{ width: "100%", height: 48, background: "#000", margin: "0 -28px 20px", width: "calc(100% + 56px)" }} />
+                                                <div style={{ height: 48, background: "#000", margin: "0 -28px 20px", width: "calc(100% + 56px)" }} />
                                                 <div style={{ width: "100%", height: 36, background: "rgba(255,255,255,0.1)", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "flex-end", padding: "0 12px", border: "1px solid rgba(255,255,255,0.05)" }}>
                                                     <span style={{ fontFamily: "monospace", fontWeight: 800, color: "#fff", fontSize: 16 }}>
                                                         {showSensitive ? selectedCard.cvv || "123" : "•••"}
