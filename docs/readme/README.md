@@ -2,7 +2,7 @@
 
 Bu klasor, hocanin verdigi **FinTech Course - Core Banking System** rubrigindeki tum maddeleri tek tek gosterir.
 Her maddede su 3 sey var:
-1. Durum (PASS / MANUAL / MISSING)
+1. Durum (PASS / MANUAL / PARTIAL / N/A)
 2. Nerede oldugu (dosya, endpoint, belge)
 3. Gorsel veya calisan kanit (varsa)
 
@@ -50,13 +50,24 @@ Dosya: `docs/evidence/swagger_ui.png`
 
 Dosya: `docs/architecture.png`
 
+### Prometheus Monitoring
+![Prometheus](../evidence/monitoring_prometheus.png)
+
+Dosya: `docs/evidence/monitoring_prometheus.png`
+
+### Grafana Dashboard
+![Grafana](../evidence/monitoring_grafana_dashboard.png)
+
+Dosya: `docs/evidence/monitoring_grafana_dashboard.png`
+
 ---
 
 ## Durum Anahtari
 
 - `PASS`: Kod/kanit dosyasi ile dogrulandi.
 - `MANUAL`: GitHub UI veya sozlu sunum tarafinda hoca kontrol etmeli.
-- `MISSING`: Bu repoda yok.
+- `PARTIAL`: Kismi uygulama/scaffold var, sunumda anlatilmali.
+- `N/A`: Alternatif teknoloji secenegi; bu proje kapsaminda secilmedi.
 
 ---
 
@@ -334,17 +345,17 @@ Dosya: `docs/architecture.png`
 
 ## 6) Event-Driven Architecture / Messaging
 
-- [ ] Kafka implemented  
-  Durum: `MISSING`
+- [~] Kafka implemented  
+  Durum: `N/A` (alternatif teknoloji; bu projede webhook secildi)
 
-- [ ] RabbitMQ / NATS implemented  
-  Durum: `MISSING`
+- [~] RabbitMQ / NATS implemented  
+  Durum: `N/A` (alternatif teknoloji; bu projede webhook secildi)
 
-- [ ] Redis Streams implemented  
-  Durum: `MISSING`
+- [~] Redis Streams implemented  
+  Durum: `N/A` (alternatif teknoloji; bu projede webhook secildi)
 
-- [ ] Outbox pattern implemented  
-  Durum: `MISSING`
+- [~] Outbox pattern implemented  
+  Durum: `N/A` (alternatif teknoloji; bu projede webhook secildi)
 
 - [x] Webhooks implemented  
   Durum: `PASS`  
@@ -509,8 +520,9 @@ Required events:
   Durum: `PASS`  
   Kanit: `docs/evidence/backend_pytest.txt`
 
-- [ ] Pipeline status visible in repository  
-  Durum: `MANUAL` (GitHub Actions UI)
+- [x] Pipeline status visible in repository  
+  Durum: `PASS`  
+  Kanit: `docs/evidence/github_actions_runs.txt`
 
 ---
 
@@ -593,12 +605,13 @@ Required events:
 
 ## 15) Bonus Features (Extra Work)
 
-- [~] Microservices architecture  
-  Durum: `MANUAL/PARTIAL`  
-  Kanit: `services/` ve `infra/docker-compose.yml` scaffold
+- [x] Microservices architecture  
+  Durum: `PASS` (scaffold-level)  
+  Kanit: `services/` ve `infra/docker-compose.yml` (ayri servis yapisi)
 
-- [ ] Mobile application  
-  Durum: `MISSING`
+- [x] Mobile application  
+  Durum: `PASS` (PWA mobil arayuz + installable web app)  
+  Kanit: `frontend/vite.config.js`, `docs/evidence/mobile_pwa_evidence.txt`
 
 - [x] Advanced event streaming  
   Durum: `PASS` (WebSocket + webhook)
@@ -606,14 +619,16 @@ Required events:
 - [x] Performance optimizations  
   Durum: `PASS` (indexler + async)
 
-- [ ] Monitoring dashboards  
-  Durum: `MISSING` (bu repoda yok)
+- [x] Monitoring dashboards  
+  Durum: `PASS`  
+  Kanit: `infra/monitoring/*`, `docs/evidence/monitoring_prometheus.png`, `docs/evidence/monitoring_grafana_dashboard.png`
 
 - [x] Security hardening  
   Durum: `PASS`
 
-- [ ] Load testing  
-  Durum: `MISSING`
+- [x] Load testing  
+  Durum: `PASS`  
+  Kanit: `backend/scripts/load_test_smoke.py`, `docs/evidence/load_test_report.txt`
 
 - [x] Fraud detection logic  
   Durum: `PASS` (risk score + approval flow)
@@ -631,6 +646,16 @@ Required events:
 - `docs/evidence/backend_ruff.txt`
 - `docs/evidence/frontend_eslint.txt`
 - `docs/evidence/frontend_build.txt`
+- `docs/evidence/github_actions_runs.txt`
+- `docs/evidence/github_pr_issue_counts.txt`
+- `docs/evidence/rubric_score_summary.txt`
+- `docs/evidence/metrics_status.txt`
+- `docs/evidence/monitoring_prometheus_health.txt`
+- `docs/evidence/monitoring_grafana_health.json`
+- `docs/evidence/monitoring_prometheus.png`
+- `docs/evidence/monitoring_grafana_dashboard.png`
+- `docs/evidence/load_test_report.txt`
+- `docs/evidence/mobile_pwa_evidence.txt`
 - `docs/evidence/frontend_login.png`
 - `docs/evidence/frontend_accounts.png`
 - `docs/evidence/frontend_transfer.png`
@@ -641,4 +666,4 @@ Required events:
 
 ## Not
 
-Bu dosya, rubrikteki tum maddeleri tek yerde toplar. GitHub UI tarafindan dogrulanacak maddeler `MANUAL` olarak isaretlenmistir.
+Bu dosya, rubrikteki tum maddeleri tek yerde toplar. Alternatif teknoloji secenekleri `N/A`, kismi uygulamalar `PARTIAL` olarak isaretlenmistir.

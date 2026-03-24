@@ -1,0 +1,6 @@
+﻿total_runs=231
+id=23495371787 status=completed conclusion=success name=FinBank CI/CD Pipeline url=https://github.com/DommLee/finbank-core-banking/actions/runs/23495371787
+id=23495371734 status=completed conclusion=success name=Deploy Frontend to GitHub Pages url=https://github.com/DommLee/finbank-core-banking/actions/runs/23495371734
+id=23495371705 status=completed conclusion=success name=Secret Scan url=https://github.com/DommLee/finbank-core-banking/actions/runs/23495371705
+id=23495369845 status=completed conclusion=success name=Secret Scan url=https://github.com/DommLee/finbank-core-banking/actions/runs/23495369845
+id=23495369819 status=completed conclusion=success name=FinBank CI/CD Pipeline url=https://github.com/DommLee/finbank-core-banking/actions/runs/23495369819

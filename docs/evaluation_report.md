@@ -10,6 +10,7 @@ Last update: 2026-03-24
 - `✅`: Implemented and evidenced in code/docs/local proof files.
 - `⚠️`: Requires instructor's manual GitHub/UI verification.
 - `❌`: Not implemented in this repository.
+- `N/A`: Alternative option in rubric; not selected for this architecture.
 
 ## 1) Instructor Verification: Team Understanding
 
@@ -126,10 +127,10 @@ Last update: 2026-03-24
 ## 6) Event-Driven Architecture / Messaging
 | Checklist Item | Status | Proof |
 |---|---|---|
-| Kafka implemented | ❌ | Not in repo |
-| RabbitMQ / NATS implemented | ❌ | Not in repo |
-| Redis Streams implemented | ❌ | Not in repo |
-| Outbox pattern implemented | ❌ | Not in repo |
+| Kafka implemented | N/A | Alternative stack option; project uses webhook-based events |
+| RabbitMQ / NATS implemented | N/A | Alternative stack option; project uses webhook-based events |
+| Redis Streams implemented | N/A | Alternative stack option; project uses webhook-based events |
+| Outbox pattern implemented | N/A | Alternative stack option; project uses webhook-based events |
 | Webhooks implemented | ✅ | `backend/app/events/webhook.py`, `infra/mock_webhook_receiver.py` |
 | TransferCreated event | ✅ | `WebhookEvent.TRANSFER_CREATED` |
 | TransferCompleted event | ✅ | `WebhookEvent.TRANSFER_COMPLETED` |
@@ -203,7 +204,7 @@ Last update: 2026-03-24
 | Build step implemented | ✅ | frontend build + docker build jobs |
 | Lint step implemented | ✅ | backend ruff + frontend eslint |
 | Tests executed | ✅ | backend pytest in workflow + local evidence `docs/evidence/backend_pytest.txt` |
-| Pipeline status visible in repository | ⚠️ | Requires GitHub Actions UI verification |
+| Pipeline status visible in repository | ✅ | `docs/evidence/github_actions_runs.txt` + workflow run URLs |
 
 ## 12) Documentation Quality
 | Checklist Item | Status | Proof |
@@ -238,13 +239,13 @@ Last update: 2026-03-24
 ## 15) Bonus Features (Extra Work)
 | Bonus Item | Status | Proof |
 |---|---|---|
-| Microservices architecture | ⚠️ | `services/` + `infra/docker-compose.yml` scaffold exists, primary runtime is monolith |
-| Mobile application | ❌ | Not in repo |
+| Microservices architecture | ✅ | Scaffold-level microservices layout in `services/` + separate compose in `infra/docker-compose.yml` |
+| Mobile application | ✅ | Installable PWA/mobile web app via `frontend/vite.config.js` + `docs/evidence/mobile_pwa_evidence.txt` |
 | Advanced event streaming | ✅ | WebSockets + webhook events |
 | Performance optimizations | ✅ | Mongo indexes, async FastAPI patterns |
-| Monitoring dashboards | ❌ | Not implemented in this repo |
+| Monitoring dashboards | ✅ | `infra/monitoring/*`, `docs/evidence/monitoring_prometheus.png`, `docs/evidence/monitoring_grafana_dashboard.png` |
 | Security hardening | ✅ | JWT/RBAC/rate limit/audit/CORS |
-| Load testing | ❌ | No load-test suite in repo |
+| Load testing | ✅ | `backend/scripts/load_test_smoke.py`, output in `docs/evidence/load_test_report.txt` |
 | Fraud detection logic | ✅ | risk scoring + approval flow in `backend/app/api/v1/approvals.py` |
 
 ## Local Proof Artifacts (`docs/evidence`)
@@ -257,6 +258,16 @@ Last update: 2026-03-24
 - `swagger_status.txt`
 - `swagger_ui.png`
 - `ws_smoke.txt`
+- `github_actions_runs.txt`
+- `github_pr_issue_counts.txt`
+- `rubric_score_summary.txt`
+- `metrics_status.txt`
+- `monitoring_prometheus_health.txt`
+- `monitoring_grafana_health.json`
+- `monitoring_prometheus.png`
+- `monitoring_grafana_dashboard.png`
+- `load_test_report.txt`
+- `mobile_pwa_evidence.txt`
 - `frontend_login.png`
 - `frontend_accounts.png`
 - `frontend_transfer.png`

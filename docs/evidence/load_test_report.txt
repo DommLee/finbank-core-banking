@@ -1,0 +1,11 @@
+﻿url=http://localhost:8000/
+requests_total=400
+concurrency=40
+success=400
+failed=0
+duration_seconds=0.5830
+throughput_rps=686.11
+latency_avg_ms=54.22
+latency_p50_ms=41.65
+latency_p95_ms=155.15
+latency_p99_ms=222.09

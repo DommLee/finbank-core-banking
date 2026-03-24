@@ -18,6 +18,7 @@ from slowapi.errors import RateLimitExceeded
 import structlog
 import time
 import uuid
+from prometheus_client import Counter, Histogram, generate_latest, CONTENT_TYPE_LATEST
 
 from app.core.config import settings
 from app.core.database import connect_to_mongo, close_mongo_connection, get_database
@@ -38,6 +39,18 @@ logger = structlog.get_logger()
 
 # ── Rate Limiter ──
 limiter = Limiter(key_func=get_remote_address)
+
+# Request metrics exposed via /metrics for Prometheus scraping.
+REQUEST_COUNT = Counter(
+    "finbank_http_requests_total",
+    "Total HTTP requests",
+    ["method", "path", "status_code"],
+)
+REQUEST_LATENCY_SECONDS = Histogram(
+    "finbank_http_request_duration_seconds",
+    "HTTP request duration in seconds",
+    ["method", "path"],
+)
 
 
 @asynccontextmanager
@@ -107,10 +120,17 @@ async def log_requests(request: Request, call_next):
     start_time = time.time()
     response: Response = await call_next(request)
     duration = time.time() - start_time
+    path = request.url.path
+    method = request.method
+    status_code = str(response.status_code)
+
+    REQUEST_COUNT.labels(method=method, path=path, status_code=status_code).inc()
+    REQUEST_LATENCY_SECONDS.labels(method=method, path=path).observe(duration)
+
     logger.info(
         "HTTP Request",
-        method=request.method,
-        path=request.url.path,
+        method=method,
+        path=path,
         status=response.status_code,
         duration_ms=round(duration * 1000, 2),
     )
@@ -123,6 +143,12 @@ async def log_requests(request: Request, call_next):
 async def health_check(request: Request):
     """Health check endpoint for Docker."""
     return {"status": "healthy", "service": "FinBank Core Banking"}
+
+
+@app.get("/metrics", include_in_schema=False)
+async def metrics():
+    """Prometheus metrics endpoint."""
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 # ── Register Routers ──

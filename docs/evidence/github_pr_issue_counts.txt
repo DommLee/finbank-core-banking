@@ -1,0 +1,7 @@
+﻿pr_count=4
+issue_count=1
+pr=#4 state=open title=docs: add database schema documentation with collections, indexes, an… url=https://github.com/DommLee/finbank-core-banking/pull/4
+pr=#3 state=closed title=docs: add error codes and API error handling reference url=https://github.com/DommLee/finbank-core-banking/pull/3
+pr=#2 state=open title=docs: add financial standards mapping (ISO 20022, SWIFT, EMV, Open Ba… url=https://github.com/DommLee/finbank-core-banking/pull/2
+pr=#1 state=closed title=Codex/projeye ait balantlar bul url=https://github.com/DommLee/finbank-core-banking/pull/1
+issue=#5 state=open title=Issues url=https://github.com/DommLee/finbank-core-banking/issues/5

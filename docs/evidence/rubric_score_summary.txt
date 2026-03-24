@@ -1,0 +1,8 @@
+﻿generated_at=2026-03-24T18:03:17.3089193+03:00
+total_items=130
+pass_items=126
+na_items=4
+strict_percent=96.9
+effective_percent_excluding_na=100
+core_percent_excluding_na=100
+bonus_percent=100

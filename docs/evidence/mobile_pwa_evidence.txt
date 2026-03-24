@@ -1,0 +1,5 @@
+﻿vite_plugin_pwa=true
+config_file=frontend/vite.config.js
+manifest_file=frontend/dist/manifest.webmanifest
+service_worker=frontend/dist/sw.js
+{"name":"FinBank SaaS","short_name":"FinBank","description":"Mobile-First Business Management App","start_url":"/","display":"standalone","background_color":"#121212","theme_color":"#121212","lang":"en","scope":"/","icons":[{"src":"/vite.svg","sizes":"192x192","type":"image/svg+xml"},{"src":"/vite.svg","sizes":"512x512","type":"image/svg+xml"}]}

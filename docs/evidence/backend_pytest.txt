@@ -1,6 +1,6 @@
-﻿/usr/local/lib/python3.11/site-packages/pytest_asyncio/plugin.py:208: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+/usr/local/lib/python3.11/site-packages/pytest_asyncio/plugin.py:208: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
 The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
-System.Management.Automation.RemoteException
+
   warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
 ........................................................................ [ 93%]
 .....                                                                    [100%]
@@ -18,4 +18,4 @@ tests/test_ledger_service.py::TestDeposit::test_deposit_creates_credit_entry
     return SyncPostgrestClient(
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
-77 passed, 3 warnings in 3.54s
+77 passed, 3 warnings in 2.86s
